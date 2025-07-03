@@ -23,6 +23,13 @@ def main():
             self.send_header('Access-Control-Allow-Origin', '*')
             self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
             self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+            
+            # Add cache-busting headers for data.json to prevent stale data
+            if self.path.endswith('data.json'):
+                self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                self.send_header('Pragma', 'no-cache')
+                self.send_header('Expires', '0')
+            
             super().end_headers()
     
     with socketserver.TCPServer(("", PORT), CustomHandler) as httpd:

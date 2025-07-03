@@ -5,9 +5,12 @@ An automated web-based tool that analyzes historical CVE data and uses time seri
 ## 🔥 Features
 
 - **Automated Data Collection**: Daily fetching of CVE data from the official CVE Project repository
-- **Multiple Forecasting Models**: Implements 12+ time series models including ARIMA, Prophet, NBEATS, and more
-- **Model Performance Comparison**: Ranks models by Mean Absolute Percentage Error (MAPE)
+- **Multiple Forecasting Models**: Implements 6+ time series models including ARIMA, Prophet, ExponentialSmoothing, Kalman Filter, and more
+- **Comprehensive Model Evaluation**: Ranks models by multiple metrics (MAPE, RMSE, MAE, sMAPE)
+- **Validation Against Actuals**: Real-time comparison of predictions vs actual CVE counts with detailed accuracy metrics
 - **Interactive Dashboard**: Beautiful web interface with charts and real-time data visualization
+- **Model Performance Transparency**: Detailed validation table showing monthly prediction accuracy
+- **Enhanced Accuracy Metrics**: Multi-dimensional model performance assessment
 - **GitHub Actions Automation**: Fully automated daily updates
 - **GitHub Pages Ready**: Static site deployment compatible
 
@@ -83,9 +86,16 @@ The dashboard will be available at `http://localhost:8000` when using the local 
 - Model selection filter
 
 ### Model Rankings Table
-- Performance comparison of all models
-- MAPE scores and performance ratings
+- Performance comparison of all models with comprehensive metrics (MAPE, RMSE, MAE, sMAPE)
 - Color-coded performance indicators
+- Detailed accuracy assessment
+
+### Validation Against Actuals Table ⭐ **NEW**
+- **Monthly comparison** of predicted vs actual CVE counts for the last 6 months
+- **Absolute and percentage error** calculations
+- **Color-coded accuracy ratings** (Excellent/Good/Fair/Poor)
+- **Summary statistics** including average error and accuracy rate
+- **Transparency** in model performance and reliability
 
 ## 🤖 Forecasting Models
 

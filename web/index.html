@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVE Forecast Dashboard</title>
+    <title>CVEForecast - RogoLabs</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
         .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #111827 100%);
+        }
+        .rogo-blue {
+            color: #60a5fa;
+        }
+        .rogo-dark {
+            color: #1f2937;
         }
         .card-shadow {
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -31,6 +37,40 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .metric-highlight {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #1e40af;
+        }
+        .validation-row:hover {
+            background-color: #f9fafb;
+        }
+        .tooltip {
+            position: relative;
+        }
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+        .metric-link {
+            transition: color 0.2s ease-in-out;
+            text-decoration: underline;
+            text-decoration-style: dotted;
+            text-underline-offset: 2px;
+        }
+        .metric-link:hover {
+            color: #2563eb !important;
+            text-decoration-style: solid;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -39,12 +79,10 @@
         <div class="container mx-auto px-6 py-4">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-3xl font-bold">CVE Forecast Dashboard</h1>
-                    <p class="text-blue-100 mt-1">Predictive Analytics for CVE Publications</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-blue-100 text-sm" id="lastUpdated">Loading...</p>
-                    <p class="text-blue-100 text-sm">Updated Daily at Midnight UTC</p>
+                    <h1 class="text-3xl font-bold">
+                        <span class="text-white">CVE</span><span class="rogo-blue">Forecast</span>
+                    </h1>
+                    <p class="text-gray-300 mt-1">Predictive Analytics for CVE Publications</p>
                 </div>
             </div>
         </div>
@@ -75,13 +113,14 @@
                 <div class="bg-white rounded-lg card-shadow p-6">
                     <div class="flex items-center">
                         <div class="p-3 bg-blue-100 rounded-full">
-                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            <svg class="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                             </svg>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Total Historical CVEs</p>
-                            <p class="text-2xl font-bold text-gray-900" id="totalCVEs">-</p>
+                            <p class="text-sm font-medium text-gray-600">Estimated CVEs This Year</p>
+                            <p class="text-2xl font-bold text-gray-900" id="currentYearForecast">-</p>
+                            <p class="text-xs text-gray-500" id="forecastDescription">Using best model (actual + forecast)</p>
                         </div>
                     </div>
                 </div>
@@ -110,9 +149,12 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-600">Forecast Accuracy (MAPE)</p>
                             <p class="text-2xl font-bold text-gray-900" id="bestAccuracy">-</p>
+                            <p class="text-xs text-gray-500">Lower is better</p>
                         </div>
                     </div>
                 </div>
+
+
             </div>
 
             <!-- Chart Section -->
@@ -122,14 +164,14 @@
                     <div class="flex space-x-2">
                         <select id="chartType" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
                             <option value="monthly">Monthly Counts</option>
-                            <option value="cumulative">Cumulative Growth</option>
+                            <option value="cumulative" selected>Cumulative Growth</option>
                         </select>
                         <select id="modelSelector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
                             <option value="all">All Models</option>
                         </select>
                         <select id="timeRange" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
-                            <option value="6m">Last 6 Months</option>
-                            <option value="1y">Last Year</option>
+                            <option value="this_year" selected>This Year</option>
+                            <option value="next_year">Next Year</option>
                             <option value="all">All Data</option>
                         </select>
                     </div>
@@ -148,7 +190,18 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MAPE Score</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <a href="https://en.wikipedia.org/wiki/Mean_absolute_percentage_error" target="_blank" rel="noopener noreferrer" class="metric-link text-gray-500">MAPE</a>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <a href="https://en.wikipedia.org/wiki/Mean_absolute_scaled_error" target="_blank" rel="noopener noreferrer" class="metric-link text-gray-500">MASE</a>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <a href="https://en.wikipedia.org/wiki/Root-mean-square_deviation" target="_blank" rel="noopener noreferrer" class="metric-link text-gray-500">RMSSE</a>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <a href="https://en.wikipedia.org/wiki/Mean_absolute_error" target="_blank" rel="noopener noreferrer" class="metric-link text-gray-500">MAE</a>
+                                </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
                             </tr>
                         </thead>
@@ -159,17 +212,108 @@
                 </div>
             </div>
 
-            <!-- Data Period Info -->
-            <div class="bg-white rounded-lg card-shadow p-6">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">Data Information</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h3 class="text-sm font-medium text-gray-600 mb-2">Historical Data Period</h3>
-                        <p class="text-gray-900" id="historicalPeriod">-</p>
+            <!-- Validation Against Actuals -->
+            <div class="bg-white rounded-lg card-shadow p-6 mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Validation Against Actuals</h2>
+                    <div class="flex items-center space-x-4">
+                        <select id="validationModelSelector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
+                            <!-- Model options will be populated dynamically -->
+                        </select>
+                        <div class="tooltip" data-tooltip="Shows how well the selected model predicted actual CVE counts">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-medium text-gray-600 mb-2">Forecast Period</h3>
-                        <p class="text-gray-900" id="forecastPeriod">-</p>
+                </div>
+                <p class="text-gray-600 mb-4">Comparison of predicted vs actual CVE counts for all months in the current year using the selected model.</p>
+                
+                <!-- Validation Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="metric-highlight p-4 rounded-lg text-center">
+                        <div class="text-sm font-medium text-gray-600">Mean Absolute Error</div>
+                        <div class="text-2xl font-bold text-gray-900" id="avgErrorCard">-</div>
+                        <div class="text-xs text-gray-500">MAE - Lower is better</div>
+                    </div>
+                    <div class="metric-highlight p-4 rounded-lg text-center">
+                        <div class="text-sm font-medium text-gray-600">Mean Absolute Percentage Error</div>
+                        <div class="text-2xl font-bold text-gray-900" id="avgPercentErrorCard">-</div>
+                        <div class="text-xs text-gray-500">MAPE - Lower is better</div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actual CVEs</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Predicted CVEs</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percent Error</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="validationTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Validation data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 text-center">
+                    <div class="inline-flex items-center space-x-8 text-sm text-gray-600">
+                        <div>
+                            <span class="font-medium">Average Error:</span>
+                            <span id="avgError" class="ml-1">-</span>
+                        </div>
+                        <div>
+                            <span class="font-medium">Average Percent Error:</span>
+                            <span id="avgPercentError" class="ml-1">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Period Info -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Historical Data Period</p>
+                            <p class="text-lg font-semibold text-gray-900" id="historicalPeriod">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-full">
+                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Forecast Period</p>
+                            <p class="text-lg font-semibold text-gray-900" id="forecastPeriod">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-purple-100 rounded-full">
+                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Historical CVEs</p>
+                            <p class="text-2xl font-bold text-gray-900" id="totalCVEs">-</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -177,11 +321,15 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-8 mt-12">
+    <footer class="bg-gray-900 text-white py-8 mt-12">
         <div class="container mx-auto px-6 text-center">
-            <p class="mb-2">CVE Forecast Dashboard - Automated Daily Updates</p>
-            <p class="text-gray-400 text-sm">Data source: <a href="https://github.com/CVEProject/cvelistV5" class="text-blue-400 hover:underline">CVE Project Official Repository</a></p>
-            <p class="text-gray-400 text-sm mt-2">Powered by time series forecasting models using the Darts library</p>
+            <p class="mb-2">CVEForecast - Part of <a href="https://rogolabs.net" class="text-blue-400 hover:text-blue-300 transition-colors">RogoLabs</a> Open-Source Security Tools</p>
+            <p class="text-gray-300 text-sm">Data source: <a href="https://github.com/CVEProject/cvelistV5" class="text-blue-400 hover:text-blue-300 transition-colors">CVE Project Official Repository</a></p>
+            <p class="text-gray-300 text-sm mt-2">Powered by time series forecasting models using the Darts library</p>
+            <div class="mt-4 pt-4 border-t border-gray-600">
+                <p class="text-gray-300 text-sm" id="lastUpdated">Loading...</p>
+                <p class="text-gray-300 text-sm">Updated Daily at Midnight UTC</p>
+            </div>
         </div>
     </footer>
 
