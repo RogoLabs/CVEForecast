@@ -1,6 +1,8 @@
 name: CVE Forecast Daily Update
 
 on:
+  push:
+    branches: [ main, master ]
   schedule:
     # Run daily at midnight UTC
     - cron: '0 0 * * *'
