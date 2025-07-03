@@ -10,6 +10,9 @@ on:
   # Allow manual triggering
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   update-forecast:
     runs-on: ubuntu-latest
@@ -19,6 +22,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -38,13 +42,13 @@ jobs:
     
     - name: Clone CVE data repository
       run: |
-        git clone --depth 1 https://github.com/CVEProject/cvelistV5.git cve_data
+        git clone --depth 1 https://github.com/CVEProject/cvelistV5.git cvelistV5
         echo "CVE data cloned successfully"
-        ls -la cve_data/
+        ls -la cvelistV5/
     
     - name: Run CVE forecast
       run: |
-        python cve_forecast.py --data-path cve_data
+        python cve_forecast.py
       env:
         PYTHONUNBUFFERED: 1
     
@@ -59,6 +63,8 @@ jobs:
     
     - name: Commit and push changes
       if: steps.verify-changed-files.outputs.changed == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git add web/data.json
         git commit -m "Update CVE forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
