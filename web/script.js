@@ -446,20 +446,40 @@ function createChart() {
                         callbacks: {
                             title: function(context) {
                                 const point = context[0];
-                                const dateStr = new Date(point.parsed.x).toISOString().substring(0, 7); // Get YYYY-MM format
+                                
+                                // Use Chart.js's built-in time formatting
+                                const chart = this.chart;
+                                const scale = chart.scales.x;
+                                const timestamp = point.parsed.x;
+                                
+                                // Format the timestamp using the scale's time adapter
+                                const formattedDate = scale._adapter.format(timestamp, 'MMM yyyy');
+                                
+                                console.log('Tooltip - timestamp:', timestamp, 'formatted:', formattedDate);
+                                
+                                // Extract YYYY-MM for comparison
+                                const date = new Date(timestamp);
+                                const year = date.getFullYear();
+                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const dateStr = `${year}-${month}`;
                                 
                                 // Check if this is the current month
                                 if (forecastData.current_month_progress && 
                                     dateStr === forecastData.current_month_progress.date) {
-                                    return `${formatMonth(dateStr)} (Current Month - ${forecastData.current_month_progress.progress_percentage.toFixed(2)}% Complete)`;
+                                    return `${formattedDate} (Current Month - ${forecastData.current_month_progress.progress_percentage.toFixed(2)}% Complete)`;
                                 }
                                 
-                                return formatMonth(dateStr);
+                                return formattedDate;
                             },
                             label: function(context) {
                                 const point = context;
-                                const dateStr = new Date(point.parsed.x).toISOString().substring(0, 7);
                                 const value = formatNumber(point.parsed.y);
+                                
+                                // Extract YYYY-MM for comparison
+                                const date = new Date(point.parsed.x);
+                                const year = date.getFullYear();
+                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const dateStr = `${year}-${month}`;
                                 
                                 // Check if this is the current month and add special information
                                 if (forecastData.current_month_progress && 
@@ -477,7 +497,12 @@ function createChart() {
                             },
                             afterLabel: function(context) {
                                 const point = context;
-                                const dateStr = new Date(point.parsed.x).toISOString().substring(0, 7);
+                                
+                                // Extract YYYY-MM for comparison
+                                const date = new Date(point.parsed.x);
+                                const year = date.getFullYear();
+                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const dateStr = `${year}-${month}`;
                                 
                                 // Add extra context for current month
                                 if (forecastData.current_month_progress && 
@@ -498,7 +523,13 @@ function createChart() {
                             unit: 'month',
                             displayFormats: {
                                 month: 'MMM yyyy'
-                            }
+                            },
+                            parser: false, // Let Chart.js handle parsing
+                            round: 'month',
+                            tooltipFormat: 'MMM yyyy'
+                        },
+                        adapters: {
+                            date: {}
                         },
                         title: {
                             display: true,
@@ -586,7 +617,7 @@ function prepareChartData() {
     datasets.push({
         label: chartType === 'cumulative' ? 'Cumulative CVEs' : 'Monthly CVEs',
         data: processedHistoricalData.map(item => ({
-            x: item.date + '-01', // Convert YYYY-MM to YYYY-MM-DD for Chart.js
+            x: item.date + '-01', // Use ISO date string format
             y: item.cve_count
         })),
         borderColor: 'rgb(59, 130, 246)',
@@ -679,7 +710,7 @@ function prepareChartData() {
                 datasets.push({
                     label: modelName,
                     data: processedForecast.map(item => ({
-                        x: item.date + '-01', // Convert YYYY-MM to YYYY-MM-DD for Chart.js
+                        x: item.date + '-01', // Use ISO date string format
                         y: item.cve_count
                     })),
                     borderColor: color,
@@ -732,7 +763,7 @@ function prepareChartData() {
             datasets.push({
                 label: selectedModel,
                 data: processedForecast.map(item => ({
-                    x: item.date + '-01', // Convert YYYY-MM to YYYY-MM-DD for Chart.js
+                    x: item.date + '-01', // Use ISO date string format
                     y: item.cve_count
                 })),
                 borderColor: 'rgb(239, 68, 68)',

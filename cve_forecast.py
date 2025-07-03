@@ -19,11 +19,13 @@ import pandas as pd
 import numpy as np
 from darts import TimeSeries
 from darts.models import (
-    ARIMA, ExponentialSmoothing, Prophet, Theta,
-    LinearRegressionModel, RandomForest, XGBModel,
-    KalmanForecaster, NaiveSeasonal, NaiveDrift,
+    ARIMA, ExponentialSmoothing, Prophet, Theta, FourTheta,
+    LinearRegressionModel, RandomForestModel, XGBModel,
+    KalmanForecaster, NaiveSeasonal, NaiveDrift, NaiveMean, NaiveMovingAverage,
     AutoARIMA as DartsAutoARIMA, NaiveEnsembleModel, 
     RegressionEnsembleModel, LightGBMModel, CatBoostModel,
+    # Additional statistical models
+    FFT, TBATS, Croston,
     # PyTorch Lightning-based models
     TCNModel, TFTModel, NBEATSModel, NHiTSModel,
     TransformerModel, RNNModel, BlockRNNModel,
@@ -62,6 +64,40 @@ except ImportError:
     except ImportError:
         StatsForecastAutoTheta = None
         STATSFORECAST_THETA_AVAILABLE = False
+
+# Additional StatsForecast models
+try:
+    from darts.models.forecasting.sf_auto_ces import StatsForecastAutoCES
+    STATSFORECAST_CES_AVAILABLE = True
+except ImportError:
+    try:
+        from darts.models import StatsForecastAutoCES
+        STATSFORECAST_CES_AVAILABLE = True
+    except ImportError:
+        StatsForecastAutoCES = None
+        STATSFORECAST_CES_AVAILABLE = False
+
+try:
+    from darts.models.forecasting.sf_auto_mfles import StatsForecastAutoMFLES
+    STATSFORECAST_MFLES_AVAILABLE = True
+except ImportError:
+    try:
+        from darts.models import StatsForecastAutoMFLES
+        STATSFORECAST_MFLES_AVAILABLE = True
+    except ImportError:
+        StatsForecastAutoMFLES = None
+        STATSFORECAST_MFLES_AVAILABLE = False
+
+try:
+    from darts.models.forecasting.sf_auto_tbats import StatsForecastAutoTBATS
+    STATSFORECAST_TBATS_AVAILABLE = True
+except ImportError:
+    try:
+        from darts.models import StatsForecastAutoTBATS
+        STATSFORECAST_TBATS_AVAILABLE = True
+    except ImportError:
+        StatsForecastAutoTBATS = None
+        STATSFORECAST_TBATS_AVAILABLE = False
 from darts.metrics import mape, rmse, mae, mase, rmsse
 from darts.utils.utils import ModelMode, SeasonalityMode
 
@@ -230,7 +266,7 @@ class CVEForecastEngine:
         return complete_df
     
     def prepare_models(self) -> List[Tuple[str, Any]]:
-        """Prepare and return comprehensive forecasting models for evaluation (15 models total)"""
+        """Prepare and return comprehensive forecasting models for evaluation (25+ models total)"""
         models = []
         
         # Statistical Models - Proven performers for time series
@@ -241,7 +277,15 @@ class CVEForecastEngine:
                 print("Added AutoARIMA model")
             else:
                 print("StatsForecastAutoARIMA not available, using DartsAutoARIMA instead")
-                models.append(("AutoARIMA", DartsAutoARIMA()))
+                models.append(("AutoARIMA", DartsAutoARIMA(
+                    start_p=0, start_q=0,      # Starting values for p and q
+                    max_p=3, max_q=3,          # Maximum values for p and q  
+                    seasonal=True,             # Enable seasonal component
+                    stepwise=True,             # Use stepwise algorithm for speed
+                    suppress_warnings=True,    # Suppress warnings
+                    error_action='ignore',     # Ignore errors and continue
+                    random_state=42
+                )))
         except Exception as e:
             print(f"Failed to add AutoARIMA: {e}")
         
@@ -256,15 +300,30 @@ class CVEForecastEngine:
             print(f"Failed to add AutoETS: {e}")
         
         try:
-            # ExponentialSmoothing - Good for trends and seasonality patterns
-            models.append(("ExponentialSmoothing", ExponentialSmoothing()))
+            # ExponentialSmoothing - Good for trends and seasonality patterns - Enhanced
+            models.append(("ExponentialSmoothing", ExponentialSmoothing(
+                trend='add',               # Additive trend
+                seasonal='add',            # Additive seasonality
+                seasonal_periods=12,       # 12 month seasonality
+                damped_trend=True,         # Damped trend for long-term stability
+            )))
             print("Added ExponentialSmoothing model")
         except Exception as e:
             print(f"Failed to add ExponentialSmoothing: {e}")
         
         try:
-            # Prophet - Facebook's robust forecasting method, handles seasonality well
-            models.append(("Prophet", Prophet()))
+            # Prophet - Facebook's robust forecasting method, handles seasonality well - Enhanced
+            models.append(("Prophet", Prophet(
+                yearly_seasonality=True,    # Enable yearly patterns
+                weekly_seasonality=False,   # Disable weekly (not relevant for CVE data)
+                daily_seasonality=False,    # Disable daily (not relevant for monthly data)
+                seasonality_mode='additive',        # Use additive instead of multiplicative for zero values
+                changepoint_prior_scale=0.1,        # Slightly more flexible changepoints
+                seasonality_prior_scale=1.0,        # More conservative seasonality
+                n_changepoints=15,                   # Fewer changepoints to reduce overfitting
+                mcmc_samples=0,                      # Disable MCMC for faster training
+                interval_width=0.8,                  # Confidence intervals
+            )))
             print("Added Prophet model")
         except Exception as e:
             print(f"Failed to add Prophet: {e}")
@@ -276,7 +335,7 @@ class CVEForecastEngine:
                 print("Added AutoTheta model")
             else:
                 print("StatsForecastAutoTheta not available, using standard Theta instead")
-                models.append(("Theta", Theta()))
+                models.append(("Theta", Theta(season_mode=SeasonalityMode.ADDITIVE)))
         except Exception as e:
             print(f"Failed to add AutoTheta: {e}")
         
@@ -287,49 +346,195 @@ class CVEForecastEngine:
         except Exception as e:
             print(f"Failed to add KalmanFilter: {e}")
         
+        # Additional Statistical Models
+        # Note: FFT removed as it's not suitable for this type of time series data
+        
+        try:
+            # TBATS - Trigonometric seasonality, Box-Cox transformation, ARMA errors, Trend and Seasonal components
+            models.append(("TBATS", TBATS(season_length=12)))  # 12 for monthly seasonality
+            print("Added TBATS model")
+        except Exception as e:
+            print(f"Failed to add TBATS: {e}")
+        
+        try:
+            # Croston - Intermittent demand forecasting
+            models.append(("Croston", Croston()))
+            print("Added Croston model")
+        except Exception as e:
+            print(f"Failed to add Croston: {e}")
+        
+        try:
+            # FourTheta - Four Theta method
+            models.append(("FourTheta", FourTheta(season_mode=SeasonalityMode.ADDITIVE)))
+            print("Added FourTheta model")
+        except Exception as e:
+            print(f"Failed to add FourTheta: {e}")
+        
+        # Additional StatsForecast Models
+        try:
+            # AutoCES - Complex Exponential Smoothing with automatic parameter selection
+            if STATSFORECAST_CES_AVAILABLE and StatsForecastAutoCES is not None:
+                models.append(("AutoCES", StatsForecastAutoCES()))
+                print("Added AutoCES model")
+            else:
+                print("StatsForecastAutoCES not available")
+        except Exception as e:
+            print(f"Failed to add AutoCES: {e}")
+        
+        try:
+            # AutoMFLES - Multiple Frequency Linear Exponential Smoothing
+            if STATSFORECAST_MFLES_AVAILABLE and StatsForecastAutoMFLES is not None:
+                models.append(("AutoMFLES", StatsForecastAutoMFLES()))
+                print("Added AutoMFLES model")
+            else:
+                print("StatsForecastAutoMFLES not available")
+        except Exception as e:
+            print(f"Failed to add AutoMFLES: {e}")
+        
+        try:
+            # AutoTBATS - TBATS with automatic parameter selection
+            if STATSFORECAST_TBATS_AVAILABLE and StatsForecastAutoTBATS is not None:
+                models.append(("AutoTBATS", StatsForecastAutoTBATS()))
+                print("Added AutoTBATS model")
+            else:
+                print("StatsForecastAutoTBATS not available")
+        except Exception as e:
+            print(f"Failed to add AutoTBATS: {e}")
+        
+        # Baseline Models
+        try:
+            # NaiveMean - Simple mean forecast
+            models.append(("NaiveMean", NaiveMean()))
+            print("Added NaiveMean model")
+        except Exception as e:
+            print(f"Failed to add NaiveMean: {e}")
+        
+        try:
+            # NaiveMovingAverage - Moving average forecast - Enhanced
+            models.append(("NaiveMovingAverage", NaiveMovingAverage(input_chunk_length=6)))  # Shorter window
+            print("Added NaiveMovingAverage model")
+        except Exception as e:
+            print(f"Failed to add NaiveMovingAverage: {e}")
+        
+        try:
+            # NaiveSeasonal - Seasonal naive forecast
+            models.append(("NaiveSeasonal", NaiveSeasonal(K=12)))  # 12-month seasonal pattern
+            print("Added NaiveSeasonal model")
+        except Exception as e:
+            print(f"Failed to add NaiveSeasonal: {e}")
+        
+        try:
+            # NaiveDrift - Drift method forecast
+            models.append(("NaiveDrift", NaiveDrift()))
+            print("Added NaiveDrift model")
+        except Exception as e:
+            print(f"Failed to add NaiveDrift: {e}")
+        
         # Machine Learning Models
         try:
             # XGBoost - Gradient boosting for time series
-            models.append(("XGBoost", XGBModel(lags=12, random_state=42)))
+            # XGBoost - Extreme Gradient Boosting with time series features - Optimized
+            models.append(("XGBoost", XGBModel(
+                lags=24,                    # Increased from 12 for better patterns
+                random_state=42,
+                # XGBoost specific parameters for better performance
+                **{
+                    'n_estimators': 200,     # More trees for better learning
+                    'max_depth': 6,          # Moderate depth to prevent overfitting
+                    'learning_rate': 0.1,    # Learning rate
+                    'subsample': 0.8,        # Row sampling for regularization
+                    'colsample_bytree': 0.8, # Column sampling for regularization
+                    'reg_alpha': 0.1,        # L1 regularization
+                    'reg_lambda': 0.1,       # L2 regularization
+                }
+            )))
             print("Added XGBoost model")
         except Exception as e:
             print(f"Failed to add XGBoost: {e}")
         
         try:
-            # LightGBM - Fast gradient boosting
-            models.append(("LightGBM", LightGBMModel(lags=12, random_state=42)))
+            # LightGBM - Fast gradient boosting with optimization - Improved
+            models.append(("LightGBM", LightGBMModel(
+                lags=12,                    # Reduced lags for simpler model
+                random_state=42,
+                # LightGBM specific parameters for better performance
+                **{
+                    'n_estimators': 100,     # Fewer trees to prevent overfitting
+                    'max_depth': 4,          # Shallower trees
+                    'learning_rate': 0.05,   # Lower learning rate
+                    'subsample': 0.9,        # Higher row sampling
+                    'colsample_bytree': 0.9, # Higher column sampling
+                    'reg_alpha': 0.5,        # Stronger L1 regularization
+                    'reg_lambda': 0.5,       # Stronger L2 regularization
+                    'min_child_samples': 10, # Fewer minimum samples in leaf
+                    'verbose': -1,           # Suppress warnings
+                    'force_row_wise': True,  # Force row-wise tree construction
+                }
+            )))
             print("Added LightGBM model")
         except Exception as e:
             print(f"Failed to add LightGBM: {e}")
         
         try:
-            # RandomForest - Ensemble tree model
-            models.append(("RandomForest", RandomForest(lags=12, random_state=42)))
+            # RandomForest - Ensemble tree model with optimization
+            models.append(("RandomForest", RandomForestModel(
+                lags=24,                    # Increased from 12 for better patterns
+                random_state=42,
+                # RandomForest specific parameters for better performance
+                **{
+                    'n_estimators': 200,     # More trees for better learning
+                    'max_depth': 8,          # Deeper trees for complex patterns
+                    'min_samples_split': 5,  # Minimum samples to split
+                    'min_samples_leaf': 2,   # Minimum samples in leaf
+                    'max_features': 'sqrt',  # Feature sampling strategy
+                    'bootstrap': True,       # Bootstrap sampling
+                }
+            )))
             print("Added RandomForest model")
         except Exception as e:
             print(f"Failed to add RandomForest: {e}")
         
         try:
-            # CatBoost - Another powerful gradient boosting model
-            models.append(("CatBoost", CatBoostModel(lags=12, random_state=42)))
+            # CatBoost - Another powerful gradient boosting model with optimization
+            models.append(("CatBoost", CatBoostModel(
+                lags=24,                    # Increased from 12 for better patterns
+                random_state=42,
+                # CatBoost specific parameters for better performance
+                **{
+                    'iterations': 200,       # More iterations for better learning
+                    'depth': 6,              # Tree depth
+                    'learning_rate': 0.1,    # Learning rate
+                    'l2_leaf_reg': 3,        # L2 regularization
+                    'bootstrap_type': 'Bernoulli',  # Bootstrap type
+                    'subsample': 0.8,        # Row sampling
+                    'random_strength': 1,    # Random strength
+                    'verbose': False,        # Silent training
+                }
+            )))
             print("Added CatBoost model")
         except Exception as e:
             print(f"Failed to add CatBoost: {e}")
         
         # PyTorch Lightning-based Deep Learning Models (with CPU-only training)
         try:
-            # TCN (Temporal Convolutional Network) - Excellent for long sequences
+            # TCN (Temporal Convolutional Network) - Optimized for long sequences
             models.append(("TCN", TCNModel(
-                input_chunk_length=12,
+                input_chunk_length=24,      # Increased for better long-term patterns
                 output_chunk_length=1,
-                n_epochs=25,  # Reduced for faster training
+                kernel_size=3,              # Kernel size for convolution
+                num_filters=32,             # Number of filters
+                dilation_base=2,            # Dilation base for TCN
+                dropout=0.1,                # Dropout for regularization
+                n_epochs=40,                # Increased for better convergence
+                batch_size=16,              # Smaller batch for stability
                 random_state=42,
                 force_reset=True,
                 save_checkpoints=False,
                 pl_trainer_kwargs={
                     "enable_progress_bar": False, 
                     "enable_model_summary": False,
-                    "accelerator": "cpu"  # Force CPU to avoid MPS issues
+                    "accelerator": "cpu",  # Force CPU to avoid MPS issues
+                    "max_epochs": 40
                 }
             )))
             print("Added TCN model")
@@ -337,18 +542,24 @@ class CVEForecastEngine:
             print(f"Failed to add TCN: {e}")
         
         try:
-            # N-BEATS - Neural basis expansion analysis for time series
+            # N-BEATS - Neural basis expansion analysis for time series - Improved
             models.append(("NBEATS", NBEATSModel(
-                input_chunk_length=12,
+                input_chunk_length=12,     # Reduced for simpler patterns
                 output_chunk_length=1,
-                n_epochs=25,
+                num_stacks=2,              # Fewer stacks to reduce complexity
+                num_blocks=2,              # Fewer blocks per stack
+                num_layers=2,              # Fewer layers per block
+                layer_widths=32,           # Smaller hidden layer width
+                n_epochs=30,               # Reduced epochs
+                batch_size=32,             # Larger batch for stability
                 random_state=42,
                 force_reset=True,
                 save_checkpoints=False,
                 pl_trainer_kwargs={
                     "enable_progress_bar": False, 
                     "enable_model_summary": False,
-                    "accelerator": "cpu"
+                    "accelerator": "cpu",
+                    "max_epochs": 30
                 }
             )))
             print("Added NBEATS model")
@@ -356,18 +567,24 @@ class CVEForecastEngine:
             print(f"Failed to add NBEATS: {e}")
         
         try:
-            # NHiTS - Neural Hierarchical Interpolation for Time Series
+            # NHiTS - Neural Hierarchical Interpolation for Time Series - Optimized
             models.append(("NHiTS", NHiTSModel(
-                input_chunk_length=12,
+                input_chunk_length=24,     # Increased from 12 for better patterns
                 output_chunk_length=1,
-                n_epochs=25,
+                num_stacks=3,              # Added hierarchical stacks
+                num_blocks=1,              # Blocks per stack
+                num_layers=2,              # Layers per block
+                layer_widths=64,           # Hidden layer width
+                n_epochs=40,               # Increased from 25
+                batch_size=16,             # Added for stability
                 random_state=42,
                 force_reset=True,
                 save_checkpoints=False,
                 pl_trainer_kwargs={
                     "enable_progress_bar": False, 
                     "enable_model_summary": False,
-                    "accelerator": "cpu"
+                    "accelerator": "cpu",
+                    "max_epochs": 40
                 }
             )))
             print("Added NHiTS model")
@@ -394,18 +611,20 @@ class CVEForecastEngine:
             print(f"Failed to add DLinear: {e}")
         
         try:
-            # NLinear - Normalized linear model
+            # NLinear - Normalized linear model - Improved configuration
             models.append(("NLinear", NLinearModel(
-                input_chunk_length=12,
+                input_chunk_length=24,     # Increased for better pattern capture
                 output_chunk_length=1,
-                n_epochs=25,
+                n_epochs=40,               # More epochs for better convergence
+                batch_size=32,             # Larger batch for stability
                 random_state=42,
                 force_reset=True,
                 save_checkpoints=False,
                 pl_trainer_kwargs={
                     "enable_progress_bar": False, 
                     "enable_model_summary": False,
-                    "accelerator": "cpu"
+                    "accelerator": "cpu",
+                    "max_epochs": 40
                 }
             )))
             print("Added NLinear model")
@@ -413,18 +632,20 @@ class CVEForecastEngine:
             print(f"Failed to add NLinear: {e}")
         
         try:
-            # TSMixer - Time Series Mixer model
+            # TSMixer - Time Series Mixer model - Improved configuration
             models.append(("TSMixer", TSMixerModel(
-                input_chunk_length=12,
+                input_chunk_length=12,      # Reduced for simpler patterns
                 output_chunk_length=1,
-                n_epochs=25,
+                n_epochs=30,                # Reduced epochs to prevent overfitting
+                batch_size=32,              # Larger batch for more stable training
                 random_state=42,
                 force_reset=True,
                 save_checkpoints=False,
                 pl_trainer_kwargs={
                     "enable_progress_bar": False, 
                     "enable_model_summary": False,
-                    "accelerator": "cpu"
+                    "accelerator": "cpu",
+                    "max_epochs": 30
                 }
             )))
             print("Added TSMixer model")
@@ -461,14 +682,14 @@ class CVEForecastEngine:
             except Exception as e:
                 print(f"Failed to add NaiveEnsemble: {e}")
         
-        # Add additional fallback models if we don't have 15 yet
-        while len(models) < 15:
+        # Add additional fallback models if we don't have enough yet
+        while len(models) < 25:
             try:
-                if len(models) == 13:
+                if len(models) == 23:
                     # ARIMA - Classic time series model
                     models.append(("ARIMA", ARIMA()))
                     print("Added ARIMA as additional model")
-                elif len(models) == 14:
+                elif len(models) == 24:
                     # LinearRegression - Simple baseline
                     models.append(("LinearRegression", LinearRegressionModel(lags=12)))
                     print("Added LinearRegression as additional model")

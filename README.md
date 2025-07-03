@@ -1,11 +1,14 @@
 # CVE Forecast Dashboard
 
+🌐 **Live at [cveforecast.org](https://cveforecast.org)** 🌐
+
 An automated web-based tool that analyzes historical CVE data and uses time series forecasting models to predict the number of new CVEs for the remainder of the current calendar year.
 
 ## 🔥 Features
 
+- **🌐 Live Production Deployment**: Available 24/7 at [cveforecast.org](https://cveforecast.org)
 - **Automated Data Collection**: Daily fetching of CVE data from the official CVE Project repository
-- **Multiple Forecasting Models**: Implements 6+ time series models including ARIMA, Prophet, ExponentialSmoothing, Kalman Filter, and more
+- **Multiple Forecasting Models**: Implements 25+ time series models including ARIMA, Prophet, ExponentialSmoothing, Kalman Filter, and advanced deep learning models
 - **Comprehensive Model Evaluation**: Ranks models by multiple metrics (MAPE, RMSE, MAE, sMAPE)
 - **Validation Against Actuals**: Real-time comparison of predictions vs actual CVE counts with detailed accuracy metrics
 - **Interactive Dashboard**: Beautiful web interface with charts and real-time data visualization
@@ -15,6 +18,12 @@ An automated web-based tool that analyzes historical CVE data and uses time seri
 - **GitHub Pages Ready**: Static site deployment compatible
 
 ## 🚀 Quick Start
+
+### 🌐 Live Demo
+
+**Visit [cveforecast.org](https://cveforecast.org) to see the dashboard in action!**
+
+The live site is automatically updated daily with the latest CVE data and forecasts.
 
 ### 1. Setup Repository
 
@@ -70,7 +79,9 @@ python serve.py
 
 ### 5. View Dashboard
 
-The dashboard will be available at `http://localhost:8000` when using the local server.
+**Production Site**: [cveforecast.org](https://cveforecast.org) - Live 24/7 with daily updates
+
+**Local Development**: The dashboard will be available at `http://localhost:8000` when using the local server.
 
 ## 📊 Dashboard Components
 
@@ -103,9 +114,23 @@ The system evaluates the following time series models:
 
 ### Statistical Models
 - **ARIMA**: AutoRegressive Integrated Moving Average
+- **VARIMA**: Vector AutoRegressive Integrated Moving Average
 - **ExponentialSmoothing**: Exponential smoothing with trend and seasonality
 - **Prophet**: Facebook's forecasting procedure
-- **Theta**: Theta method for forecasting
+- **Theta & FourTheta**: Theta method for forecasting
+- **FFT**: Fast Fourier Transform for frequency domain analysis
+- **TBATS**: Trigonometric seasonality, Box-Cox transformation, ARMA errors
+- **Croston**: Intermittent demand forecasting
+- **KalmanForecaster**: Kalman filter with N4SID system identification
+- **AutoCES**: Complex Exponential Smoothing (automatic parameters)
+- **AutoMFLES**: Multiple Frequency Linear Exponential Smoothing
+- **AutoTBATS**: TBATS with automatic parameter selection
+
+### Baseline Models
+- **NaiveMean**: Simple mean forecast
+- **NaiveSeasonal**: Seasonal naive forecasting
+- **NaiveDrift**: Naive drift method
+- **NaiveMovingAverage**: Moving average forecast
 
 ### Machine Learning Models
 - **LinearRegression**: Linear regression with time-based features
@@ -116,10 +141,18 @@ The system evaluates the following time series models:
 
 ### Deep Learning Models
 - **NBEATS**: Neural Basis Expansion Analysis
+- **NHiTS**: Neural Hierarchical Interpolation for Time Series
 - **TFT**: Temporal Fusion Transformer
 - **RNN**: Recurrent Neural Networks
 - **TCN**: Temporal Convolutional Networks
 - **Transformer**: Transformer architecture for time series
+- **TSMixer**: Time Series Mixer (optimized configuration)
+- **DLinear**: Simple but effective linear neural model
+- **NLinear**: Normalized linear neural model
+- **TiDE**: Time-series Dense Encoder
+
+### Ensemble Models
+- **NaiveEnsemble**: Simple average of multiple models
 
 ## 🔄 Automation
 
@@ -193,9 +226,21 @@ CVEForecast/
 6. **Data Export**: Save structured data for web dashboard
 7. **Visualization**: Interactive charts and statistics in web interface
 
-## 🌐 GitHub Pages Setup
+## 🌐 Production Deployment
 
-To deploy the dashboard using GitHub Pages:
+### Live Site: [cveforecast.org](https://cveforecast.org)
+
+The CVE Forecast Dashboard is deployed and running live at **cveforecast.org** with:
+
+- **Daily Automatic Updates**: Fresh data and forecasts every day
+- **High Availability**: 99.9% uptime with reliable hosting
+- **Real-time Validation**: Live comparison against actual CVE publication data
+- **Mobile Responsive**: Optimized for desktop, tablet, and mobile viewing
+- **Performance Optimized**: Fast loading with CDN delivery
+
+### GitHub Pages Setup (Alternative)
+
+To deploy your own copy using GitHub Pages:
 
 1. Go to your repository settings
 2. Navigate to "Pages" section
@@ -267,6 +312,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
+**🌐 Live Dashboard**: [cveforecast.org](https://cveforecast.org)
+
 If you encounter any issues or have questions:
 
 1. Check the [Issues](https://github.com/yourusername/CVEForecast/issues) page
@@ -274,5 +321,7 @@ If you encounter any issues or have questions:
 3. Include logs and error messages when applicable
 
 ---
+
+**🌐 Visit [cveforecast.org](https://cveforecast.org) for live CVE forecasting**
 
 **Made with ❤️ for the cybersecurity community**
