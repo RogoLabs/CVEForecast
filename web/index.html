@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVE Forecast Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold">CVE Forecast Dashboard</h1>
+                    <p class="text-blue-100 mt-1">Predictive Analytics for CVE Publications</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-blue-100 text-sm" id="lastUpdated">Loading...</p>
+                    <p class="text-blue-100 text-sm">Updated Daily at Midnight UTC</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center">
+            <div class="loading-spinner"></div>
+            <p class="text-gray-600 mt-4">Loading CVE forecast data...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden text-center py-12">
+            <div class="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Error Loading Data</h2>
+            <p class="text-gray-600 mb-4">Unable to load CVE forecast data. Please try again later.</p>
+            <button onclick="location.reload()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
+                Try Again
+            </button>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div id="dashboard" class="hidden">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Historical CVEs</p>
+                            <p class="text-2xl font-bold text-gray-900" id="totalCVEs">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-full">
+                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Best Model</p>
+                            <p class="text-2xl font-bold text-gray-900" id="bestModel">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-purple-100 rounded-full">
+                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Forecast Accuracy (MAPE)</p>
+                            <p class="text-2xl font-bold text-gray-900" id="bestAccuracy">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="bg-white rounded-lg card-shadow p-6 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">CVE Publication Trends & Forecasts</h2>
+                    <div class="flex space-x-2">
+                        <select id="chartType" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
+                            <option value="monthly">Monthly Counts</option>
+                            <option value="cumulative">Cumulative Growth</option>
+                        </select>
+                        <select id="modelSelector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
+                            <option value="all">All Models</option>
+                        </select>
+                        <select id="timeRange" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
+                            <option value="6m">Last 6 Months</option>
+                            <option value="1y">Last Year</option>
+                            <option value="all">All Data</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="forecastChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Model Rankings -->
+            <div class="bg-white rounded-lg card-shadow p-6 mb-8">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Model Performance Rankings</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MAPE Score</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modelRankingsTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Model rankings will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Data Period Info -->
+            <div class="bg-white rounded-lg card-shadow p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Data Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-600 mb-2">Historical Data Period</h3>
+                        <p class="text-gray-900" id="historicalPeriod">-</p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-600 mb-2">Forecast Period</h3>
+                        <p class="text-gray-900" id="forecastPeriod">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="container mx-auto px-6 text-center">
+            <p class="mb-2">CVE Forecast Dashboard - Automated Daily Updates</p>
+            <p class="text-gray-400 text-sm">Data source: <a href="https://github.com/CVEProject/cvelistV5" class="text-blue-400 hover:underline">CVE Project Official Repository</a></p>
+            <p class="text-gray-400 text-sm mt-2">Powered by time series forecasting models using the Darts library</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
