@@ -29,9 +29,39 @@ from darts.models import (
     TransformerModel, RNNModel, BlockRNNModel,
     TiDEModel, DLinearModel, NLinearModel, TSMixerModel
 )
-from darts.models.forecasting.sf_auto_arima import StatsForecastAutoARIMA
-from darts.models.forecasting.sf_auto_ets import StatsForecastAutoETS
-from darts.models.forecasting.sf_auto_theta import StatsForecastAutoTheta
+# Try to import StatsForecast models, fallback if not available
+try:
+    from darts.models.forecasting.sf_auto_arima import StatsForecastAutoARIMA
+    STATSFORECAST_ARIMA_AVAILABLE = True
+except ImportError:
+    try:
+        from darts.models import StatsForecastAutoARIMA
+        STATSFORECAST_ARIMA_AVAILABLE = True
+    except ImportError:
+        StatsForecastAutoARIMA = None
+        STATSFORECAST_ARIMA_AVAILABLE = False
+
+try:
+    from darts.models.forecasting.sf_auto_ets import StatsForecastAutoETS
+    STATSFORECAST_ETS_AVAILABLE = True
+except ImportError:
+    try:
+        from darts.models import StatsForecastAutoETS
+        STATSFORECAST_ETS_AVAILABLE = True
+    except ImportError:
+        StatsForecastAutoETS = None
+        STATSFORECAST_ETS_AVAILABLE = False
+
+try:
+    from darts.models.forecasting.sf_auto_theta import StatsForecastAutoTheta
+    STATSFORECAST_THETA_AVAILABLE = True
+except ImportError:
+    try:
+        from darts.models import StatsForecastAutoTheta
+        STATSFORECAST_THETA_AVAILABLE = True
+    except ImportError:
+        StatsForecastAutoTheta = None
+        STATSFORECAST_THETA_AVAILABLE = False
 from darts.metrics import mape, rmse, mae, mase, rmsse
 from darts.utils.utils import ModelMode, SeasonalityMode
 
@@ -206,15 +236,22 @@ class CVEForecastEngine:
         # Statistical Models - Proven performers for time series
         try:
             # AutoARIMA - Automatically selects the best ARIMA parameters
-            models.append(("AutoARIMA", StatsForecastAutoARIMA()))
-            print("Added AutoARIMA model")
+            if STATSFORECAST_ARIMA_AVAILABLE and StatsForecastAutoARIMA is not None:
+                models.append(("AutoARIMA", StatsForecastAutoARIMA()))
+                print("Added AutoARIMA model")
+            else:
+                print("StatsForecastAutoARIMA not available, using DartsAutoARIMA instead")
+                models.append(("AutoARIMA", DartsAutoARIMA()))
         except Exception as e:
             print(f"Failed to add AutoARIMA: {e}")
         
         try:
             # AutoETS - Error, Trend, Seasonality model with automatic parameter selection
-            models.append(("AutoETS", StatsForecastAutoETS()))
-            print("Added AutoETS model")
+            if STATSFORECAST_ETS_AVAILABLE and StatsForecastAutoETS is not None:
+                models.append(("AutoETS", StatsForecastAutoETS()))
+                print("Added AutoETS model")
+            else:
+                print("StatsForecastAutoETS not available, skipping")
         except Exception as e:
             print(f"Failed to add AutoETS: {e}")
         
@@ -234,8 +271,12 @@ class CVEForecastEngine:
         
         try:
             # AutoTheta - Theta method with automatic parameter selection
-            models.append(("AutoTheta", StatsForecastAutoTheta()))
-            print("Added AutoTheta model")
+            if STATSFORECAST_THETA_AVAILABLE and StatsForecastAutoTheta is not None:
+                models.append(("AutoTheta", StatsForecastAutoTheta()))
+                print("Added AutoTheta model")
+            else:
+                print("StatsForecastAutoTheta not available, using standard Theta instead")
+                models.append(("Theta", Theta()))
         except Exception as e:
             print(f"Failed to add AutoTheta: {e}")
         
@@ -397,9 +438,14 @@ class CVEForecastEngine:
                 try:
                     # Create a copy for ensemble use
                     if name == "AutoARIMA":
-                        individual_models.append(StatsForecastAutoARIMA())
+                        if STATSFORECAST_ARIMA_AVAILABLE and StatsForecastAutoARIMA is not None:
+                            individual_models.append(StatsForecastAutoARIMA())
+                        else:
+                            individual_models.append(DartsAutoARIMA())
                     elif name == "AutoETS":
-                        individual_models.append(StatsForecastAutoETS())
+                        if STATSFORECAST_ETS_AVAILABLE and StatsForecastAutoETS is not None:
+                            individual_models.append(StatsForecastAutoETS())
+                        # Skip if not available
                     elif name == "ExponentialSmoothing":
                         individual_models.append(ExponentialSmoothing())
                 except:
