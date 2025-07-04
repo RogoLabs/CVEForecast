@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVEForecast - RogoLabs</title>
+    <title>CVEForecast</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -113,7 +113,7 @@
                 <div class="bg-white rounded-lg card-shadow p-6">
                     <div class="flex items-center">
                         <div class="p-3 bg-blue-100 rounded-full">
-                            <svg class="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                             </svg>
                         </div>
@@ -127,9 +127,9 @@
 
                 <div class="bg-white rounded-lg card-shadow p-6">
                     <div class="flex items-center">
-                        <div class="p-3 bg-green-100 rounded-full">
-                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.26 10.147a60.436 60.436 0 0 0-.491 6.347A48.627 48.627 0 0 1 12 20.904a48.627 48.627 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.57 50.57 0 0 0-2.658-.813A59.905 59.905 0 0 1 12 3.493a59.902 59.902 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"></path>
                             </svg>
                         </div>
                         <div class="ml-4">
@@ -141,9 +141,9 @@
 
                 <div class="bg-white rounded-lg card-shadow p-6">
                     <div class="flex items-center">
-                        <div class="p-3 bg-purple-100 rounded-full">
-                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"></path>
                             </svg>
                         </div>
                         <div class="ml-4">
@@ -181,6 +181,67 @@
                 </div>
             </div>
 
+            <!-- Forecast vs Published -->
+            <div class="bg-white rounded-lg card-shadow p-6 mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Forecast vs Published</h2>
+                    <div class="flex items-center space-x-4">
+                        <select id="validationModelSelector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
+                            <!-- Model options will be populated dynamically -->
+                        </select>
+                        <div class="tooltip" data-tooltip="Shows how well the selected model predicted actual CVE counts">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-gray-600 mb-4">Comparison of forecasted vs actual CVE counts for all months in the current year using the selected model.</p>
+                
+                <!-- Validation Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="metric-highlight p-4 rounded-lg text-center">
+                        <div class="text-sm font-medium text-gray-600">Mean Absolute Error</div>
+                        <div class="text-2xl font-bold text-gray-900" id="avgErrorCard">-</div>
+                        <div class="text-xs text-gray-500">MAE - Lower is better</div>
+                    </div>
+                    <div class="metric-highlight p-4 rounded-lg text-center">
+                        <div class="text-sm font-medium text-gray-600">Mean Absolute Percentage Error</div>
+                        <div class="text-2xl font-bold text-gray-900" id="avgPercentErrorCard">-</div>
+                        <div class="text-xs text-gray-500">MAPE - Lower is better</div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actual CVEs</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Forecasted CVEs</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percent Error</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="validationTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Validation data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 text-center">
+                    <div class="inline-flex items-center space-x-8 text-sm text-gray-600">
+                        <div>
+                            <span class="font-medium">Average Error:</span>
+                            <span id="avgError" class="ml-1">-</span>
+                        </div>
+                        <div>
+                            <span class="font-medium">Average Percent Error:</span>
+                            <span id="avgPercentError" class="ml-1">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Model Rankings -->
             <div class="bg-white rounded-lg card-shadow p-6 mb-8">
                 <h2 class="text-xl font-bold text-gray-800 mb-6">Model Performance Rankings</h2>
@@ -212,67 +273,6 @@
                 </div>
             </div>
 
-            <!-- Validation Against Actuals -->
-            <div class="bg-white rounded-lg card-shadow p-6 mb-8">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">Validation Against Actuals</h2>
-                    <div class="flex items-center space-x-4">
-                        <select id="validationModelSelector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
-                            <!-- Model options will be populated dynamically -->
-                        </select>
-                        <div class="tooltip" data-tooltip="Shows how well the selected model predicted actual CVE counts">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-gray-600 mb-4">Comparison of predicted vs actual CVE counts for all months in the current year using the selected model.</p>
-                
-                <!-- Validation Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div class="metric-highlight p-4 rounded-lg text-center">
-                        <div class="text-sm font-medium text-gray-600">Mean Absolute Error</div>
-                        <div class="text-2xl font-bold text-gray-900" id="avgErrorCard">-</div>
-                        <div class="text-xs text-gray-500">MAE - Lower is better</div>
-                    </div>
-                    <div class="metric-highlight p-4 rounded-lg text-center">
-                        <div class="text-sm font-medium text-gray-600">Mean Absolute Percentage Error</div>
-                        <div class="text-2xl font-bold text-gray-900" id="avgPercentErrorCard">-</div>
-                        <div class="text-xs text-gray-500">MAPE - Lower is better</div>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actual CVEs</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Predicted CVEs</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percent Error</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
-                            </tr>
-                        </thead>
-                        <tbody id="validationTable" class="bg-white divide-y divide-gray-200">
-                            <!-- Validation data will be populated here -->
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mt-4 text-center">
-                    <div class="inline-flex items-center space-x-8 text-sm text-gray-600">
-                        <div>
-                            <span class="font-medium">Average Error:</span>
-                            <span id="avgError" class="ml-1">-</span>
-                        </div>
-                        <div>
-                            <span class="font-medium">Average Percent Error:</span>
-                            <span id="avgPercentError" class="ml-1">-</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Data Period Info -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-white rounded-lg card-shadow p-6">
@@ -291,8 +291,8 @@
 
                 <div class="bg-white rounded-lg card-shadow p-6">
                     <div class="flex items-center">
-                        <div class="p-3 bg-green-100 rounded-full">
-                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                             </svg>
                         </div>
@@ -305,9 +305,9 @@
 
                 <div class="bg-white rounded-lg card-shadow p-6">
                     <div class="flex items-center">
-                        <div class="p-3 bg-purple-100 rounded-full">
-                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2v-14a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                             </svg>
                         </div>
                         <div class="ml-4">

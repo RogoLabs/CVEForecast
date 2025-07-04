@@ -445,40 +445,32 @@ function createChart() {
                         intersect: false,
                         callbacks: {
                             title: function(context) {
-                                const point = context[0];
-                                
-                                // Use Chart.js's built-in time formatting
-                                const chart = this.chart;
-                                const scale = chart.scales.x;
-                                const timestamp = point.parsed.x;
-                                
-                                // Format the timestamp using the scale's time adapter
-                                const formattedDate = scale._adapter.format(timestamp, 'MMM yyyy');
-                                
-                                console.log('Tooltip - timestamp:', timestamp, 'formatted:', formattedDate);
-                                
-                                // Extract YYYY-MM for comparison
-                                const date = new Date(timestamp);
-                                const year = date.getFullYear();
-                                const month = String(date.getMonth() + 1).padStart(2, '0');
-                                const dateStr = `${year}-${month}`;
-                                
-                                // Check if this is the current month
-                                if (forecastData.current_month_progress && 
-                                    dateStr === forecastData.current_month_progress.date) {
-                                    return `${formattedDate} (Current Month - ${forecastData.current_month_progress.progress_percentage.toFixed(2)}% Complete)`;
+                                if (context.length > 0) {
+                                    const point = context[0];
+                                    const date = new Date(point.parsed.x);
+                                    const year = date.getUTCFullYear();
+                                    const month = date.getUTCMonth(); // 0-indexed
+                                    const formattedDate = ``;
+                                    
+                                    const monthForCompare = month + 1;
+                                    const dateStrCompare = `${year}-${String(monthForCompare).padStart(2, '0')}`;
+
+                                    if (forecastData.current_month_progress &&
+                                        dateStrCompare === forecastData.current_month_progress.date) {
+                                        return `Current Month - ${forecastData.current_month_progress.progress_percentage.toFixed(2)}% Complete`;
+                                    }
+                                    return formattedDate;
                                 }
-                                
-                                return formattedDate;
+                                return '';
                             },
                             label: function(context) {
                                 const point = context;
                                 const value = formatNumber(point.parsed.y);
                                 
-                                // Extract YYYY-MM for comparison
+                                // Extract YYYY-MM for comparison using UTC to avoid timezone issues
                                 const date = new Date(point.parsed.x);
-                                const year = date.getFullYear();
-                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const year = date.getUTCFullYear();
+                                const month = String(date.getUTCMonth() + 1).padStart(2, '0');
                                 const dateStr = `${year}-${month}`;
                                 
                                 // Check if this is the current month and add special information
@@ -498,10 +490,10 @@ function createChart() {
                             afterLabel: function(context) {
                                 const point = context;
                                 
-                                // Extract YYYY-MM for comparison
+                                // Extract YYYY-MM for comparison using UTC to avoid timezone issues
                                 const date = new Date(point.parsed.x);
-                                const year = date.getFullYear();
-                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const year = date.getUTCFullYear();
+                                const month = String(date.getUTCMonth() + 1).padStart(2, '0');
                                 const dateStr = `${year}-${month}`;
                                 
                                 // Add extra context for current month
