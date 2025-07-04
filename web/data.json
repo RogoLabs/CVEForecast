@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-07-03T17:25:10.343155",
+  "generated_at": "2025-07-04T02:19:39.036720",
   "model_rankings": [
     {
       "model_name": "DLinear",
@@ -30,13 +30,6 @@
       "mae": 307.0069
     },
     {
-      "model_name": "XGBoost",
-      "mape": 7.4621,
-      "mase": 1.3992,
-      "rmsse": 0.9608,
-      "mae": 309.7831
-    },
-    {
       "model_name": "TBATS",
       "mape": 7.6629,
       "mase": 1.4428,
@@ -63,6 +56,13 @@
       "mase": 1.695,
       "rmsse": 1.0656,
       "mae": 375.2606
+    },
+    {
+      "model_name": "XGBoost",
+      "mape": 10.649,
+      "mase": 1.9765,
+      "rmsse": 1.2373,
+      "mae": 437.5811
     },
     {
       "model_name": "NLinear",
@@ -108,10 +108,10 @@
     },
     {
       "model_name": "Prophet",
-      "mape": 20.8929,
-      "mase": 3.8269,
-      "rmsse": 2.2171,
-      "mae": 847.256
+      "mape": 20.9141,
+      "mase": 3.8307,
+      "rmsse": 2.2192,
+      "mae": 848.1063
     },
     {
       "model_name": "NaiveSeasonal",
@@ -1386,10 +1386,10 @@
   ],
   "current_month_progress": {
     "date": "2025-07",
-    "cve_count": 323,
-    "days_elapsed": 3,
+    "cve_count": 327,
+    "days_elapsed": 4,
     "total_days": 31,
-    "progress_percentage": 9.7
+    "progress_percentage": 12.9
   },
   "forecasts": {
     "DLinear": [
@@ -1688,78 +1688,78 @@
         "cve_count": 5134
       }
     ],
-    "XGBoost": [
+    "TBATS": [
       {
         "date": "2025-07",
-        "cve_count": 3750
+        "cve_count": 4007
       },
       {
         "date": "2025-08",
-        "cve_count": 3737
+        "cve_count": 4011
       },
       {
         "date": "2025-09",
-        "cve_count": 3951
+        "cve_count": 4021
       },
       {
         "date": "2025-10",
-        "cve_count": 3732
+        "cve_count": 4044
       },
       {
         "date": "2025-11",
-        "cve_count": 3837
+        "cve_count": 4083
       },
       {
         "date": "2025-12",
-        "cve_count": 3826
+        "cve_count": 4137
       },
       {
         "date": "2026-01",
-        "cve_count": 3889
+        "cve_count": 4202
       },
       {
         "date": "2026-02",
-        "cve_count": 3843
+        "cve_count": 4268
       },
       {
         "date": "2026-03",
-        "cve_count": 3850
+        "cve_count": 4329
       },
       {
         "date": "2026-04",
-        "cve_count": 3851
+        "cve_count": 4377
       },
       {
         "date": "2026-05",
-        "cve_count": 3850
+        "cve_count": 4409
       },
       {
         "date": "2026-06",
-        "cve_count": 3852
+        "cve_count": 4425
       },
       {
         "date": "2026-07",
-        "cve_count": 3852
+        "cve_count": 4431
       },
       {
         "date": "2026-08",
-        "cve_count": 3847
+        "cve_count": 4435
       },
       {
         "date": "2026-09",
-        "cve_count": 3852
+        "cve_count": 4445
       },
       {
         "date": "2026-10",
-        "cve_count": 3843
+        "cve_count": 4468
       },
       {
         "date": "2026-11",
-        "cve_count": 3852
+        "cve_count": 4507
       },
       {
         "date": "2026-12",
-        "cve_count": 3852
+        "cve_count": 4561
       }
     ]
   },
@@ -1814,10 +1814,10 @@
     },
     {
       "date": "2025-07",
-      "actual": 323,
+      "actual": 327,
       "predicted": 3670,
-      "error": 3347,
-      "percent_error": 1036.22,
+      "error": 3343,
+      "percent_error": 1022.32,
       "is_current_month": true
     }
   ],
@@ -1873,10 +1873,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3670,
-        "error": 3347,
-        "percent_error": 1036.22,
+        "error": 3343,
+        "percent_error": 1022.32,
         "is_current_month": true
       }
     ],
@@ -1931,10 +1931,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3798,
-        "error": 3475,
-        "percent_error": 1075.85,
+        "error": 3471,
+        "percent_error": 1061.47,
         "is_current_month": true
       }
     ],
@@ -1989,10 +1989,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3589,
-        "error": 3266,
-        "percent_error": 1011.15,
+        "error": 3262,
+        "percent_error": 997.55,
         "is_current_month": true
       }
     ],
@@ -2047,68 +2047,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3623,
-        "error": 3300,
-        "percent_error": 1021.67,
-        "is_current_month": true
-      }
-    ],
-    "XGBoost": [
-      {
-        "date": "2025-01",
-        "actual": 4314,
-        "predicted": 3687,
-        "error": -627,
-        "percent_error": 14.53,
-        "is_current_month": false
-      },
-      {
-        "date": "2025-02",
-        "actual": 3713,
-        "predicted": 3719,
-        "error": 6,
-        "percent_error": 0.16,
-        "is_current_month": false
-      },
-      {
-        "date": "2025-03",
-        "actual": 4111,
-        "predicted": 3889,
-        "error": -222,
-        "percent_error": 5.4,
-        "is_current_month": false
-      },
-      {
-        "date": "2025-04",
-        "actual": 4121,
-        "predicted": 3680,
-        "error": -441,
-        "percent_error": 10.7,
-        "is_current_month": false
-      },
-      {
-        "date": "2025-05",
-        "actual": 4094,
-        "predicted": 3645,
-        "error": -449,
-        "percent_error": 10.97,
-        "is_current_month": false
-      },
-      {
-        "date": "2025-06",
-        "actual": 3780,
-        "predicted": 3666,
-        "error": -114,
-        "percent_error": 3.02,
-        "is_current_month": false
-      },
-      {
-        "date": "2025-07",
-        "actual": 323,
-        "predicted": 3687,
-        "error": 3364,
-        "percent_error": 1041.49,
+        "error": 3296,
+        "percent_error": 1007.95,
         "is_current_month": true
       }
     ],
@@ -2163,10 +2105,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3579,
-        "error": 3256,
-        "percent_error": 1008.05,
+        "error": 3252,
+        "percent_error": 994.5,
         "is_current_month": true
       }
     ],
@@ -2221,10 +2163,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3533,
-        "error": 3210,
-        "percent_error": 993.81,
+        "error": 3206,
+        "percent_error": 980.43,
         "is_current_month": true
       }
     ],
@@ -2279,10 +2221,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3579,
-        "error": 3256,
-        "percent_error": 1008.05,
+        "error": 3252,
+        "percent_error": 994.5,
         "is_current_month": true
       }
     ],
@@ -2337,10 +2279,68 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3683,
-        "error": 3360,
-        "percent_error": 1040.25,
+        "error": 3356,
+        "percent_error": 1026.3,
+        "is_current_month": true
+      }
+    ],
+    "XGBoost": [
+      {
+        "date": "2025-01",
+        "actual": 4314,
+        "predicted": 3626,
+        "error": -688,
+        "percent_error": 15.95,
+        "is_current_month": false
+      },
+      {
+        "date": "2025-02",
+        "actual": 3713,
+        "predicted": 3522,
+        "error": -191,
+        "percent_error": 5.14,
+        "is_current_month": false
+      },
+      {
+        "date": "2025-03",
+        "actual": 4111,
+        "predicted": 3691,
+        "error": -420,
+        "percent_error": 10.22,
+        "is_current_month": false
+      },
+      {
+        "date": "2025-04",
+        "actual": 4121,
+        "predicted": 3486,
+        "error": -635,
+        "percent_error": 15.41,
+        "is_current_month": false
+      },
+      {
+        "date": "2025-05",
+        "actual": 4094,
+        "predicted": 3544,
+        "error": -550,
+        "percent_error": 13.43,
+        "is_current_month": false
+      },
+      {
+        "date": "2025-06",
+        "actual": 3780,
+        "predicted": 3639,
+        "error": -141,
+        "percent_error": 3.73,
+        "is_current_month": false
+      },
+      {
+        "date": "2025-07",
+        "actual": 327,
+        "predicted": 3626,
+        "error": 3299,
+        "percent_error": 1008.87,
         "is_current_month": true
       }
     ],
@@ -2395,10 +2395,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3574,
-        "error": 3251,
-        "percent_error": 1006.5,
+        "error": 3247,
+        "percent_error": 992.97,
         "is_current_month": true
       }
     ],
@@ -2453,10 +2453,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3480,
-        "error": 3157,
-        "percent_error": 977.4,
+        "error": 3153,
+        "percent_error": 964.22,
         "is_current_month": true
       }
     ],
@@ -2511,10 +2511,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3494,
-        "error": 3171,
-        "percent_error": 981.73,
+        "error": 3167,
+        "percent_error": 968.5,
         "is_current_month": true
       }
     ],
@@ -2569,10 +2569,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3302,
-        "error": 2979,
-        "percent_error": 922.29,
+        "error": 2975,
+        "percent_error": 909.79,
         "is_current_month": true
       }
     ],
@@ -2627,10 +2627,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3399,
-        "error": 3076,
-        "percent_error": 952.32,
+        "error": 3072,
+        "percent_error": 939.45,
         "is_current_month": true
       }
     ],
@@ -2685,10 +2685,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3390,
-        "error": 3067,
-        "percent_error": 949.54,
+        "error": 3063,
+        "percent_error": 936.7,
         "is_current_month": true
       }
     ],
@@ -2696,17 +2696,17 @@
       {
         "date": "2025-01",
         "actual": 4314,
-        "predicted": 3125,
-        "error": -1189,
-        "percent_error": 27.56,
+        "predicted": 3124,
+        "error": -1190,
+        "percent_error": 27.58,
         "is_current_month": false
       },
       {
         "date": "2025-02",
         "actual": 3713,
-        "predicted": 3047,
-        "error": -666,
-        "percent_error": 17.94,
+        "predicted": 3046,
+        "error": -667,
+        "percent_error": 17.96,
         "is_current_month": false
       },
       {
@@ -2720,33 +2720,33 @@
       {
         "date": "2025-04",
         "actual": 4121,
-        "predicted": 3219,
-        "error": -902,
-        "percent_error": 21.89,
+        "predicted": 3218,
+        "error": -903,
+        "percent_error": 21.91,
         "is_current_month": false
       },
       {
         "date": "2025-05",
         "actual": 4094,
-        "predicted": 3333,
-        "error": -761,
-        "percent_error": 18.59,
+        "predicted": 3332,
+        "error": -762,
+        "percent_error": 18.61,
         "is_current_month": false
       },
       {
         "date": "2025-06",
         "actual": 3780,
-        "predicted": 3170,
-        "error": -610,
-        "percent_error": 16.14,
+        "predicted": 3169,
+        "error": -611,
+        "percent_error": 16.16,
         "is_current_month": false
       },
       {
         "date": "2025-07",
-        "actual": 323,
-        "predicted": 3125,
-        "error": 2802,
-        "percent_error": 867.49,
+        "actual": 327,
+        "predicted": 3124,
+        "error": 2797,
+        "percent_error": 855.35,
         "is_current_month": true
       }
     ],
@@ -2801,10 +2801,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 2715,
-        "error": 2392,
-        "percent_error": 740.56,
+        "error": 2388,
+        "percent_error": 730.28,
         "is_current_month": true
       }
     ],
@@ -2859,10 +2859,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 3129,
-        "error": 2806,
-        "percent_error": 868.73,
+        "error": 2802,
+        "percent_error": 856.88,
         "is_current_month": true
       }
     ],
@@ -2917,10 +2917,10 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 907,
-        "error": 584,
-        "percent_error": 180.8,
+        "error": 580,
+        "percent_error": 177.37,
         "is_current_month": true
       }
     ],
@@ -2975,16 +2975,16 @@
       },
       {
         "date": "2025-07",
-        "actual": 323,
+        "actual": 327,
         "predicted": 45,
-        "error": -278,
-        "percent_error": 86.07,
+        "error": -282,
+        "percent_error": 86.24,
         "is_current_month": true
       }
     ]
   },
   "summary": {
-    "total_historical_cves": 300246,
+    "total_historical_cves": 300250,
     "data_period": {
       "start": "1999-09-01",
       "end": "2025-07-01"
