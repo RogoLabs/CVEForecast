@@ -112,6 +112,176 @@ class CVEForecastEngine:
         self.forecasts = {}
         self.model_rankings = []
         
+    def load_performance_history(self, history_path: str = "web/performance_history.json") -> List[Dict[str, Any]]:
+        """Load existing performance history from JSON file"""
+        try:
+            if os.path.exists(history_path):
+                with open(history_path, 'r') as f:
+                    return json.load(f)
+            else:
+                print(f"Performance history file {history_path} not found, starting with empty history")
+                return []
+        except Exception as e:
+            print(f"Error loading performance history: {e}")
+            return []
+    
+    def save_performance_history(self, history: List[Dict[str, Any]], history_path: str = "web/performance_history.json"):
+        """Save performance history to JSON file"""
+        try:
+            # Ensure output directory exists
+            os.makedirs(os.path.dirname(history_path), exist_ok=True)
+            
+            with open(history_path, 'w') as f:
+                json.dump(history, f, indent=2)
+            print(f"Performance history saved to {history_path}")
+        except Exception as e:
+            print(f"Error saving performance history: {e}")
+    
+    def create_run_record(self, data: pd.DataFrame, model_results: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Create a new run record for performance history"""
+        # Split data for training and validation (same logic as in evaluate_models)
+        split_point = int(len(data) * 0.8)
+        train_data = data.iloc[:split_point]
+        val_data = data.iloc[split_point:]
+        
+        run_record = {
+            "run_timestamp": datetime.now().isoformat() + "Z",
+            "training_set_size": len(train_data),
+            "validation_set_size": len(val_data),
+            "model_performances": []
+        }
+        
+        for result in model_results:
+            model_performance = {
+                "model_name": result['model_name'],
+                "hyperparameters": result.get('hyperparameters', {}),
+                "metrics": {
+                    "mape": result['mape'],
+                    "mase": result['mase'], 
+                    "rmsse": result['rmsse'],
+                    "mae": result['mae']
+                }
+            }
+            run_record["model_performances"].append(model_performance)
+        
+        return run_record
+    
+    def extract_model_hyperparameters(self, model_name: str, model) -> Dict[str, Any]:
+        """Extract hyperparameters from any model object for performance logging"""
+        hyperparams = {}
+        
+        try:
+            # Get all attributes from the model object
+            model_attrs = dir(model)
+            
+            # Common hyperparameters to extract based on model type
+            common_params = [
+                'lags', 'n_estimators', 'max_depth', 'learning_rate', 'random_state',
+                'yearly_seasonality', 'weekly_seasonality', 'daily_seasonality', 
+                'seasonality_mode', 'changepoint_prior_scale', 'seasonality_prior_scale',
+                'n_changepoints', 'mcmc_samples', 'interval_width', 'trend', 'seasonal',
+                'seasonal_periods', 'damped_trend', 'input_chunk_length', 'output_chunk_length',
+                'hidden_dim', 'n_rnn_layers', 'batch_size', 'n_epochs', 'dropout',
+                'kernel_size', 'num_filters', 'dilation_base', 'weight_norm',
+                'subsample', 'colsample_bytree', 'reg_alpha', 'reg_lambda',
+                'min_child_samples', 'num_leaves', 'feature_fraction', 'bagging_fraction',
+                'min_samples_split', 'min_samples_leaf', 'max_features', 'bootstrap',
+                'start_p', 'start_q', 'max_p', 'max_q', 'seasonal', 'stepwise',
+                'K', 'season_length', 'season_mode'
+            ]
+            
+            # Extract available hyperparameters
+            for param in common_params:
+                if hasattr(model, param):
+                    value = getattr(model, param)
+                    # Convert complex objects to simple types for JSON serialization
+                    if hasattr(value, '__name__'):  # Function or class
+                        hyperparams[param] = str(value.__name__)
+                    elif hasattr(value, 'name'):  # Enum or named object
+                        hyperparams[param] = str(value.name)
+                    elif isinstance(value, (int, float, str, bool, type(None))):
+                        hyperparams[param] = value
+                    else:
+                        hyperparams[param] = str(value)
+            
+            # Model-specific hyperparameter extraction
+            if 'XGB' in model_name or 'XGBoost' in model_name:
+                xgb_params = ['n_estimators', 'max_depth', 'learning_rate', 'subsample', 
+                            'colsample_bytree', 'reg_alpha', 'reg_lambda', 'lags']
+                for param in xgb_params:
+                    if hasattr(model, param):
+                        hyperparams[param] = getattr(model, param)
+                        
+            elif 'Prophet' in model_name:
+                prophet_params = ['yearly_seasonality', 'weekly_seasonality', 'daily_seasonality',
+                                'seasonality_mode', 'changepoint_prior_scale', 'seasonality_prior_scale',
+                                'n_changepoints', 'mcmc_samples', 'interval_width']
+                for param in prophet_params:
+                    if hasattr(model, param):
+                        hyperparams[param] = getattr(model, param)
+                        
+            elif 'LightGBM' in model_name:
+                lgb_params = ['n_estimators', 'max_depth', 'learning_rate', 'subsample',
+                            'colsample_bytree', 'reg_alpha', 'reg_lambda', 'min_child_samples',
+                            'num_leaves', 'lags']
+                for param in lgb_params:
+                    if hasattr(model, param):
+                        hyperparams[param] = getattr(model, param)
+                        
+            elif 'RandomForest' in model_name:
+                rf_params = ['n_estimators', 'max_depth', 'min_samples_split', 'min_samples_leaf',
+                           'max_features', 'bootstrap', 'lags']
+                for param in rf_params:
+                    if hasattr(model, param):
+                        hyperparams[param] = getattr(model, param)
+                        
+            elif 'ExponentialSmoothing' in model_name:
+                es_params = ['trend', 'seasonal', 'seasonal_periods', 'damped_trend']
+                for param in es_params:
+                    if hasattr(model, param):
+                        hyperparams[param] = getattr(model, param)
+                        
+            elif 'ARIMA' in model_name:
+                arima_params = ['start_p', 'start_q', 'max_p', 'max_q', 'seasonal', 'stepwise']
+                for param in arima_params:
+                    if hasattr(model, param):
+                        hyperparams[param] = getattr(model, param)
+                        
+            elif 'Naive' in model_name:
+                naive_params = ['input_chunk_length', 'K']
+                for param in naive_params:
+                    if hasattr(model, param):
+                        hyperparams[param] = getattr(model, param)
+                        
+            elif 'TBATS' in model_name:
+                tbats_params = ['season_length']
+                for param in tbats_params:
+                    if hasattr(model, param):
+                        hyperparams[param] = getattr(model, param)
+                        
+            # Add model-specific information
+            hyperparams['model_type'] = type(model).__name__
+            hyperparams['model_category'] = self._get_model_category(model_name)
+            
+        except Exception as e:
+            print(f"Warning: Could not extract hyperparameters for {model_name}: {e}")
+            hyperparams = {'model_type': type(model).__name__, 'extraction_error': str(e)}
+            
+        return hyperparams
+    
+    def _get_model_category(self, model_name: str) -> str:
+        """Categorize model type for better organization"""
+        if any(x in model_name for x in ['XGB', 'LightGBM', 'RandomForest', 'CatBoost']):
+            return 'tree_based'
+        elif any(x in model_name for x in ['Prophet', 'ARIMA', 'ETS', 'ExponentialSmoothing', 'Theta']):
+            return 'statistical'
+        elif any(x in model_name for x in ['TCN', 'TFT', 'NBEATS', 'NHiTS', 'Transformer', 'RNN']):
+            return 'deep_learning'
+        elif any(x in model_name for x in ['Naive', 'Mean', 'Drift', 'Seasonal']):
+            return 'baseline'
+        else:
+            return 'other'
+        
     def parse_cve_data(self, repo_path: str = None) -> pd.DataFrame:
         """Parse CVE JSON files and extract publication dates"""
         if repo_path is None:
@@ -274,8 +444,10 @@ class CVEForecastEngine:
         
         return complete_df
     
-    def prepare_models(self) -> List[Tuple[str, Any]]:
-        """Prepare and return comprehensive forecasting models for evaluation (25+ models total)"""
+    def prepare_models(self) -> List[Dict[str, Any]]:
+        """Prepare and return comprehensive forecasting models for evaluation (25+ models total)
+        Returns list of dictionaries with model_name, model_object, and hyperparameters
+        """
         models = []
         
         # Statistical Models - Proven performers for time series
@@ -322,17 +494,22 @@ class CVEForecastEngine:
         
         try:
             # Prophet - Facebook's robust forecasting method, handles seasonality well - Enhanced
-            models.append(("Prophet", Prophet(
-                yearly_seasonality=True,    # Enable yearly patterns
-                weekly_seasonality=False,   # Disable weekly (not relevant for CVE data)
-                daily_seasonality=False,    # Disable daily (not relevant for monthly data)
-                seasonality_mode='additive',        # Use additive instead of multiplicative for zero values
-                changepoint_prior_scale=0.1,        # Slightly more flexible changepoints
-                seasonality_prior_scale=1.0,        # More conservative seasonality
-                n_changepoints=15,                   # Fewer changepoints to reduce overfitting
-                mcmc_samples=0,                      # Disable MCMC for faster training
-                interval_width=0.8,                  # Confidence intervals
-            )))
+            prophet_hyperparams = {
+                'yearly_seasonality': True,
+                'weekly_seasonality': False,
+                'daily_seasonality': False,
+                'seasonality_mode': 'additive',
+                'changepoint_prior_scale': 0.1,
+                'seasonality_prior_scale': 1.0,
+                'n_changepoints': 15,
+                'mcmc_samples': 0,
+                'interval_width': 0.8
+            }
+            models.append({
+                'model_name': 'Prophet',
+                'model_object': Prophet(**prophet_hyperparams),
+                'hyperparameters': prophet_hyperparams
+            })
             print("Added Prophet model")
         except Exception as e:
             print(f"Failed to add Prophet: {e}")
@@ -441,22 +618,26 @@ class CVEForecastEngine:
         
         # Machine Learning Models
         try:
-            # XGBoost - Gradient boosting for time series
             # XGBoost - Extreme Gradient Boosting with time series features - Optimized
-            models.append(("XGBoost", XGBModel(
-                lags=24,                    # Increased from 12 for better patterns
-                random_state=42,
-                # XGBoost specific parameters for better performance
-                **{
-                    'n_estimators': 200,     # More trees for better learning
-                    'max_depth': 6,          # Moderate depth to prevent overfitting
-                    'learning_rate': 0.1,    # Learning rate
-                    'subsample': 0.8,        # Row sampling for regularization
-                    'colsample_bytree': 0.8, # Column sampling for regularization
-                    'reg_alpha': 0.1,        # L1 regularization
-                    'reg_lambda': 0.1,       # L2 regularization
-                }
-            )))
+            xgb_hyperparams = {
+                'lags': 24,
+                'n_estimators': 200,
+                'max_depth': 6,
+                'learning_rate': 0.1,
+                'subsample': 0.8,
+                'colsample_bytree': 0.8,
+                'reg_alpha': 0.1,
+                'reg_lambda': 0.1
+            }
+            models.append({
+                'model_name': 'XGBoost',
+                'model_object': XGBModel(
+                    lags=xgb_hyperparams['lags'],
+                    random_state=42,
+                    **{k: v for k, v in xgb_hyperparams.items() if k != 'lags'}
+                ),
+                'hyperparameters': xgb_hyperparams
+            })
             print("Added XGBoost model")
         except Exception as e:
             print(f"Failed to add XGBoost: {e}")
@@ -663,7 +844,14 @@ class CVEForecastEngine:
         
         # Store individual models for ensemble creation (use best statistical models)
         individual_models = []
-        for name, model in models:
+        for model_info in models:
+            # Handle both dictionary and tuple formats
+            if isinstance(model_info, dict):
+                name = model_info['model_name']
+                model = model_info['model_object']
+            else:
+                name, model = model_info
+                
             if name in ["AutoARIMA", "AutoETS", "ExponentialSmoothing"]:
                 try:
                     # Create a copy for ensemble use
@@ -759,7 +947,22 @@ class CVEForecastEngine:
         models = self.prepare_models()
         results = []
         
-        for model_name, model in models:
+        for model_info in models:
+            # Handle both dictionary format (with hyperparameters) and tuple format (legacy)
+            if isinstance(model_info, dict):
+                model_name = model_info['model_name']
+                model = model_info['model_object']
+                hyperparameters = model_info['hyperparameters']
+            else:
+                # Legacy tuple format (model_name, model_object)
+                model_name, model = model_info
+                hyperparameters = {}
+            
+            # Extract comprehensive hyperparameters for ALL models (overrides manual hyperparameters)
+            extracted_hyperparams = self.extract_model_hyperparameters(model_name, model)
+            # Merge manually specified hyperparameters with extracted ones (manual takes precedence)
+            final_hyperparams = {**extracted_hyperparams, **hyperparameters}
+            
             print(f"\nTraining {model_name}...")
             try:
                 # Train the model
@@ -853,7 +1056,8 @@ class CVEForecastEngine:
                     'rmsse': rmsse_score,
                     'mae': mae_score,
                     'model': model,
-                    'validation_data': validation_data
+                    'validation_data': validation_data,
+                    'hyperparameters': final_hyperparams  # Include comprehensive hyperparameters for performance logging
                 })
                 
                 mase_str = f"{mase_score:.4f}" if mase_score is not None else "N/A"
@@ -1211,22 +1415,48 @@ class CVEForecastEngine:
     def run(self, output_path: str = "web/data.json"):
         """Main execution method"""
         try:
-            # Step 1: Parse CVE data
+            print("\n🚀 Starting CVE Forecast generation with performance logging...")
+            
+            # Step 1: Load existing performance history
+            print("📊 Loading performance history...")
+            performance_history = self.load_performance_history()
+            print(f"Loaded {len(performance_history)} previous runs from performance history")
+            
+            # Step 2: Parse CVE data
+            print("🔍 Parsing CVE data...")
             data = self.parse_cve_data()
             
-            # Step 2: Evaluate models
+            # Step 3: Evaluate models with comprehensive hyperparameter tracking
+            print("🤖 Evaluating models with hyperparameter tracking...")
             model_results = self.evaluate_models(data)
             
-            # Step 3: Generate forecasts
+            # Step 4: Create performance record for this run
+            print("📈 Creating performance record for this run...")
+            run_record = self.create_run_record(data, model_results)
+            print(f"Created run record with {len(run_record['model_performances'])} model performances")
+            
+            # Step 5: Update performance history
+            performance_history.append(run_record)
+            print(f"Added new run to history. Total runs: {len(performance_history)}")
+            
+            # Step 6: Save updated performance history
+            print("💾 Saving updated performance history...")
+            self.save_performance_history(performance_history)
+            
+            # Step 7: Generate forecasts
+            print("🔮 Generating forecasts...")
             forecasts = self.generate_forecasts(data, model_results)
             
-            # Step 4: Save data file
+            # Step 8: Save data file
+            print("📄 Saving forecast data file...")
             self.save_data_file(data, model_results, forecasts, output_path)
             
-            print("\nCVE Forecast generation completed successfully!")
+            print("\n✅ CVE Forecast generation completed successfully!")
+            print(f"📊 Performance history now contains {len(performance_history)} runs")
+            print(f"🎯 Best model this run: {model_results[0]['model_name']} (MAPE: {model_results[0]['mape']:.4f})")
             
         except Exception as e:
-            print(f"Error in CVE forecast generation: {e}")
+            print(f"❌ Error in CVE forecast generation: {e}")
             raise
 
 
