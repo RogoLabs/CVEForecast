@@ -146,6 +146,14 @@ class CVEForecastEngine:
                 with open(json_file, 'r', encoding='utf-8') as f:
                     cve_data = json.load(f)
                 
+                # Filter out rejected CVEs - check state array for "REJECTED"
+                if 'cveMetadata' in cve_data and 'state' in cve_data['cveMetadata']:
+                    state = cve_data['cveMetadata']['state']
+                    if isinstance(state, list) and 'REJECTED' in state:
+                        continue  # Skip rejected CVEs
+                    elif isinstance(state, str) and state == 'REJECTED':
+                        continue  # Skip rejected CVEs
+                
                 # Try multiple ways to extract publication date
                 published_date = None
                 
@@ -879,10 +887,11 @@ class CVEForecastEngine:
             fill_missing_dates=True
         )
         
-        # Calculate months until end of next year
+        # Calculate months until end of current year + January 2026 (needed for chart display)
         current_date = datetime.now().date()
         current_month = datetime(current_date.year, current_date.month, 1).date()
-        end_of_next_year = datetime(current_date.year + 1, 12, 1).date()
+        # Extend through January 2026 to support extended chart timeline
+        end_forecast_date = datetime(current_date.year + 1, 1, 1).date()
         
         # For forecasting, we want to predict the current month (since it's incomplete) and all future months
         # Use data up to the previous month for training to predict current and future months
@@ -901,12 +910,12 @@ class CVEForecastEngine:
             fill_missing_dates=True
         )
         
-        # Calculate number of months to forecast (current month + remainder of current year + next year)
-        months_to_forecast = ((end_of_next_year.year - current_month.year) * 12 + 
-                             end_of_next_year.month - current_month.month + 1)
+        # Calculate number of months to forecast (current month through January 2026)
+        months_to_forecast = ((end_forecast_date.year - current_month.year) * 12 + 
+                             end_forecast_date.month - current_month.month + 1)
         
         print(f"Training on data through {previous_month.strftime('%Y-%m')}")
-        print(f"Forecasting {months_to_forecast} months starting from {current_month.strftime('%Y-%m')} (through {end_of_next_year.strftime('%Y-%m')})")
+        print(f"Forecasting {months_to_forecast} months starting from {current_month.strftime('%Y-%m')} (through {end_forecast_date.strftime('%Y-%m')})")
         
         # Use top 5 models
         top_models = model_results[:5]
@@ -915,6 +924,10 @@ class CVEForecastEngine:
         for result in top_models:
             model_name = result['model_name']
             model = result['model']
+            
+            # DEBUG: Check if models are unique objects
+            print(f"🔍 DEBUG: {model_name} model object ID: {id(model)}")
+            print(f"🔍 DEBUG: {model_name} model type: {type(model).__name__}")
             
             try:
                 # Train on data up to previous month (excluding incomplete current month)
@@ -935,7 +948,17 @@ class CVEForecastEngine:
                 
                 forecasts[model_name] = forecast_data
                 
-                print(f"Generated forecast for {model_name}")
+                # DEBUG: Show first few forecast values to check for differences
+                first_3_values = [item['cve_count'] for item in forecast_data[:3]]
+                print(f"🔍 DEBUG: {model_name} first 3 forecast values: {first_3_values}")
+                
+                # Debug output to see what dates were generated
+                forecast_dates = [item['date'] for item in forecast_data]
+                print(f"Generated forecast for {model_name}: {forecast_dates}")
+                
+                # Check specifically for January 2026
+                jan_2026_found = any('2026-01' in date for date in forecast_dates)
+                print(f"  January 2026 included: {jan_2026_found}")
                 
             except Exception as e:
                 print(f"Error generating forecast for {model_name}: {e}")
@@ -980,16 +1003,17 @@ class CVEForecastEngine:
         
         best_model_validation = model_results[0]['validation_data'] if model_results else []
         
-        # Prepare current month progress data
+        # Prepare current month progress data (will calculate cumulative after timelines are generated)
         current_date = datetime.now().date()
         current_month = datetime(current_date.year, current_date.month, 1).date()
         current_month_data = None
+        current_month_raw_data = None
         
-        # Find current month's data in the original dataset
+        # Find current month's raw data first
         for _, row in data.iterrows():
             row_date = row['date'].date() if hasattr(row['date'], 'date') else pd.to_datetime(row['date']).date()
             if row_date.year == current_month.year and row_date.month == current_month.month:
-                current_month_data = {
+                current_month_raw_data = {
                     'date': row['date'].strftime('%Y-%m'),
                     'cve_count': int(row['cve_count']),
                     'days_elapsed': current_date.day,
@@ -1009,13 +1033,156 @@ class CVEForecastEngine:
             current_month_data['total_days'] = days_in_month
             current_month_data['progress_percentage'] = round((current_date.day / days_in_month) * 100, 1)
         
+        # Calculate yearly forecast totals for each model (backend single source of truth)
+        yearly_forecast_totals = {}
+        
+        # Step 1: Sum only 2025 historical data for yearly forecast totals
+        # (historical_data contains all data from 1999+, but yearly totals should only include 2025)
+        historical_total = sum(item['cve_count'] for item in historical_data 
+                             if item['date'].startswith('2025'))
+        
+        # Step 2: Calculate individual model totals
+        for model_name, model_forecasts in forecasts.items():
+            model_forecast_total = 0
+            for forecast in model_forecasts:
+                # Include current month and future months within 2025 only (2025-only scope)
+                forecast_date = datetime.strptime(forecast['date'], '%Y-%m')
+                if forecast_date.year == 2025 and forecast_date.month >= current_date.month:
+                    model_forecast_total += forecast['cve_count']
+                    print(f"DEBUG: yearly_forecast_totals - Including {forecast['date']}: {forecast['cve_count']} CVEs for {model_name}")
+            
+            # Store complete yearly total: historical + future forecasts
+            yearly_forecast_totals[model_name] = round(historical_total + model_forecast_total)
+        
+        # Step 3: Calculate "All Models" average
+        if yearly_forecast_totals:
+            all_models_average = sum(yearly_forecast_totals.values()) / len(yearly_forecast_totals)
+            yearly_forecast_totals['all_models_average'] = round(all_models_average)
+        
+        # Step 4: Identify best model and store its total
+        if rankings:
+            best_model_name = rankings[0]['model_name']
+            yearly_forecast_totals['best_model_total'] = yearly_forecast_totals.get(best_model_name, 0)
+            yearly_forecast_totals['best_model_name'] = best_model_name
+        
+        print(f"📊 Yearly forecast totals calculated: {yearly_forecast_totals}")
+        
+        # Calculate complete cumulative timelines for each model (eliminates all JavaScript calculations)
+        cumulative_timelines = {}
+        
+        # Create comprehensive timeline for cumulative calculations (Jan 2025 - Dec 2025 + Jan 2026 endpoint)
+        timeline_months = []
+        for month in range(1, 13):  # January to December 2025
+            timeline_months.append(f"2025-{month:02d}")
+        timeline_months.append("2026-01")  # January 2026 endpoint to show full 2025 cumulative total
+        
+        # CRITICAL FIX: Calculate cumulative timeline correctly 
+        # Each month shows cumulative total of CVEs published BEFORE that month starts
+        for model_name in forecasts.keys():
+            model_timeline = []
+            
+            print(f"🔍 DEBUG: Processing cumulative timeline for {model_name}")
+            print(f"🔍 DEBUG: {model_name} forecast data: {forecasts[model_name][:3]}")
+            
+            for i, month_date in enumerate(timeline_months):
+                cumulative_total = 0
+                
+                # Calculate cumulative total of all data published BEFORE this month starts
+                for j in range(i):  # All months BEFORE current month (restore original logic)
+                    prev_month_date = timeline_months[j]
+                    prev_month_num = int(prev_month_date.split('-')[1])
+                    prev_year = int(prev_month_date.split('-')[0])
+                    
+                    # Add historical data for past months
+                    if prev_year == current_date.year and prev_month_num < current_date.month:
+                        historical_month = next((item for item in historical_data if item['date'] == prev_month_date), None)
+                        if historical_month:
+                            cumulative_total += historical_month['cve_count']
+                            if month_date == '2025-08':  # Debug August calculation (should include July forecast)
+                                print(f"🔍 DEBUG: {model_name} Aug calc - added historical {prev_month_date}: {historical_month['cve_count']}")
+                    
+                    # Add forecast data for current and future months that are BEFORE this timeline month
+                    elif (prev_year == current_date.year and prev_month_num >= current_date.month) or prev_year > current_date.year:
+                        model_forecasts = forecasts[model_name]
+                        forecast_month = next((item for item in model_forecasts if item['date'] == prev_month_date), None)
+                        if forecast_month:
+                            cumulative_total += forecast_month['cve_count']
+                            if month_date == '2025-08':  # Debug August calculation (should include July forecast)
+                                print(f"🔍 DEBUG: {model_name} Aug calc - added forecast {prev_month_date}: {forecast_month['cve_count']}")
+                
+                if month_date == '2025-07':  # Focus on July for debugging
+                    print(f"🔍 DEBUG: {model_name} {month_date} FINAL cumulative_total: {cumulative_total:,}")
+                
+                # Store cumulative total for this month (total published BEFORE this month)
+                model_timeline.append({
+                    'date': month_date,
+                    'cumulative_total': round(cumulative_total)
+                })
+            
+            cumulative_timelines[f"{model_name}_cumulative"] = model_timeline
+        
+        # Calculate "All Models" average cumulative timeline
+        all_models_timeline = []
+        for i, month_date in enumerate(timeline_months):
+            month_totals = []
+            for model_name in forecasts.keys():
+                model_timeline = cumulative_timelines[f"{model_name}_cumulative"]
+                month_totals.append(model_timeline[i]['cumulative_total'])
+            
+            average_total = sum(month_totals) / len(month_totals) if month_totals else 0
+            all_models_timeline.append({
+                'date': month_date,
+                'cumulative_total': round(average_total)
+            })
+        
+        cumulative_timelines['all_models_cumulative'] = all_models_timeline
+        
+        print(f"📈 Cumulative timelines calculated for {len(cumulative_timelines)} datasets")
+        
+        # Calculate current month data using cumulative timeline (after timelines are generated)
+        if current_month_raw_data:
+            current_month_str = current_month_raw_data['date']
+            current_month_progress = current_month_raw_data['cve_count']
+            
+            # Calculate cumulative total at start of current month using ONLY data published BEFORE current month
+            # For July, this should be Jan+Feb+Mar+Apr+May (20,353), NOT including June
+            cumulative_at_month_start = 0
+            current_month_num = int(current_month_str.split('-')[1])  # Extract month number
+            
+            for item in historical_data:
+                item_month_num = int(item['date'].split('-')[1])  # Extract month number
+                # Only include months that are strictly before the current month
+                if item['date'].startswith('2025') and item_month_num < current_month_num:
+                    cumulative_at_month_start += item['cve_count']
+                    print(f"📊 DEBUG: Including {item['date']}: {item['cve_count']:,} CVEs")
+            
+            # Final cumulative = cumulative at month start + current month progress
+            cumulative_total = cumulative_at_month_start + current_month_progress
+            
+            print(f"🔍 DEBUG: Cumulative at month start: {cumulative_at_month_start:,}")
+            print(f"🔍 DEBUG: Current month progress: {current_month_progress:,}")
+            print(f"🔍 DEBUG: Final cumulative total: {cumulative_total:,}")
+            
+            # Create final current_month_data with cumulative total
+            current_month_data = {
+                'date': current_month_str,
+                'cve_count': current_month_progress,  # Monthly progress count (for display)
+                'cumulative_total': cumulative_total,  # Cumulative total (for chart)
+                'days_elapsed': current_month_raw_data['days_elapsed'],
+                'total_days': current_month_raw_data['total_days'],
+                'progress_percentage': current_month_raw_data['progress_percentage']
+            }
+            print(f"📊 Current month cumulative total: {cumulative_total:,} CVEs (monthly: {current_month_progress:,})")
+        
         # Prepare output data
         output_data = {
             'generated_at': datetime.now().isoformat(),
             'model_rankings': rankings,
             'historical_data': historical_data,
-            'current_month_progress': current_month_data,
+            'current_month_actual': current_month_data,
             'forecasts': forecasts,
+            'yearly_forecast_totals': yearly_forecast_totals,
+            'cumulative_timelines': cumulative_timelines,
             'validation_against_actuals': best_model_validation,
             'all_models_validation': all_models_validation,
             'summary': {
@@ -1026,7 +1193,7 @@ class CVEForecastEngine:
                 },
                 'forecast_period': {
                     'start': datetime(datetime.now().year, datetime.now().month, 1).strftime('%Y-%m-%d'),
-                    'end': datetime(datetime.now().year + 1, 12, 31).strftime('%Y-%m-%d')
+                    'end': datetime(datetime.now().year + 1, 1, 31).strftime('%Y-%m-%d')
                 }
             }
         }
