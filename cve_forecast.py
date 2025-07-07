@@ -32,6 +32,13 @@ from darts.models import (
     TiDEModel, DLinearModel, NLinearModel, TSMixerModel
 )
 # Try to import StatsForecast models, fallback if not available
+STATSFORECAST_ARIMA_AVAILABLE = False
+STATSFORECAST_ETS_AVAILABLE = False
+STATSFORECAST_THETA_AVAILABLE = False
+STATSFORECAST_CES_AVAILABLE = False
+STATSFORECAST_MFLES_AVAILABLE = False
+STATSFORECAST_TBATS_AVAILABLE = False
+
 try:
     from darts.models.forecasting.sf_auto_arima import StatsForecastAutoARIMA
     STATSFORECAST_ARIMA_AVAILABLE = True
@@ -41,7 +48,6 @@ except ImportError:
         STATSFORECAST_ARIMA_AVAILABLE = True
     except ImportError:
         StatsForecastAutoARIMA = None
-        STATSFORECAST_ARIMA_AVAILABLE = False
 
 try:
     from darts.models.forecasting.sf_auto_ets import StatsForecastAutoETS
@@ -52,7 +58,6 @@ except ImportError:
         STATSFORECAST_ETS_AVAILABLE = True
     except ImportError:
         StatsForecastAutoETS = None
-        STATSFORECAST_ETS_AVAILABLE = False
 
 try:
     from darts.models.forecasting.sf_auto_theta import StatsForecastAutoTheta
@@ -63,9 +68,7 @@ except ImportError:
         STATSFORECAST_THETA_AVAILABLE = True
     except ImportError:
         StatsForecastAutoTheta = None
-        STATSFORECAST_THETA_AVAILABLE = False
 
-# Additional StatsForecast models
 try:
     from darts.models.forecasting.sf_auto_ces import StatsForecastAutoCES
     STATSFORECAST_CES_AVAILABLE = True
@@ -75,7 +78,6 @@ except ImportError:
         STATSFORECAST_CES_AVAILABLE = True
     except ImportError:
         StatsForecastAutoCES = None
-        STATSFORECAST_CES_AVAILABLE = False
 
 try:
     from darts.models.forecasting.sf_auto_mfles import StatsForecastAutoMFLES
@@ -86,7 +88,6 @@ except ImportError:
         STATSFORECAST_MFLES_AVAILABLE = True
     except ImportError:
         StatsForecastAutoMFLES = None
-        STATSFORECAST_MFLES_AVAILABLE = False
 
 try:
     from darts.models.forecasting.sf_auto_tbats import StatsForecastAutoTBATS
@@ -97,7 +98,7 @@ except ImportError:
         STATSFORECAST_TBATS_AVAILABLE = True
     except ImportError:
         StatsForecastAutoTBATS = None
-        STATSFORECAST_TBATS_AVAILABLE = False
+
 from darts.metrics import mape, rmse, mae, mase, rmsse
 from darts.utils.utils import ModelMode, SeasonalityMode
 
