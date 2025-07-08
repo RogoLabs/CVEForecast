@@ -17,6 +17,44 @@ An automated web-based tool that analyzes historical CVE data and uses time seri
 - **GitHub Actions Automation**: Fully automated daily updates
 - **GitHub Pages Ready**: Static site deployment compatible
 
+## 🏗️ Architecture
+
+The application has been refactored into a clean, modular architecture:
+
+### 📁 File Structure
+
+```
+CVEForecast/
+├── code/                # Python source code and dependencies
+│   ├── main.py          # Main entry point and workflow orchestration
+│   ├── config.py        # Configuration, constants, and model imports
+│   ├── data_processor.py # CVE data parsing and processing
+│   ├── analysis.py      # Model preparation, evaluation, and forecasting
+│   ├── file_io.py       # File operations and data.json generation
+│   ├── utils.py         # Utility functions and logging setup
+│   ├── data_fetcher.py  # External data fetching (future extensibility)
+│   └── requirements.txt # Python dependencies
+├── cvelistV5/          # CVE data repository (downloaded)
+└── web/                # Web interface files
+    ├── index.html      # Main dashboard page
+    ├── script.js       # Frontend JavaScript
+    ├── style.css       # Styling
+    ├── data.json       # Generated forecast data
+    └── performance_history.json # Model performance tracking
+```
+
+### 🔧 Module Responsibilities
+
+All Python source code is organized in the `code/` directory:
+
+- **`code/main.py`**: Entry point that orchestrates the complete workflow
+- **`code/config.py`**: Centralizes all configuration, constants, and model imports
+- **`code/data_processor.py`**: Handles CVE JSON file parsing and data cleaning
+- **`code/analysis.py`**: Contains all forecasting models and evaluation logic
+- **`code/file_io.py`**: Manages file operations and data.json generation
+- **`code/utils.py`**: Provides logging setup and common utility functions
+- **`code/data_fetcher.py`**: Placeholder for future external data fetching
+
 ## 🚀 Quick Start
 
 ### 🌐 Live Demo
@@ -35,10 +73,36 @@ cd CVEForecast
 ### 2. Install Dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r code/requirements.txt
 ```
 
-### 3. Local Development and Testing
+### 3. Download CVE Data
+
+```bash
+python download_data.py
+```
+
+### 4. Run the Forecast Engine
+
+**Basic usage:**
+```bash
+cd code
+python main.py --output ../web/data.json
+```
+
+**Advanced usage:**
+```bash
+cd code
+python main.py --data-path ../cvelistV5 --output ../web/data.json --log-level INFO
+```
+
+**Get help:**
+```bash
+cd code
+python main.py --help
+```
+
+### 5. Local Development and Testing
 
 Use the test scripts in the `tests/` folder for local development with real CVE data:
 

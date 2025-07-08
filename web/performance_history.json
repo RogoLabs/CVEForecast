@@ -1,306 +1,25 @@
 [
   {
-    "run_timestamp": "2025-07-07T08:08:02.325456Z",
-    "training_set_size": 248,
-    "validation_set_size": 63,
+    "timestamp": "2025-07-07T17:37:41.432202",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
     "model_performances": [
       {
-        "model_name": "XGBoost",
-        "hyperparameters": {
-          "lags": 24,
-          "output_chunk_length": 1,
-          "model_type": "XGBModel",
-          "model_category": "tree_based",
-          "n_estimators": 200,
-          "max_depth": 6,
-          "learning_rate": 0.1,
-          "subsample": 0.8,
-          "colsample_bytree": 0.8,
-          "reg_alpha": 0.1,
-          "reg_lambda": 0.1
-        },
-        "metrics": {
-          "mape": 5.263904732282241,
-          "mase": 1.1664394352343426,
-          "rmsse": 0.8681742626198986,
-          "mae": 213.70479329427084
-        }
-      },
-      {
-        "model_name": "CatBoost",
-        "hyperparameters": {
-          "lags": "{'target': [-24, -23, -22, -21, -20, -19, -18, -17, -16, -15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1]}",
-          "output_chunk_length": 1,
-          "model_type": "CatBoostModel",
-          "model_category": "tree_based"
-        },
-        "metrics": {
-          "mape": 5.764015880754751,
-          "mase": 1.281684638339854,
-          "rmsse": 1.053466556154652,
-          "mae": 234.81900768369738
-        }
-      },
-      {
-        "model_name": "NHiTS",
-        "hyperparameters": {
-          "input_chunk_length": 24,
-          "output_chunk_length": 1,
-          "batch_size": 16,
-          "n_epochs": 40,
-          "dropout": 0.1,
-          "model_type": "NHiTSModel",
-          "model_category": "deep_learning"
-        },
-        "metrics": {
-          "mape": 6.451422332032756,
-          "mase": 1.3983590085387136,
-          "rmsse": 1.010878179074941,
-          "mae": 256.19506152148386
-        }
-      },
-      {
-        "model_name": "DLinear",
-        "hyperparameters": {
-          "input_chunk_length": 12,
-          "output_chunk_length": 1,
-          "batch_size": 32,
-          "n_epochs": 25,
-          "kernel_size": 25,
-          "model_type": "DLinearModel",
-          "model_category": "other"
-        },
-        "metrics": {
-          "mape": 6.623145256576873,
-          "mase": 1.4741552662932353,
-          "rmsse": 1.223174243061252,
-          "mae": 270.08178646117625
-        }
-      },
-      {
-        "model_name": "KalmanFilter",
-        "hyperparameters": {
-          "output_chunk_length": null,
-          "model_type": "KalmanForecaster",
-          "model_category": "other"
-        },
-        "metrics": {
-          "mape": 6.686037761246536,
-          "mase": 1.485796764990153,
-          "rmsse": 1.17770923245737,
-          "mae": 272.21463965312995
-        }
-      },
-      {
-        "model_name": "TBATS",
-        "hyperparameters": {
-          "output_chunk_length": null,
-          "model_type": "TBATS",
-          "model_category": "other"
-        },
-        "metrics": {
-          "mape": 7.178954556104255,
-          "mase": 1.599003727848688,
-          "rmsse": 1.2665821226407104,
-          "mae": 292.95542555796777
-        }
-      },
-      {
-        "model_name": "RandomForest",
-        "hyperparameters": {
-          "lags": {
-            "target": [
-              -24,
-              -23,
-              -22,
-              -21,
-              -20,
-              -19,
-              -18,
-              -17,
-              -16,
-              -15,
-              -14,
-              -13,
-              -12,
-              -11,
-              -10,
-              -9,
-              -8,
-              -7,
-              -6,
-              -5,
-              -4,
-              -3,
-              -2,
-              -1
-            ]
-          },
-          "n_estimators": 200,
-          "max_depth": 8,
-          "output_chunk_length": 1,
-          "model_type": "RandomForestModel",
-          "model_category": "tree_based"
-        },
-        "metrics": {
-          "mape": 7.437119617375379,
-          "mase": 1.6566062406758173,
-          "rmsse": 1.2853479716709646,
-          "mae": 303.50885227272823
-        }
-      },
-      {
-        "model_name": "NBEATS",
-        "hyperparameters": {
-          "input_chunk_length": 12,
-          "output_chunk_length": 1,
-          "batch_size": 32,
-          "n_epochs": 30,
-          "dropout": 0.0,
-          "model_type": "NBEATSModel",
-          "model_category": "deep_learning"
-        },
-        "metrics": {
-          "mape": 7.6083303836896325,
-          "mase": 1.657329931055792,
-          "rmsse": 1.2515691220769773,
-          "mae": 303.6414404709578
-        }
-      },
-      {
-        "model_name": "TCN",
-        "hyperparameters": {
-          "input_chunk_length": 24,
-          "output_chunk_length": 1,
-          "batch_size": 16,
-          "n_epochs": 40,
-          "dropout": 0.1,
-          "kernel_size": 3,
-          "num_filters": 32,
-          "dilation_base": 2,
-          "weight_norm": false,
-          "model_type": "TCNModel",
-          "model_category": "deep_learning"
-        },
-        "metrics": {
-          "mape": 8.182730329166523,
-          "mase": 1.7759493784078195,
-          "rmsse": 1.4475957060004043,
-          "mae": 325.3738542691528
-        }
-      },
-      {
-        "model_name": "NLinear",
-        "hyperparameters": {
-          "input_chunk_length": 24,
-          "output_chunk_length": 1,
-          "batch_size": 32,
-          "n_epochs": 40,
-          "model_type": "NLinearModel",
-          "model_category": "other"
-        },
-        "metrics": {
-          "mape": 9.8444462019595,
-          "mase": 2.1765709393752264,
-          "rmsse": 1.5950697753099472,
-          "mae": 398.7722196618381
-        }
-      },
-      {
-        "model_name": "LightGBM",
-        "hyperparameters": {
-          "lags": {
-            "target": [
-              -12,
-              -11,
-              -10,
-              -9,
-              -8,
-              -7,
-              -6,
-              -5,
-              -4,
-              -3,
-              -2,
-              -1
-            ]
-          },
-          "output_chunk_length": 1,
-          "model_type": "LightGBMModel",
-          "model_category": "tree_based"
-        },
-        "metrics": {
-          "mape": 11.071289639472857,
-          "mase": 2.4427961029919953,
-          "rmsse": 1.7473418581873237,
-          "mae": 447.5476569815005
-        }
-      },
-      {
-        "model_name": "NaiveDrift",
-        "hyperparameters": {
-          "output_chunk_length": null,
-          "model_type": "NaiveDrift",
-          "model_category": "baseline"
-        },
-        "metrics": {
-          "mape": 11.80055482373463,
-          "mase": 2.5964999189379068,
-          "rmsse": 1.8194634316610272,
-          "mae": 475.7079207920793
-        }
-      },
-      {
-        "model_name": "NaiveMovingAverage",
-        "hyperparameters": {
-          "input_chunk_length": 6,
-          "output_chunk_length": null,
-          "model_type": "NaiveMovingAverage",
-          "model_category": "baseline"
-        },
-        "metrics": {
-          "mape": 14.113833723088595,
-          "mase": 3.090693841467132,
-          "rmsse": 2.123988358637988,
-          "mae": 566.2497928097852
-        }
-      },
-      {
-        "model_name": "Theta",
-        "hyperparameters": {
-          "output_chunk_length": null,
-          "season_mode": "ADDITIVE",
-          "model_type": "Theta",
-          "model_category": "statistical"
-        },
-        "metrics": {
-          "mape": 17.56760269583529,
-          "mase": 3.823201134150486,
-          "rmsse": 2.5159642858052917,
-          "mae": 700.453348383155
-        }
-      },
-      {
-        "model_name": "FourTheta",
-        "hyperparameters": {
-          "output_chunk_length": null,
-          "season_mode": "ADDITIVE",
-          "model_type": "FourTheta",
-          "model_category": "statistical"
-        },
-        "metrics": {
-          "mape": 17.751853207261227,
-          "mase": 3.8627598220171273,
-          "rmsse": 2.540368774626653,
-          "mae": 707.7009438931909
-        }
-      },
-      {
         "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 22.709293567091873,
+          "mae": 442.89563610600476,
+          "mase": 2.8751645216573,
+          "rmsse": 2.988636247573048
+        },
         "hyperparameters": {
-          "output_chunk_length": null,
-          "model_type": "Prophet",
-          "model_category": "statistical",
           "yearly_seasonality": true,
           "weekly_seasonality": false,
           "daily_seasonality": false,
@@ -310,75 +29,4762 @@
           "n_changepoints": 15,
           "mcmc_samples": 0,
           "interval_width": 0.8
-        },
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
         "metrics": {
-          "mape": 19.28822935780781,
-          "mase": 4.206124015148074,
-          "rmsse": 2.8063456368199136,
-          "mae": 770.6091170063204
+          "mape": 27.520767349382275,
+          "mae": 472.6559499787301,
+          "mase": 3.0683608226020342,
+          "rmsse": 2.8837365581664947
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 32.245648165690426,
+          "mae": 607.3886639676113,
+          "mase": 3.9430109378601452,
+          "rmsse": 3.4904594067237555
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 34.15559781058764,
+          "mae": 907.8122099863398,
+          "mase": 5.8932833058109315,
+          "rmsse": 5.354732998703515
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 34.16837386250601,
+          "mae": 886.7301587301587,
+          "mase": 5.756424053034222,
+          "rmsse": 5.276994641303767
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      }
+    ],
+    "best_model": {
+      "name": "Prophet",
+      "mape": 22.709293567091873
+    }
+  },
+  {
+    "timestamp": "2025-07-07T17:48:36.829959",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 22.709293567091873,
+          "mae": 442.89563610600476,
+          "mase": 2.8751645216573,
+          "rmsse": 2.988636247573048
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 27.520767349382275,
+          "mae": 472.6559499787301,
+          "mase": 3.0683608226020342,
+          "rmsse": 2.8837365581664947
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 32.245648165690426,
+          "mae": 607.3886639676113,
+          "mase": 3.9430109378601452,
+          "rmsse": 3.4904594067237555
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 34.15559781058764,
+          "mae": 907.8122099863398,
+          "mase": 5.8932833058109315,
+          "rmsse": 5.354732998703515
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 34.16837386250601,
+          "mae": 886.7301587301587,
+          "mase": 5.756424053034222,
+          "rmsse": 5.276994641303767
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      }
+    ],
+    "best_model": {
+      "name": "Prophet",
+      "mape": 22.709293567091873
+    }
+  },
+  {
+    "timestamp": "2025-07-07T17:50:00.159911",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 22.709293567091873,
+          "mae": 442.89563610600476,
+          "mase": 2.8751645216573,
+          "rmsse": 2.988636247573048
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 27.520767349382275,
+          "mae": 472.6559499787301,
+          "mase": 3.0683608226020342,
+          "rmsse": 2.8837365581664947
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 32.245648165690426,
+          "mae": 607.3886639676113,
+          "mase": 3.9430109378601452,
+          "rmsse": 3.4904594067237555
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 34.15559781058764,
+          "mae": 907.8122099863398,
+          "mase": 5.8932833058109315,
+          "rmsse": 5.354732998703515
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 34.16837386250601,
+          "mae": 886.7301587301587,
+          "mase": 5.756424053034222,
+          "rmsse": 5.276994641303767
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      }
+    ],
+    "best_model": {
+      "name": "Prophet",
+      "mape": 22.709293567091873
+    }
+  },
+  {
+    "timestamp": "2025-07-07T18:00:07.464692",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 22.709293567091873,
+          "mae": 442.89563610600476,
+          "mase": 2.8751645216573,
+          "rmsse": 2.988636247573048
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 27.520767349382275,
+          "mae": 472.6559499787301,
+          "mase": 3.0683608226020342,
+          "rmsse": 2.8837365581664947
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 32.245648165690426,
+          "mae": 607.3886639676113,
+          "mase": 3.9430109378601452,
+          "rmsse": 3.4904594067237555
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 34.15559781058764,
+          "mae": 907.8122099863398,
+          "mase": 5.8932833058109315,
+          "rmsse": 5.354732998703515
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 34.16837386250601,
+          "mae": 886.7301587301587,
+          "mase": 5.756424053034222,
+          "rmsse": 5.276994641303767
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      }
+    ],
+    "best_model": {
+      "name": "Prophet",
+      "mape": 22.709293567091873
+    }
+  },
+  {
+    "timestamp": "2025-07-07T18:03:07.656173",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 22.709293567091873,
+          "mae": 442.89563610600476,
+          "mase": 2.8751645216573,
+          "rmsse": 2.988636247573048
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 27.520767349382275,
+          "mae": 472.6559499787301,
+          "mase": 3.0683608226020342,
+          "rmsse": 2.8837365581664947
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 32.245648165690426,
+          "mae": 607.3886639676113,
+          "mase": 3.9430109378601452,
+          "rmsse": 3.4904594067237555
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 34.15559781058764,
+          "mae": 907.8122099863398,
+          "mase": 5.8932833058109315,
+          "rmsse": 5.354732998703515
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 34.16837386250601,
+          "mae": 886.7301587301587,
+          "mase": 5.756424053034222,
+          "rmsse": 5.276994641303767
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      }
+    ],
+    "best_model": {
+      "name": "Prophet",
+      "mape": 22.709293567091873
+    }
+  },
+  {
+    "timestamp": "2025-07-07T18:17:09.872378",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 22.90482572948501,
+          "mae": 438.53623760743676,
+          "mase": 2.872406541740569,
+          "rmsse": 2.9726951085221076
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 25.116227260510083,
+          "mae": 481.66521624912986,
+          "mase": 3.1549007799929742,
+          "rmsse": 3.1260804483886853
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "KalmanFilter",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 26.504308365479552,
+          "mae": 444.026081356956,
+          "mase": 2.9083649455096294,
+          "rmsse": 2.776567826522941
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "LinearRegression",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 27.77789856139834,
+          "mae": 462.18877077604424,
+          "mase": 3.027330320384061,
+          "rmsse": 2.805357444841189
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1
+        }
+      },
+      {
+        "model_name": "Theta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 29.358801114617776,
+          "mae": 710.1755747699284,
+          "mase": 4.651640598466517,
+          "rmsse": 4.38408493849977
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "FourTheta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 29.38698771861673,
+          "mae": 712.4306479840186,
+          "mase": 4.666411298118606,
+          "rmsse": 4.396422600899505
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "DLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 29.714454204827913,
+          "mae": 470.2061829627568,
+          "mase": 3.0798442639034995,
+          "rmsse": 2.8502291276264056
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 30.984494423203927,
+          "mae": 775.8525147636567,
+          "mase": 5.081823684609472,
+          "rmsse": 4.7281954084402
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "TiDE",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 31.78290324853303,
+          "mae": 498.242258995208,
+          "mase": 3.2634801901834107,
+          "rmsse": 3.021749063633082
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "CatBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 31.785838879070884,
+          "mae": 841.5075862773901,
+          "mase": 5.5118635324984195,
+          "rmsse": 5.1014039360984915
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "XGBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 31.799776746696214,
+          "mae": 838.9453512524801,
+          "mase": 5.4950809270581455,
+          "rmsse": 5.10835845924118
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 32.245648165690426,
+          "mae": 607.3886639676113,
+          "mase": 3.9783876955714663,
+          "rmsse": 3.5161503571772403
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "LightGBM",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 32.806735343210335,
+          "mae": 859.1435883133319,
+          "mase": 5.627379111996632,
+          "rmsse": 5.155772252094719
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "RandomForest",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 32.8326916009082,
+          "mae": 865.4169841269841,
+          "mase": 5.668469771396582,
+          "rmsse": 5.197534796895495
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
         }
       },
       {
         "model_name": "Croston",
-        "hyperparameters": {
-          "output_chunk_length": null,
-          "model_type": "Croston",
-          "model_category": "other"
-        },
+        "model_category": "statistical",
         "metrics": {
-          "mape": 21.952721340449035,
-          "mase": 4.773910134452778,
-          "rmsse": 3.1270291854803594,
-          "mae": 874.6339052603204
-        }
+          "mape": 34.155597811143465,
+          "mae": 907.8122100045066,
+          "mase": 5.946157938772557,
+          "rmsse": 5.39414562736488
+        },
+        "hyperparameters": {}
       },
       {
         "model_name": "NaiveSeasonal",
-        "hyperparameters": {
-          "output_chunk_length": null,
-          "K": 12,
-          "model_type": "NaiveSeasonal",
-          "model_category": "baseline"
-        },
+        "model_category": "baseline",
         "metrics": {
-          "mape": 22.320387210005673,
-          "mase": 4.855051969808874,
-          "rmsse": 3.3946085046456025,
-          "mae": 889.5
+          "mape": 34.16837386250601,
+          "mae": 886.7301587301587,
+          "mase": 5.808070782454236,
+          "rmsse": 5.315835089530118
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      },
+      {
+        "model_name": "NaiveEnsemble",
+        "model_category": "ensemble",
+        "metrics": {
+          "mape": 34.66242660844561,
+          "mae": 913.5842426061017,
+          "mase": 5.9839646757811495,
+          "rmsse": 5.358564226938813
+        },
+        "hyperparameters": {
+          "models": [
+            "NaiveMean",
+            "NaiveDrift",
+            "NaiveSeasonal"
+          ]
         }
       },
       {
         "model_name": "NaiveMean",
-        "hyperparameters": {
-          "output_chunk_length": null,
-          "model_type": "NaiveMean",
-          "model_category": "baseline"
-        },
+        "model_category": "baseline",
         "metrics": {
-          "mape": 78.1945281806217,
-          "mase": 16.849057522799303,
-          "rmsse": 10.758527130010133,
-          "mae": 3086.9364035087724
+          "mape": 73.19285235295492,
+          "mae": 1827.948348694317,
+          "mase": 11.973037447029869,
+          "rmsse": 9.049098866137383
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TCN",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 78.22873206262943,
+          "mae": 2011.7771484239859,
+          "mase": 13.177113647857981,
+          "rmsse": 10.388693386787804
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
         }
       },
       {
         "model_name": "TSMixer",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 96.57013335524668,
+          "mae": 2304.093818175524,
+          "mase": 15.09178395887972,
+          "rmsse": 10.991893300596175
+        },
         "hyperparameters": {
           "input_chunk_length": 12,
           "output_chunk_length": 1,
-          "batch_size": 32,
-          "n_epochs": 30,
-          "dropout": 0.1,
-          "model_type": "TSMixerModel",
-          "model_category": "other"
-        },
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NBEATS",
+        "model_category": "deep_learning",
         "metrics": {
-          "mape": 98.8640376295665,
-          "mase": 21.286812391587016,
-          "rmsse": 13.580536141786999,
-          "mae": 3899.9828920599666
+          "mape": 143.2271806348906,
+          "mae": 3110.208518417364,
+          "mase": 20.37182455712248,
+          "rmsse": 17.444833040029764
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NHiTS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 278.3012525448615,
+          "mae": 6266.388275173036,
+          "mase": 41.04476011582445,
+          "rmsse": 36.810255051614625
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
         }
       }
-    ]
+    ],
+    "best_model": {
+      "name": "Prophet",
+      "mape": 22.90482572948501
+    }
+  },
+  {
+    "timestamp": "2025-07-07T18:48:12.684766",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 22.90482572948501,
+          "mae": 438.53623760743676,
+          "mase": 2.872406541740569,
+          "rmsse": 2.9726951085221076
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 25.116227260510083,
+          "mae": 481.66521624912986,
+          "mase": 3.1549007799929742,
+          "rmsse": 3.1260804483886853
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 25.116227260510083,
+          "mae": 481.66521624912986,
+          "mase": 3.1549007799929742,
+          "rmsse": 3.1260804483886853
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "KalmanFilter",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 26.504308365479552,
+          "mae": 444.026081356956,
+          "mase": 2.9083649455096294,
+          "rmsse": 2.776567826522941
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "LinearRegression",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 27.77789856139834,
+          "mae": 462.18877077604424,
+          "mase": 3.027330320384061,
+          "rmsse": 2.805357444841189
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1
+        }
+      },
+      {
+        "model_name": "Theta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 29.358801114617776,
+          "mae": 710.1755747699284,
+          "mase": 4.651640598466517,
+          "rmsse": 4.38408493849977
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "FourTheta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 29.38698771861673,
+          "mae": 712.4306479840186,
+          "mase": 4.666411298118606,
+          "rmsse": 4.396422600899505
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "DLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 29.714454204827913,
+          "mae": 470.2061829627568,
+          "mase": 3.0798442639034995,
+          "rmsse": 2.8502291276264056
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 30.984494423203927,
+          "mae": 775.8525147636567,
+          "mase": 5.081823684609472,
+          "rmsse": 4.7281954084402
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "TiDE",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 31.78290324853303,
+          "mae": 498.242258995208,
+          "mase": 3.2634801901834107,
+          "rmsse": 3.021749063633082
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "CatBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 31.785838879070884,
+          "mae": 841.5075862773901,
+          "mase": 5.5118635324984195,
+          "rmsse": 5.1014039360984915
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "XGBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 31.799776746696214,
+          "mae": 838.9453512524801,
+          "mase": 5.4950809270581455,
+          "rmsse": 5.10835845924118
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 32.245648165690426,
+          "mae": 607.3886639676113,
+          "mase": 3.9783876955714663,
+          "rmsse": 3.5161503571772403
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "LightGBM",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 32.806735343210335,
+          "mae": 859.1435883133319,
+          "mase": 5.627379111996632,
+          "rmsse": 5.155772252094719
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "RandomForest",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 32.8326916009082,
+          "mae": 865.4169841269841,
+          "mase": 5.668469771396582,
+          "rmsse": 5.197534796895495
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 34.155597811143465,
+          "mae": 907.8122100045066,
+          "mase": 5.946157938772557,
+          "rmsse": 5.39414562736488
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 34.16837386250601,
+          "mae": 886.7301587301587,
+          "mase": 5.808070782454236,
+          "rmsse": 5.315835089530118
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      },
+      {
+        "model_name": "NaiveEnsemble",
+        "model_category": "ensemble",
+        "metrics": {
+          "mape": 34.66242660844561,
+          "mae": 913.5842426061017,
+          "mase": 5.9839646757811495,
+          "rmsse": 5.358564226938813
+        },
+        "hyperparameters": {
+          "models": [
+            "NaiveMean",
+            "NaiveDrift",
+            "NaiveSeasonal"
+          ]
+        }
+      },
+      {
+        "model_name": "NaiveMean",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 73.19285235295492,
+          "mae": 1827.948348694317,
+          "mase": 11.973037447029869,
+          "rmsse": 9.049098866137383
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TCN",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 78.22873206262943,
+          "mae": 2011.7771484239859,
+          "mase": 13.177113647857981,
+          "rmsse": 10.388693386787804
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "TSMixer",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 96.57013335524668,
+          "mae": 2304.093818175524,
+          "mase": 15.09178395887972,
+          "rmsse": 10.991893300596175
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NBEATS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 143.2271806348906,
+          "mae": 3110.208518417364,
+          "mase": 20.37182455712248,
+          "rmsse": 17.444833040029764
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NHiTS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 278.3012525448615,
+          "mae": 6266.388275173036,
+          "mase": 41.04476011582445,
+          "rmsse": 36.810255051614625
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      }
+    ],
+    "best_model": {
+      "name": "Prophet",
+      "mape": 22.90482572948501
+    }
+  },
+  {
+    "timestamp": "2025-07-07T19:11:05.390474",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 3.2296695158454796,
+          "mae": 0.24232103401928684,
+          "mase": 0.4497365659360495,
+          "rmsse": 0.35775742641009894
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "Theta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 3.5992037168900857,
+          "mae": 0.2755156955995693,
+          "mase": 0.5113443135545964,
+          "rmsse": 0.35869948453058337
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "FourTheta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 3.6032143161114463,
+          "mae": 0.27589424369567583,
+          "mase": 0.5120468812102421,
+          "rmsse": 0.35913245645602254
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "NLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 3.608654374555089,
+          "mae": 0.2671003632543881,
+          "mase": 0.4957258482181074,
+          "rmsse": 0.36071956680927514
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 3.9241925100987323,
+          "mae": 0.29022249550096924,
+          "mase": 0.5386394499852117,
+          "rmsse": 0.3725391570967547
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "CatBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 4.128917338694683,
+          "mae": 0.3235057707458788,
+          "mase": 0.600411660442842,
+          "rmsse": 0.4121777879999336
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "iterations": 200,
+          "depth": 6,
+          "learning_rate": 0.1,
+          "l2_leaf_reg": 3,
+          "subsample": 0.8,
+          "random_state": 42,
+          "verbose": false
+        }
+      },
+      {
+        "model_name": "KalmanFilter",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 4.378710286211938,
+          "mae": 0.32752588527205984,
+          "mase": 0.6078728059805851,
+          "rmsse": 0.4087903045614768
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "LightGBM",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.1994393421600025,
+          "mae": 0.40828605281245783,
+          "mase": 0.7577599198295124,
+          "rmsse": 0.4886623650857752
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 5.363952634270758,
+          "mae": 0.4203761418038168,
+          "mase": 0.7801985625451184,
+          "rmsse": 0.5089960784935389
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      },
+      {
+        "model_name": "RandomForest",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.5818068263718095,
+          "mae": 0.43854839978351695,
+          "mase": 0.8139254279498105,
+          "rmsse": 0.5155574070008397
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 5.657426400335168,
+          "mae": 0.4449694653631853,
+          "mase": 0.82584262694633,
+          "rmsse": 0.5249785775984137
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "XGBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.820994610494024,
+          "mae": 0.4574857181928545,
+          "mase": 0.8490722099199436,
+          "rmsse": 0.5417469064333285
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "n_estimators": 200,
+          "max_depth": 6,
+          "learning_rate": 0.1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 0.1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 6.4018950384763915,
+          "mae": 0.48534013946700144,
+          "mase": 0.9007687199677414,
+          "rmsse": 0.5776117996130025
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 6.4018950384763915,
+          "mae": 0.48534013946700144,
+          "mase": 0.9007687199677414,
+          "rmsse": 0.5776117996130025
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "DLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 6.740062971437016,
+          "mae": 0.5121517683700726,
+          "mase": 0.9505298558873715,
+          "rmsse": 0.5823545857608582
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LinearRegression",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 7.141555584999828,
+          "mae": 0.5636476690336213,
+          "mase": 1.0461038518383998,
+          "rmsse": 0.6611580393877057
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1
+        }
+      },
+      {
+        "model_name": "NaiveEnsemble",
+        "model_category": "ensemble",
+        "metrics": {
+          "mape": 8.848401900771805,
+          "mae": 0.6926216703653808,
+          "mase": 1.2854735982111403,
+          "rmsse": 0.731042033903567
+        },
+        "hyperparameters": {
+          "models": [
+            "NaiveMean",
+            "NaiveDrift",
+            "NaiveSeasonal"
+          ]
+        }
+      },
+      {
+        "model_name": "NBEATS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 10.850577133144917,
+          "mae": 0.8611992888366107,
+          "mase": 1.598345815564316,
+          "rmsse": 1.0145537958516537
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NHiTS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 12.245837425348341,
+          "mae": 0.9422147927483839,
+          "mase": 1.7487068218398145,
+          "rmsse": 1.0092695025687486
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "TSMixer",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 23.142057979372872,
+          "mae": 1.7892513976735938,
+          "mase": 3.3207673549377126,
+          "rmsse": 1.8732476467141628
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveMean",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 24.65076275735367,
+          "mae": 1.913632014931775,
+          "mase": 3.5516119941622573,
+          "rmsse": 1.8844625769954682
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TiDE",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 28.768250767919458,
+          "mae": 2.235292038474141,
+          "mase": 4.148598033662809,
+          "rmsse": 2.400940624958363
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "TCN",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 42.292842417678656,
+          "mae": 3.284247934206388,
+          "mase": 6.095411376855485,
+          "rmsse": 3.274657414781112
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      }
+    ],
+    "best_model": {
+      "name": "Prophet",
+      "mape": 3.2296695158454796
+    }
+  },
+  {
+    "timestamp": "2025-07-08T07:22:45.668667",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "NBEATS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 1.9557681803636915,
+          "mae": 0.15195893720552217,
+          "mase": 0.28135212865496484,
+          "rmsse": 0.1958831026482757
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 2.2755493045264372,
+          "mae": 0.17658357840286013,
+          "mase": 0.32694467717921194,
+          "rmsse": 0.22886655741750334
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "NLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 2.5608300546418916,
+          "mae": 0.19400600636642173,
+          "mase": 0.3592023204875235,
+          "rmsse": 0.2176855670224653
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 2.814567328990269,
+          "mae": 0.21775650767820795,
+          "mase": 0.40317639811387557,
+          "rmsse": 0.2660662189933383
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "KalmanFilter",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 3.142320359568467,
+          "mae": 0.23977792286641803,
+          "mase": 0.44394907100259146,
+          "rmsse": 0.253366272049167
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "FourTheta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 3.366104924816773,
+          "mae": 0.26437502168929616,
+          "mase": 0.4894906247921752,
+          "rmsse": 0.31788350801757786
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "Theta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 3.3697634741337588,
+          "mae": 0.2646780198403834,
+          "mase": 0.49005162618080456,
+          "rmsse": 0.31828480329943204
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "TiDE",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 4.8869128060685325,
+          "mae": 0.3871404912501128,
+          "mase": 0.7167910180526705,
+          "rmsse": 0.46269121420610776
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LightGBM",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.150085551138169,
+          "mae": 0.40817241766871937,
+          "mase": 0.755731651465935,
+          "rmsse": 0.48422066185657103
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 5.292836083013532,
+          "mae": 0.41850291713680793,
+          "mase": 0.7748585818648013,
+          "rmsse": 0.49827531031501965
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      },
+      {
+        "model_name": "RandomForest",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.293116136021097,
+          "mae": 0.4197216148671552,
+          "mase": 0.7771150019670059,
+          "rmsse": 0.4963002178182844
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "CatBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.611358593782052,
+          "mae": 0.4450098248494301,
+          "mase": 0.8239361487796082,
+          "rmsse": 0.5265302778901613
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "iterations": 200,
+          "depth": 6,
+          "learning_rate": 0.1,
+          "l2_leaf_reg": 3,
+          "subsample": 0.8,
+          "random_state": 42,
+          "verbose": false
+        }
+      },
+      {
+        "model_name": "DLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 5.764755077888987,
+          "mae": 0.4461135125035247,
+          "mase": 0.8259796276072454,
+          "rmsse": 0.4577799100227618
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 5.813547789870271,
+          "mae": 0.46043257093287565,
+          "mase": 0.8524913790285125,
+          "rmsse": 0.5344331683106035
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "XGBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.886478545587909,
+          "mae": 0.4661133197424571,
+          "mase": 0.8630092912969315,
+          "rmsse": 0.5458547434834826
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "n_estimators": 200,
+          "max_depth": 6,
+          "learning_rate": 0.1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 0.1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 6.165355840313013,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 6.165355840313013,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "NHiTS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 6.2570881273038506,
+          "mae": 0.49623835524382787,
+          "mase": 0.9187858255369266,
+          "rmsse": 0.5907545589287839
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LinearRegression",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 7.725145996608251,
+          "mae": 0.6115380735968591,
+          "mase": 1.1322633727513354,
+          "rmsse": 0.7054569632426192
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1
+        }
+      },
+      {
+        "model_name": "NaiveEnsemble",
+        "model_category": "ensemble",
+        "metrics": {
+          "mape": 9.899362492646995,
+          "mae": 0.7757861510130771,
+          "mase": 1.4363688571562305,
+          "rmsse": 0.804649380215324
+        },
+        "hyperparameters": {
+          "models": [
+            "NaiveMean",
+            "NaiveDrift",
+            "NaiveSeasonal"
+          ]
+        }
+      },
+      {
+        "model_name": "TSMixer",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 23.514425409179314,
+          "mae": 1.8213042129239176,
+          "mase": 3.3721466249882286,
+          "rmsse": 1.8822038952314488
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveMean",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 24.93725440163658,
+          "mae": 1.9353219292576842,
+          "mase": 3.5832505441443394,
+          "rmsse": 1.8931973911519413
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TCN",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 42.99410472146278,
+          "mae": 3.3386275154319995,
+          "mase": 6.181472281438769,
+          "rmsse": 3.304385899651188
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      }
+    ],
+    "best_model": {
+      "name": "NBEATS",
+      "mape": 1.9557681803636915
+    }
+  },
+  {
+    "timestamp": "2025-07-08T07:45:35.173821",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "NBEATS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 1.9557681803636915,
+          "mae": 0.15195893720552217,
+          "mase": 0.28135212865496484,
+          "rmsse": 0.1958831026482757
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 2.2755493045264372,
+          "mae": 0.17658357840286013,
+          "mase": 0.32694467717921194,
+          "rmsse": 0.22886655741750334
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "NLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 2.5608300546418916,
+          "mae": 0.19400600636642173,
+          "mase": 0.3592023204875235,
+          "rmsse": 0.2176855670224653
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 2.814567328990269,
+          "mae": 0.21775650767820795,
+          "mase": 0.40317639811387557,
+          "rmsse": 0.2660662189933383
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "KalmanFilter",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 3.142320359568467,
+          "mae": 0.23977792286641803,
+          "mase": 0.44394907100259146,
+          "rmsse": 0.253366272049167
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "FourTheta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 3.366104924816773,
+          "mae": 0.26437502168929616,
+          "mase": 0.4894906247921752,
+          "rmsse": 0.31788350801757786
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "Theta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 3.3697634741337588,
+          "mae": 0.2646780198403834,
+          "mase": 0.49005162618080456,
+          "rmsse": 0.31828480329943204
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "TiDE",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 4.8869128060685325,
+          "mae": 0.3871404912501128,
+          "mase": 0.7167910180526705,
+          "rmsse": 0.46269121420610776
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LightGBM",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.150085551138169,
+          "mae": 0.40817241766871937,
+          "mase": 0.755731651465935,
+          "rmsse": 0.48422066185657103
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 5.292836083013532,
+          "mae": 0.41850291713680793,
+          "mase": 0.7748585818648013,
+          "rmsse": 0.49827531031501965
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      },
+      {
+        "model_name": "RandomForest",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.293116136021097,
+          "mae": 0.4197216148671552,
+          "mase": 0.7771150019670059,
+          "rmsse": 0.4963002178182844
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "CatBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.611358593782052,
+          "mae": 0.4450098248494301,
+          "mase": 0.8239361487796082,
+          "rmsse": 0.5265302778901613
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "iterations": 200,
+          "depth": 6,
+          "learning_rate": 0.1,
+          "l2_leaf_reg": 3,
+          "subsample": 0.8,
+          "random_state": 42,
+          "verbose": false
+        }
+      },
+      {
+        "model_name": "DLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 5.764755077888987,
+          "mae": 0.4461135125035247,
+          "mase": 0.8259796276072454,
+          "rmsse": 0.4577799100227618
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 5.813547789870271,
+          "mae": 0.46043257093287565,
+          "mase": 0.8524913790285125,
+          "rmsse": 0.5344331683106035
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "XGBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.886478545587909,
+          "mae": 0.4661133197424571,
+          "mase": 0.8630092912969315,
+          "rmsse": 0.5458547434834826
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "n_estimators": 200,
+          "max_depth": 6,
+          "learning_rate": 0.1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 0.1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 6.165355840313013,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 6.165355840313013,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "NHiTS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 6.2570881273038506,
+          "mae": 0.49623835524382787,
+          "mase": 0.9187858255369266,
+          "rmsse": 0.5907545589287839
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LinearRegression",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 7.725145996608251,
+          "mae": 0.6115380735968591,
+          "mase": 1.1322633727513354,
+          "rmsse": 0.7054569632426192
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1
+        }
+      },
+      {
+        "model_name": "NaiveEnsemble",
+        "model_category": "ensemble",
+        "metrics": {
+          "mape": 9.899362492646995,
+          "mae": 0.7757861510130771,
+          "mase": 1.4363688571562305,
+          "rmsse": 0.804649380215324
+        },
+        "hyperparameters": {
+          "models": [
+            "NaiveMean",
+            "NaiveDrift",
+            "NaiveSeasonal"
+          ]
+        }
+      },
+      {
+        "model_name": "TSMixer",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 23.514425409179314,
+          "mae": 1.8213042129239176,
+          "mase": 3.3721466249882286,
+          "rmsse": 1.8822038952314488
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveMean",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 24.93725440163658,
+          "mae": 1.9353219292576842,
+          "mase": 3.5832505441443394,
+          "rmsse": 1.8931973911519413
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TCN",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 42.99410472146278,
+          "mae": 3.3386275154319995,
+          "mase": 6.181472281438769,
+          "rmsse": 3.304385899651188
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      }
+    ],
+    "best_model": {
+      "name": "NBEATS",
+      "mape": 1.9557681803636915
+    }
+  },
+  {
+    "timestamp": "2025-07-08T08:02:43.016002",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "NBEATS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 1.9557681803636915,
+          "mae": 0.15195893720552217,
+          "mase": 0.28135212865496484,
+          "rmsse": 0.1958831026482757
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 2.2755493045264372,
+          "mae": 0.17658357840286013,
+          "mase": 0.32694467717921194,
+          "rmsse": 0.22886655741750334
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "NLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 2.5608300546418916,
+          "mae": 0.19400600636642173,
+          "mase": 0.3592023204875235,
+          "rmsse": 0.2176855670224653
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 2.814567328990269,
+          "mae": 0.21775650767820795,
+          "mase": 0.40317639811387557,
+          "rmsse": 0.2660662189933383
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "KalmanFilter",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 3.142320359568467,
+          "mae": 0.23977792286641803,
+          "mase": 0.44394907100259146,
+          "rmsse": 0.253366272049167
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "FourTheta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 3.366104924816773,
+          "mae": 0.26437502168929616,
+          "mase": 0.4894906247921752,
+          "rmsse": 0.31788350801757786
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "Theta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 3.3697634741337588,
+          "mae": 0.2646780198403834,
+          "mase": 0.49005162618080456,
+          "rmsse": 0.31828480329943204
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "TiDE",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 4.8869128060685325,
+          "mae": 0.3871404912501128,
+          "mase": 0.7167910180526705,
+          "rmsse": 0.46269121420610776
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LightGBM",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.150085551138169,
+          "mae": 0.40817241766871937,
+          "mase": 0.755731651465935,
+          "rmsse": 0.48422066185657103
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 5.292836083013532,
+          "mae": 0.41850291713680793,
+          "mase": 0.7748585818648013,
+          "rmsse": 0.49827531031501965
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      },
+      {
+        "model_name": "RandomForest",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.293116136021097,
+          "mae": 0.4197216148671552,
+          "mase": 0.7771150019670059,
+          "rmsse": 0.4963002178182844
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "CatBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.611358593782052,
+          "mae": 0.4450098248494301,
+          "mase": 0.8239361487796082,
+          "rmsse": 0.5265302778901613
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "iterations": 200,
+          "depth": 6,
+          "learning_rate": 0.1,
+          "l2_leaf_reg": 3,
+          "subsample": 0.8,
+          "random_state": 42,
+          "verbose": false
+        }
+      },
+      {
+        "model_name": "DLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 5.764755077888987,
+          "mae": 0.4461135125035247,
+          "mase": 0.8259796276072454,
+          "rmsse": 0.4577799100227618
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 5.813547789870271,
+          "mae": 0.46043257093287565,
+          "mase": 0.8524913790285125,
+          "rmsse": 0.5344331683106035
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "XGBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 5.886478545587909,
+          "mae": 0.4661133197424571,
+          "mase": 0.8630092912969315,
+          "rmsse": 0.5458547434834826
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "n_estimators": 200,
+          "max_depth": 6,
+          "learning_rate": 0.1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 0.1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 6.165355840313013,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 6.165355840313013,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "NHiTS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 6.2570881273038506,
+          "mae": 0.49623835524382787,
+          "mase": 0.9187858255369266,
+          "rmsse": 0.5907545589287839
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LinearRegression",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 7.725145996608251,
+          "mae": 0.6115380735968591,
+          "mase": 1.1322633727513354,
+          "rmsse": 0.7054569632426192
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1
+        }
+      },
+      {
+        "model_name": "NaiveEnsemble",
+        "model_category": "ensemble",
+        "metrics": {
+          "mape": 9.899362492646995,
+          "mae": 0.7757861510130771,
+          "mase": 1.4363688571562305,
+          "rmsse": 0.804649380215324
+        },
+        "hyperparameters": {
+          "models": [
+            "NaiveMean",
+            "NaiveDrift",
+            "NaiveSeasonal"
+          ]
+        }
+      },
+      {
+        "model_name": "TSMixer",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 23.514425409179314,
+          "mae": 1.8213042129239176,
+          "mase": 3.3721466249882286,
+          "rmsse": 1.8822038952314488
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveMean",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 24.93725440163658,
+          "mae": 1.9353219292576842,
+          "mase": 3.5832505441443394,
+          "rmsse": 1.8931973911519413
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TCN",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 42.99410472146278,
+          "mae": 3.3386275154319995,
+          "mase": 6.181472281438769,
+          "rmsse": 3.304385899651188
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      }
+    ],
+    "best_model": {
+      "name": "NBEATS",
+      "mape": 1.9557681803636915
+    }
+  },
+  {
+    "timestamp": "2025-07-08T09:00:31.674325",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "NBEATS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 14.752779899743748,
+          "mae": 0.15195893720552217,
+          "mase": 0.28135212865496484,
+          "rmsse": 0.1958831026482757
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 17.302511977007164,
+          "mae": 0.17658357840286013,
+          "mase": 0.32694467717921194,
+          "rmsse": 0.22886655741750334
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 20.67454721018038,
+          "mae": 0.21775650767820795,
+          "mase": 0.40317639811387557,
+          "rmsse": 0.2660662189933383
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "NLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 21.90090864832429,
+          "mae": 0.19400600636642173,
+          "mase": 0.3592023204875235,
+          "rmsse": 0.2176855670224653
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "FourTheta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 23.00606968652859,
+          "mae": 0.26437502168929616,
+          "mase": 0.4894906247921752,
+          "rmsse": 0.31788350801757786
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "Theta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 23.0167264026918,
+          "mae": 0.2646780198403834,
+          "mase": 0.49005162618080456,
+          "rmsse": 0.31828480329943204
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "KalmanFilter",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 27.639508649918103,
+          "mae": 0.23977792286641803,
+          "mase": 0.44394907100259146,
+          "rmsse": 0.253366272049167
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TiDE",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 30.263724310512753,
+          "mae": 0.3871404912501128,
+          "mase": 0.7167910180526705,
+          "rmsse": 0.46269121420610776
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LightGBM",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 31.34160529289099,
+          "mae": 0.40817241766871937,
+          "mase": 0.755731651465935,
+          "rmsse": 0.48422066185657103
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "RandomForest",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 31.843982236990175,
+          "mae": 0.4197216148671552,
+          "mase": 0.7771150019670059,
+          "rmsse": 0.4963002178182844
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 32.22811316512902,
+          "mae": 0.41850291713680793,
+          "mase": 0.7748585818648013,
+          "rmsse": 0.49827531031501965
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      },
+      {
+        "model_name": "CatBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 33.14393278728562,
+          "mae": 0.4450098248494301,
+          "mase": 0.8239361487796082,
+          "rmsse": 0.5265302778901613
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "iterations": 200,
+          "depth": 6,
+          "learning_rate": 0.1,
+          "l2_leaf_reg": 3,
+          "subsample": 0.8,
+          "random_state": 42,
+          "verbose": false
+        }
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 34.32403177877442,
+          "mae": 0.46043257093287565,
+          "mase": 0.8524913790285125,
+          "rmsse": 0.5344331683106035
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "XGBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 34.44360421102389,
+          "mae": 0.4661133197424571,
+          "mase": 0.8630092912969315,
+          "rmsse": 0.5458547434834826
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "n_estimators": 200,
+          "max_depth": 6,
+          "learning_rate": 0.1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 0.1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NHiTS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 35.97394128400687,
+          "mae": 0.49623835524382787,
+          "mase": 0.9187858255369266,
+          "rmsse": 0.5907545589287839
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LinearRegression",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 41.92256069102288,
+          "mae": 0.6115380735968591,
+          "mase": 1.1322633727513354,
+          "rmsse": 0.7054569632426192
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1
+        }
+      },
+      {
+        "model_name": "NaiveEnsemble",
+        "model_category": "ensemble",
+        "metrics": {
+          "mape": 51.78050103111447,
+          "mae": 0.7757861510130771,
+          "mase": 1.4363688571562305,
+          "rmsse": 0.804649380215324
+        },
+        "hyperparameters": {
+          "models": [
+            "NaiveMean",
+            "NaiveDrift",
+            "NaiveSeasonal"
+          ]
+        }
+      },
+      {
+        "model_name": "DLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 58.25314940788394,
+          "mae": 0.4461135125035247,
+          "mase": 0.8259796276072454,
+          "rmsse": 0.4577799100227618
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 65.06843688364809,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 65.06843688364809,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TSMixer",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 79.63424574419138,
+          "mae": 1.8213042129239176,
+          "mase": 3.3721466249882286,
+          "rmsse": 1.8822038952314488
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveMean",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 84.74985395687156,
+          "mae": 1.9353219292576842,
+          "mase": 3.5832505441443394,
+          "rmsse": 1.8931973911519413
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TCN",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 94.37495812145525,
+          "mae": 3.3386275154319995,
+          "mase": 6.181472281438769,
+          "rmsse": 3.304385899651188
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      }
+    ],
+    "best_model": {
+      "name": "NBEATS",
+      "mape": 14.752779899743748
+    }
+  },
+  {
+    "timestamp": "2025-07-08T09:30:16.973774",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "NBEATS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 14.752779899743748,
+          "mae": 0.15195893720552217,
+          "mase": 0.28135212865496484,
+          "rmsse": 0.1958831026482757
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 17.302511977007164,
+          "mae": 0.17658357840286013,
+          "mase": 0.32694467717921194,
+          "rmsse": 0.22886655741750334
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 20.67454721018038,
+          "mae": 0.21775650767820795,
+          "mase": 0.40317639811387557,
+          "rmsse": 0.2660662189933383
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "NLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 21.90090864832429,
+          "mae": 0.19400600636642173,
+          "mase": 0.3592023204875235,
+          "rmsse": 0.2176855670224653
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "FourTheta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 23.00606968652859,
+          "mae": 0.26437502168929616,
+          "mase": 0.4894906247921752,
+          "rmsse": 0.31788350801757786
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "Theta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 23.0167264026918,
+          "mae": 0.2646780198403834,
+          "mase": 0.49005162618080456,
+          "rmsse": 0.31828480329943204
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "KalmanFilter",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 27.639508649918103,
+          "mae": 0.23977792286641803,
+          "mase": 0.44394907100259146,
+          "rmsse": 0.253366272049167
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TiDE",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 30.263724310512753,
+          "mae": 0.3871404912501128,
+          "mase": 0.7167910180526705,
+          "rmsse": 0.46269121420610776
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LightGBM",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 31.34160529289099,
+          "mae": 0.40817241766871937,
+          "mase": 0.755731651465935,
+          "rmsse": 0.48422066185657103
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "RandomForest",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 31.843982236990175,
+          "mae": 0.4197216148671552,
+          "mase": 0.7771150019670059,
+          "rmsse": 0.4963002178182844
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 32.22811316512902,
+          "mae": 0.41850291713680793,
+          "mase": 0.7748585818648013,
+          "rmsse": 0.49827531031501965
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      },
+      {
+        "model_name": "CatBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 33.14393278728562,
+          "mae": 0.4450098248494301,
+          "mase": 0.8239361487796082,
+          "rmsse": 0.5265302778901613
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "iterations": 200,
+          "depth": 6,
+          "learning_rate": 0.1,
+          "l2_leaf_reg": 3,
+          "subsample": 0.8,
+          "random_state": 42,
+          "verbose": false
+        }
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 34.32403177877442,
+          "mae": 0.46043257093287565,
+          "mase": 0.8524913790285125,
+          "rmsse": 0.5344331683106035
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "XGBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 34.44360421102389,
+          "mae": 0.4661133197424571,
+          "mase": 0.8630092912969315,
+          "rmsse": 0.5458547434834826
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "n_estimators": 200,
+          "max_depth": 6,
+          "learning_rate": 0.1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 0.1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NHiTS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 35.97394128400687,
+          "mae": 0.49623835524382787,
+          "mase": 0.9187858255369266,
+          "rmsse": 0.5907545589287839
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LinearRegression",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 41.92256069102288,
+          "mae": 0.6115380735968591,
+          "mase": 1.1322633727513354,
+          "rmsse": 0.7054569632426192
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1
+        }
+      },
+      {
+        "model_name": "NaiveEnsemble",
+        "model_category": "ensemble",
+        "metrics": {
+          "mape": 51.78050103111447,
+          "mae": 0.7757861510130771,
+          "mase": 1.4363688571562305,
+          "rmsse": 0.804649380215324
+        },
+        "hyperparameters": {
+          "models": [
+            "NaiveMean",
+            "NaiveDrift",
+            "NaiveSeasonal"
+          ]
+        }
+      },
+      {
+        "model_name": "DLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 58.25314940788394,
+          "mae": 0.4461135125035247,
+          "mase": 0.8259796276072454,
+          "rmsse": 0.4577799100227618
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 65.06843688364809,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 65.06843688364809,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TSMixer",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 79.63424574419138,
+          "mae": 1.8213042129239176,
+          "mase": 3.3721466249882286,
+          "rmsse": 1.8822038952314488
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveMean",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 84.74985395687156,
+          "mae": 1.9353219292576842,
+          "mase": 3.5832505441443394,
+          "rmsse": 1.8931973911519413
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TCN",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 94.37495812145525,
+          "mae": 3.3386275154319995,
+          "mase": 6.181472281438769,
+          "rmsse": 3.304385899651188
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      }
+    ],
+    "best_model": {
+      "name": "NBEATS",
+      "mape": 14.752779899743748
+    }
+  },
+  {
+    "timestamp": "2025-07-08T09:46:09.903447",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "NLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 4.014243218379255,
+          "mae": 0.19400600636642173,
+          "mase": 0.3592023204875235,
+          "rmsse": 0.2176855670224653
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "KalmanFilter",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 14.646596127624143,
+          "mae": 0.23977792286641803,
+          "mase": 0.44394907100259146,
+          "rmsse": 0.253366272049167
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 14.949211618409109,
+          "mae": 0.21775650767820795,
+          "mase": 0.40317639811387557,
+          "rmsse": 0.2660662189933383
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "NBEATS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 27.168696190400503,
+          "mae": 0.15195893720552217,
+          "mase": 0.28135212865496484,
+          "rmsse": 0.1958831026482757
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 33.40449764921257,
+          "mae": 0.17658357840286013,
+          "mase": 0.32694467717921194,
+          "rmsse": 0.22886655741750334
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "FourTheta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 38.43639967690457,
+          "mae": 0.26437502168929616,
+          "mase": 0.4894906247921752,
+          "rmsse": 0.31788350801757786
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "Theta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 38.48896804335564,
+          "mae": 0.2646780198403834,
+          "mase": 0.49005162618080456,
+          "rmsse": 0.31828480329943204
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "TiDE",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 59.887756859056026,
+          "mae": 0.3871404912501128,
+          "mase": 0.7167910180526705,
+          "rmsse": 0.46269121420610776
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LightGBM",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 61.094226896075575,
+          "mae": 0.40817241766871937,
+          "mase": 0.755731651465935,
+          "rmsse": 0.48422066185657103
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 61.71978194115282,
+          "mae": 0.41850291713680793,
+          "mase": 0.7748585818648013,
+          "rmsse": 0.49827531031501965
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      },
+      {
+        "model_name": "RandomForest",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 62.43402881457742,
+          "mae": 0.4197216148671552,
+          "mase": 0.7771150019670059,
+          "rmsse": 0.4963002178182844
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 63.67403746599911,
+          "mae": 0.46043257093287565,
+          "mase": 0.8524913790285125,
+          "rmsse": 0.5344331683106035
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "CatBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 64.02429960501594,
+          "mae": 0.4450098248494301,
+          "mase": 0.8239361487796082,
+          "rmsse": 0.5265302778901613
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "iterations": 200,
+          "depth": 6,
+          "learning_rate": 0.1,
+          "l2_leaf_reg": 3,
+          "subsample": 0.8,
+          "random_state": 42,
+          "verbose": false
+        }
+      },
+      {
+        "model_name": "XGBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 66.99844153513385,
+          "mae": 0.4661133197424571,
+          "mase": 0.8630092912969315,
+          "rmsse": 0.5458547434834826
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "n_estimators": 200,
+          "max_depth": 6,
+          "learning_rate": 0.1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 0.1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NHiTS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 68.38211029377594,
+          "mae": 0.49623835524382787,
+          "mase": 0.9187858255369266,
+          "rmsse": 0.5907545589287839
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveEnsemble",
+        "model_category": "ensemble",
+        "metrics": {
+          "mape": 72.59514275836369,
+          "mae": 0.7757861510130771,
+          "mase": 1.4363688571562305,
+          "rmsse": 0.804649380215324
+        },
+        "hyperparameters": {
+          "models": [
+            "NaiveMean",
+            "NaiveDrift",
+            "NaiveSeasonal"
+          ]
+        }
+      },
+      {
+        "model_name": "LinearRegression",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 73.00113296129791,
+          "mae": 0.6115380735968591,
+          "mase": 1.1322633727513354,
+          "rmsse": 0.7054569632426192
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1
+        }
+      },
+      {
+        "model_name": "DLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 80.85881506089241,
+          "mae": 0.4461135125035247,
+          "mase": 0.8259796276072454,
+          "rmsse": 0.4577799100227618
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 81.50127994255686,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 81.50127994255686,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TSMixer",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 83.72126479086243,
+          "mae": 1.8213042129239176,
+          "mase": 3.3721466249882286,
+          "rmsse": 1.8822038952314488
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveMean",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 91.90618077781367,
+          "mae": 1.9353219292576842,
+          "mase": 3.5832505441443394,
+          "rmsse": 1.8931973911519413
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TCN",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 98.47346893564017,
+          "mae": 3.3386275154319995,
+          "mase": 6.181472281438769,
+          "rmsse": 3.304385899651188
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      }
+    ],
+    "best_model": {
+      "name": "NLinear",
+      "mape": 4.014243218379255
+    }
+  },
+  {
+    "timestamp": "2025-07-08T12:34:47.624307",
+    "dataset_info": {
+      "total_records": 306,
+      "date_range": {
+        "start": "1999-09-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 284968
+    },
+    "model_performances": [
+      {
+        "model_name": "NLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 4.014243218379255,
+          "mae": 0.19400600636642173,
+          "mase": 0.3592023204875235,
+          "rmsse": 0.2176855670224653
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "KalmanFilter",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 14.646596127624143,
+          "mae": 0.23977792286641803,
+          "mase": 0.44394907100259146,
+          "rmsse": 0.253366272049167
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 14.949211618409109,
+          "mae": 0.21775650767820795,
+          "mase": 0.40317639811387557,
+          "rmsse": 0.2660662189933383
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "NBEATS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 27.168696190400503,
+          "mae": 0.15195893720552217,
+          "mase": 0.28135212865496484,
+          "rmsse": 0.1958831026482757
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 33.40449764921257,
+          "mae": 0.17658357840286013,
+          "mase": 0.32694467717921194,
+          "rmsse": 0.22886655741750334
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "FourTheta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 38.43639967690457,
+          "mae": 0.26437502168929616,
+          "mase": 0.4894906247921752,
+          "rmsse": 0.31788350801757786
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "Theta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 38.48896804335564,
+          "mae": 0.2646780198403834,
+          "mase": 0.49005162618080456,
+          "rmsse": 0.31828480329943204
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "TiDE",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 59.887756859056026,
+          "mae": 0.3871404912501128,
+          "mase": 0.7167910180526705,
+          "rmsse": 0.46269121420610776
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LightGBM",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 61.094226896075575,
+          "mae": 0.40817241766871937,
+          "mase": 0.755731651465935,
+          "rmsse": 0.48422066185657103
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 61.71978194115282,
+          "mae": 0.41850291713680793,
+          "mase": 0.7748585818648013,
+          "rmsse": 0.49827531031501965
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      },
+      {
+        "model_name": "RandomForest",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 62.43402881457742,
+          "mae": 0.4197216148671552,
+          "mase": 0.7771150019670059,
+          "rmsse": 0.4963002178182844
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 63.67403746599911,
+          "mae": 0.46043257093287565,
+          "mase": 0.8524913790285125,
+          "rmsse": 0.5344331683106035
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "CatBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 64.02429960501594,
+          "mae": 0.4450098248494301,
+          "mase": 0.8239361487796082,
+          "rmsse": 0.5265302778901613
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "iterations": 200,
+          "depth": 6,
+          "learning_rate": 0.1,
+          "l2_leaf_reg": 3,
+          "subsample": 0.8,
+          "random_state": 42,
+          "verbose": false
+        }
+      },
+      {
+        "model_name": "XGBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 66.99844153513385,
+          "mae": 0.4661133197424571,
+          "mase": 0.8630092912969315,
+          "rmsse": 0.5458547434834826
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "n_estimators": 200,
+          "max_depth": 6,
+          "learning_rate": 0.1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 0.1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NHiTS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 68.38211029377594,
+          "mae": 0.49623835524382787,
+          "mase": 0.9187858255369266,
+          "rmsse": 0.5907545589287839
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveEnsemble",
+        "model_category": "ensemble",
+        "metrics": {
+          "mape": 72.59514275836369,
+          "mae": 0.7757861510130771,
+          "mase": 1.4363688571562305,
+          "rmsse": 0.804649380215324
+        },
+        "hyperparameters": {
+          "models": [
+            "NaiveMean",
+            "NaiveDrift",
+            "NaiveSeasonal"
+          ]
+        }
+      },
+      {
+        "model_name": "LinearRegression",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 73.00113296129791,
+          "mae": 0.6115380735968591,
+          "mase": 1.1322633727513354,
+          "rmsse": 0.7054569632426192
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1
+        }
+      },
+      {
+        "model_name": "DLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 80.85881506089241,
+          "mae": 0.4461135125035247,
+          "mase": 0.8259796276072454,
+          "rmsse": 0.4577799100227618
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 81.50127994255686,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 81.50127994255686,
+          "mae": 0.4763163224400653,
+          "mase": 0.8819001612940146,
+          "rmsse": 0.5067699915717253
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TSMixer",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 83.72126479086243,
+          "mae": 1.8213042129239176,
+          "mase": 3.3721466249882286,
+          "rmsse": 1.8822038952314488
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveMean",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 91.90618077781367,
+          "mae": 1.9353219292576842,
+          "mase": 3.5832505441443394,
+          "rmsse": 1.8931973911519413
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TCN",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 98.47346893564017,
+          "mae": 3.3386275154319995,
+          "mase": 6.181472281438769,
+          "rmsse": 3.304385899651188
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      }
+    ],
+    "best_model": {
+      "name": "NLinear",
+      "mape": 4.014243218379255
+    }
+  },
+  {
+    "timestamp": "2025-07-08T13:51:59.565200",
+    "dataset_info": {
+      "total_records": 103,
+      "date_range": {
+        "start": "2017-01-01",
+        "end": "2025-07-01"
+      },
+      "total_cves": 205011
+    },
+    "model_performances": [
+      {
+        "model_name": "TiDE",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 12.517419693147685,
+          "mae": 411.1693299259273,
+          "mase": 1.6145927559473234,
+          "rmsse": 1.6209101107213326
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NBEATS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 12.774497786534203,
+          "mae": 463.5968635591652,
+          "mase": 1.8204668566047344,
+          "rmsse": 1.8907026235462312
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "DLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 18.421108487009086,
+          "mae": 689.4062429350151,
+          "mase": 2.7071822841170197,
+          "rmsse": 2.631271851761267
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveDrift",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 19.051038020430948,
+          "mae": 714.2778782399037,
+          "mase": 2.8048490098892733,
+          "rmsse": 2.728526041329618
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "LinearRegression",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 19.26678885501176,
+          "mae": 716.4356458338185,
+          "mase": 2.8133222000632108,
+          "rmsse": 2.691211200214286
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1
+        }
+      },
+      {
+        "model_name": "KalmanFilter",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 19.40381064180341,
+          "mae": 726.5452263142522,
+          "mase": 2.8530208210968246,
+          "rmsse": 2.754309431825581
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 19.57711182052356,
+          "mae": 729.4108198339009,
+          "mase": 2.864273524549069,
+          "rmsse": 2.7372106877338735
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "TBATS",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 19.57711182052356,
+          "mae": 729.4108198339009,
+          "mase": 2.864273524549069,
+          "rmsse": 2.7372106877338735
+        },
+        "hyperparameters": {
+          "season_length": 12
+        }
+      },
+      {
+        "model_name": "Prophet",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 19.86564587663825,
+          "mae": 747.6008263145054,
+          "mase": 2.935702618493187,
+          "rmsse": 2.938079731261294
+        },
+        "hyperparameters": {
+          "yearly_seasonality": true,
+          "weekly_seasonality": false,
+          "daily_seasonality": false,
+          "seasonality_mode": "additive",
+          "changepoint_prior_scale": 0.1,
+          "seasonality_prior_scale": 1.0,
+          "n_changepoints": 15,
+          "mcmc_samples": 0,
+          "interval_width": 0.8
+        }
+      },
+      {
+        "model_name": "NHiTS",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 22.692409764009096,
+          "mae": 847.6955276483551,
+          "mase": 3.3287576639934406,
+          "rmsse": 3.148569191484562
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "Theta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 23.089223836221148,
+          "mae": 863.5986701841424,
+          "mase": 3.391206628121446,
+          "rmsse": 3.2284103904865464
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "FourTheta",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 23.451776184120472,
+          "mae": 876.0768649269968,
+          "mase": 3.440206398709253,
+          "rmsse": 3.262576178571542
+        },
+        "hyperparameters": {
+          "season_mode": "ADDITIVE"
+        }
+      },
+      {
+        "model_name": "XGBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 24.578033577464748,
+          "mae": 912.5035400390625,
+          "mase": 3.583247821010336,
+          "rmsse": 3.3477302238922633
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "n_estimators": 200,
+          "max_depth": 6,
+          "learning_rate": 0.1,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 0.1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "RandomForest",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 25.345850072458255,
+          "mae": 938.0142857142857,
+          "mase": 3.683424225640151,
+          "rmsse": 3.407469616300818
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "CatBoost",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 25.457722594051152,
+          "mae": 944.6166088033232,
+          "mase": 3.709350437193684,
+          "rmsse": 3.4458637976120032
+        },
+        "hyperparameters": {
+          "lags": 24,
+          "iterations": 200,
+          "depth": 6,
+          "learning_rate": 0.1,
+          "l2_leaf_reg": 3,
+          "subsample": 0.8,
+          "random_state": 42,
+          "verbose": false
+        }
+      },
+      {
+        "model_name": "NLinear",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 26.896930174835337,
+          "mae": 993.4882832855217,
+          "mase": 3.90126127744091,
+          "rmsse": 3.575895396143207
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "LightGBM",
+        "model_category": "tree_based",
+        "metrics": {
+          "mape": 29.236543654131697,
+          "mae": 1072.8508853941319,
+          "mase": 4.212904858640839,
+          "rmsse": 3.7965786584117476
+        },
+        "hyperparameters": {
+          "lags": 12,
+          "lags_past_covariates": null,
+          "output_chunk_length": 1,
+          "random_state": 42
+        }
+      },
+      {
+        "model_name": "NaiveSeasonal",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 29.433622453962432,
+          "mae": 1072.142857142857,
+          "mase": 4.210124550864188,
+          "rmsse": 3.7718631759245818
+        },
+        "hyperparameters": {
+          "K": 12
+        }
+      },
+      {
+        "model_name": "Croston",
+        "model_category": "statistical",
+        "metrics": {
+          "mape": 31.014378218365223,
+          "mae": 1132.3696907059698,
+          "mase": 4.446625189669531,
+          "rmsse": 3.960255925694684
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "NaiveEnsemble",
+        "model_category": "ensemble",
+        "metrics": {
+          "mape": 31.463040270588756,
+          "mae": 1139.2712351818363,
+          "mase": 4.473726393248092,
+          "rmsse": 3.9295479614800923
+        },
+        "hyperparameters": {
+          "models": [
+            "NaiveMean",
+            "NaiveDrift",
+            "NaiveSeasonal"
+          ]
+        }
+      },
+      {
+        "model_name": "TCN",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 48.485655676327724,
+          "mae": 1741.7708915868564,
+          "mase": 6.8396411390477025,
+          "rmsse": 5.90920951953559
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      },
+      {
+        "model_name": "NaiveMean",
+        "model_category": "baseline",
+        "metrics": {
+          "mape": 48.5269144445714,
+          "mae": 1691.4315476190477,
+          "mase": 6.641967007749516,
+          "rmsse": 5.449903586355996
+        },
+        "hyperparameters": {}
+      },
+      {
+        "model_name": "TSMixer",
+        "model_category": "deep_learning",
+        "metrics": {
+          "mape": 99.43370437620919,
+          "mae": 3309.619498739342,
+          "mase": 12.996318739457601,
+          "rmsse": 10.052453459278727
+        },
+        "hyperparameters": {
+          "input_chunk_length": 12,
+          "output_chunk_length": 1,
+          "n_epochs": 50,
+          "random_state": 42,
+          "pl_trainer_kwargs": {
+            "enable_progress_bar": false,
+            "accelerator": "cpu",
+            "precision": "64-true"
+          }
+        }
+      }
+    ],
+    "best_model": {
+      "name": "TiDE",
+      "mape": 12.517419693147685
+    }
   }
 ]

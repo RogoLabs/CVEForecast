@@ -307,6 +307,7 @@ function populateModelRankings() {
     
     // Model information links
     const modelLinks = {
+        'TiDE': 'https://arxiv.org/abs/2304.08424',
         'XGBoost': 'https://en.wikipedia.org/wiki/XGBoost',
         'CatBoost': 'https://catboost.ai/',
         'NHiTS': 'https://arxiv.org/abs/2201.12886',
@@ -320,12 +321,14 @@ function populateModelRankings() {
         'LightGBM': 'https://lightgbm.readthedocs.io/',
         'NaiveDrift': 'https://otexts.com/fpp3/simple-methods.html#drift-method',
         'NaiveMovingAverage': 'https://en.wikipedia.org/wiki/Moving_average',
+        'LinearRegression': 'https://en.wikipedia.org/wiki/Linear_regression',
         'Theta': 'https://en.wikipedia.org/wiki/Theta_model',
         'FourTheta': 'https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1427',
         'Prophet': 'https://facebook.github.io/prophet/',
         'Croston': 'https://en.wikipedia.org/wiki/Croston%27s_method',
         'NaiveSeasonal': 'https://otexts.com/fpp3/simple-methods.html#seasonal-naïve-method',
         'NaiveMean': 'https://otexts.com/fpp3/simple-methods.html#average-method',
+        'NaiveEnsemble': 'https://unit8co.github.io/darts/generated_api/darts.models.forecasting.ensemble_model.html',
         'TSMixer': 'https://arxiv.org/abs/2303.06053'
     };
     
@@ -365,7 +368,7 @@ function populateModelRankings() {
                 }
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                ${model.mape.toFixed(2)}%
+                ${model.mape !== null && model.mape !== undefined ? model.mape.toFixed(2) + '%' : 'N/A'}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 ${model.mase !== null && model.mase !== undefined ? model.mase.toFixed(2) : 'N/A'}
@@ -397,98 +400,179 @@ function populateValidationTable() {
     // Get selected model
     const selectedModel = document.getElementById('validationModelSelector').value;
     
-    // Get validation data for selected model
+    // Get ALL validation data for selected model (not just 2025)
     let validationData = forecastData.all_models_validation?.[selectedModel] || [];
     
     if (validationData.length === 0) {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                No validation data available
+                No validation data available for this model
             </td>
         `;
         tableBody.appendChild(row);
         return;
     }
     
+    // Group validation data by year
+    const dataByYear = {};
     let totalError = 0;
     let totalPercentError = 0;
     let validationCount = 0; // Only count completed months
     
-    // Get current month for comparison
-    const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM format
-    
-    validationData.forEach((item, index) => {
-        const row = document.createElement('tr');
+    validationData.forEach(item => {
+        // Calculate error and percent_error if missing from backend data
+        if (item.error === undefined || item.error === null) {
+            item.error = item.predicted - item.actual;
+        }
+        if (item.percent_error === undefined || item.percent_error === null) {
+            item.percent_error = item.actual !== 0 ? ((item.predicted - item.actual) / item.actual) * 100 : 0;
+        }
+        
+        const year = item.date.substring(0, 4);
+        if (!dataByYear[year]) {
+            dataByYear[year] = [];
+        }
+        dataByYear[year].push(item);
         
         // Check if this is the current ongoing month using the backend flag
         const isCurrentMonth = item.is_current_month === true;
         
         // Only include completed months in accuracy calculations
         if (!isCurrentMonth) {
-            totalError += Math.abs(item.error); // Use absolute value for average error calculation
+            totalError += Math.abs(item.error);
             totalPercentError += item.percent_error;
             validationCount++;
         }
+    });
+    
+    // Sort years in descending order (most recent first)
+    const sortedYears = Object.keys(dataByYear).sort((a, b) => parseInt(b) - parseInt(a));
+    
+    // Create expandable year sections
+    sortedYears.forEach(year => {
+        const yearData = dataByYear[year];
+        const yearCount = yearData.filter(item => !item.is_current_month).length;
         
-        // Performance badge based on percent error (similar to model rankings)
-        let performanceBadge = '';
-        let badgeClass = '';
+        // Calculate yearly totals (only for completed months)
+        const completedMonths = yearData.filter(item => !item.is_current_month);
+        const yearlyActual = completedMonths.reduce((sum, item) => sum + item.actual, 0);
+        const yearlyPredicted = completedMonths.reduce((sum, item) => sum + Math.round(item.predicted), 0);
+        const yearlyError = yearlyPredicted - yearlyActual;
+        const yearlyPercentError = yearlyActual > 0 ? ((yearlyError / yearlyActual) * 100) : 0;
         
-        if (!isCurrentMonth) {
-            const absPercentError = Math.abs(item.percent_error);
-            if (absPercentError === 0) {
-                performanceBadge = 'Perfect';
-                badgeClass = 'bg-purple-100 text-purple-800';
-            } else if (absPercentError < 10) {
-                performanceBadge = 'Excellent';
-                badgeClass = 'bg-green-100 text-green-800';
-            } else if (absPercentError < 15) {
-                performanceBadge = 'Good';
-                badgeClass = 'bg-blue-100 text-blue-800';
-            } else if (absPercentError < 25) {
-                performanceBadge = 'Fair';
-                badgeClass = 'bg-yellow-100 text-yellow-800';
-            } else {
-                performanceBadge = 'Poor';
-                badgeClass = 'bg-red-100 text-red-800';
-            }
-        }
-        
-        row.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                ${formatMonth(item.date)}
+        // Create year header row (expandable)
+        const yearHeaderRow = document.createElement('tr');
+        yearHeaderRow.className = 'year-header-row bg-gray-50 hover:bg-gray-100 cursor-pointer border-t-2 border-gray-200';
+        yearHeaderRow.innerHTML = `
+            <td class="px-6 py-3 text-left">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2 transform transition-transform duration-200 year-toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    <span class="font-semibold text-gray-700">${year}</span>
+                    <span class="ml-2 text-sm text-gray-500">(${yearCount} month${yearCount !== 1 ? 's' : ''})</span>
+                </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                ${item.actual.toLocaleString()}
+            <td class="px-6 py-3 text-sm font-medium text-gray-900">
+                ${yearlyActual.toLocaleString()}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                ${Math.round(item.predicted).toLocaleString()}
+            <td class="px-6 py-3 text-sm text-gray-900">
+                ${yearlyPredicted.toLocaleString()}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${isCurrentMonth ? 'text-gray-400' : ''}">
-                ${isCurrentMonth ? '-' : (item.error > 0 ? '+' + Math.round(item.error).toLocaleString() : Math.round(item.error).toLocaleString())}
+            <td class="px-6 py-3 text-sm text-gray-900">
+                ${yearlyError > 0 ? '+' + yearlyError.toLocaleString() : yearlyError.toLocaleString()}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${isCurrentMonth ? 'text-gray-400' : ''}">
-                ${isCurrentMonth ? '-' : item.percent_error.toFixed(2) + '%'}
+            <td class="px-6 py-3 text-sm text-gray-900">
+                ${yearlyPercentError.toFixed(2)}%
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                ${isCurrentMonth ? '<span class="text-gray-400">-</span>' : `<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${badgeClass}">${performanceBadge}</span>`}
+            <td class="px-6 py-3 text-sm text-gray-500">
+                Year Total
             </td>
         `;
         
-        row.className = 'validation-row';
-        if (isCurrentMonth) {
-            row.className += ' bg-blue-50'; // Highlight current month row
-        }
+        // Add click handler for expanding/collapsing
+        yearHeaderRow.addEventListener('click', function() {
+            const yearRows = tableBody.querySelectorAll(`[data-year="${year}"]`);
+            const toggleIcon = this.querySelector('.year-toggle-icon');
+            const isExpanded = toggleIcon.classList.contains('rotate-90');
+            
+            yearRows.forEach(row => {
+                row.style.display = isExpanded ? 'none' : 'table-row';
+            });
+            
+            if (isExpanded) {
+                toggleIcon.classList.remove('rotate-90');
+            } else {
+                toggleIcon.classList.add('rotate-90');
+            }
+        });
         
-        tableBody.appendChild(row);
+        tableBody.appendChild(yearHeaderRow);
+        
+        // Create month rows for this year (initially hidden)
+        yearData.forEach(item => {
+            const isCurrentMonth = item.is_current_month === true;
+            
+            // Performance badge based on percent error
+            let performanceBadge = '';
+            let badgeClass = '';
+            
+            if (!isCurrentMonth) {
+                const absPercentError = Math.abs(item.percent_error);
+                if (absPercentError === 0) {
+                    performanceBadge = 'Perfect';
+                    badgeClass = 'bg-purple-100 text-purple-800';
+                } else if (absPercentError < 10) {
+                    performanceBadge = 'Excellent';
+                    badgeClass = 'bg-green-100 text-green-800';
+                } else if (absPercentError < 15) {
+                    performanceBadge = 'Good';
+                    badgeClass = 'bg-blue-100 text-blue-800';
+                } else if (absPercentError < 25) {
+                    performanceBadge = 'Fair';
+                    badgeClass = 'bg-yellow-100 text-yellow-800';
+                } else {
+                    performanceBadge = 'Poor';
+                    badgeClass = 'bg-red-100 text-red-800';
+                }
+            }
+            
+            const monthRow = document.createElement('tr');
+            monthRow.className = `month-data-row ${isCurrentMonth ? 'bg-blue-50' : ''}`;
+            monthRow.setAttribute('data-year', year);
+            monthRow.style.display = 'none'; // Initially hidden
+            
+            monthRow.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 pl-12">
+                    ${formatMonth(item.date)}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    ${item.actual.toLocaleString()}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${Math.round(item.predicted).toLocaleString()}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${isCurrentMonth ? 'text-gray-400' : ''}">
+                    ${isCurrentMonth ? '-' : (item.error > 0 ? '+' + Math.round(item.error).toLocaleString() : Math.round(item.error).toLocaleString())}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${isCurrentMonth ? 'text-gray-400' : ''}">
+                    ${isCurrentMonth ? '-' : (item.percent_error !== null && item.percent_error !== undefined ? item.percent_error.toFixed(2) + '%' : 'N/A')}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    ${isCurrentMonth ? '<span class="text-gray-400">-</span>' : `<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${badgeClass}">${performanceBadge}</span>`}
+                </td>
+            `;
+            
+            tableBody.appendChild(monthRow);
+        });
     });
     
     // Update summary statistics (excluding current month)
     if (validationCount > 0) {
         const avgError = Math.round(totalError / validationCount).toLocaleString();
         
-        // Use MAPE from model rankings instead of calculating manually to ensure consistency
+        // Use MAPE from model rankings (backend calculation is correct)
         const selectedModelRanking = forecastData.model_rankings.find(model => model.model_name === selectedModel);
         const mapeValue = selectedModelRanking ? selectedModelRanking.mape.toFixed(2) : (totalPercentError / validationCount).toFixed(2);
         
@@ -531,20 +615,43 @@ function updateDataPeriodInfo() {
 }
 
 /**
- * Update current year forecast card using backend pre-calculated totals
+ * Update current year forecast card using dynamic forecast data from new_forecast_runs
  */
 function updateCurrentYearForecast() {
-    // Use backend pre-calculated totals (no JavaScript calculations needed)
-    const backendTotals = forecastData.yearly_forecast_totals || {};
-    const yearlyTotal = backendTotals.best_model_total || 0;
-    const bestModelName = backendTotals.best_model_name || 'Unknown';
+    // Get best model name from model rankings (first model is best)
+    let bestModelName = 'Unknown';
+    if (forecastData.model_rankings && forecastData.model_rankings.length > 0) {
+        bestModelName = forecastData.model_rankings[0].model_name;
+    }
     
-    // Update the display
-    document.getElementById('currentYearForecast').textContent = yearlyTotal.toLocaleString();
+    // Get forecast total from new_forecast_runs (dynamic forecasting data)
+    let forecastTotal = 0;
     
-    // Update the description to show best model (not average)
+    // First try the new dynamic forecast data
+    if (forecastData.new_forecast_runs && forecastData.new_forecast_runs.yearly_forecast_totals) {
+        forecastTotal = forecastData.new_forecast_runs.yearly_forecast_totals[bestModelName] || 0;
+    }
+    
+    // Fallback to old cumulative timeline data if new data not available
+    if (forecastTotal === 0) {
+        const bestModelCumulative = `${bestModelName}_cumulative`;
+        if (forecastData.cumulative_timelines && forecastData.cumulative_timelines[bestModelCumulative]) {
+            const timeline = forecastData.cumulative_timelines[bestModelCumulative];
+            // Get the Jan 1 2026 endpoint (last entry in timeline)
+            const jan2026Entry = timeline.find(entry => entry.date === '2026-01');
+            if (jan2026Entry) {
+                forecastTotal = jan2026Entry.cumulative_total;
+            }
+        }
+    }
+    
+    // Update the display with forecast total
+    document.getElementById('currentYearForecast').textContent = forecastTotal.toLocaleString();
+    
+    // Update the description to show best model and data source
+    const dataSource = (forecastData.new_forecast_runs && forecastData.new_forecast_runs.yearly_forecast_totals) ? 'Dynamic Forecast' : 'Standard Forecast';
     document.getElementById('forecastDescription').textContent = 
-        `Total CVEs: Published + Forecasted (${bestModelName} - best model)`;
+        `Total CVEs: Published + Forecasted (${bestModelName} - ${dataSource})`;
 }
 
 /**
@@ -888,12 +995,12 @@ function prepareChartData() {
     const datasets = [];
     const currentMonth = 7; // July 2025
     
-    // Create consistent timeline for all datasets (Jan 2025 - Jan 2026)
+    // Create consistent timeline for all datasets (Jan 2025 - Jan 2026 endpoint)
     const fullTimeline = [];
     for (let month = 1; month <= 12; month++) {
         fullTimeline.push(`2025-${String(month).padStart(2, '0')}`);
     }
-    fullTimeline.push('2026-01'); // Add January 2026
+    fullTimeline.push('2026-01'); // Add January 2026 as year-end cumulative endpoint
     
     // MAIN CHART: Historical + 5 Model Forecasts + Average (all with full timeline)
     // Simplified: Always show main chart with all models
@@ -902,7 +1009,12 @@ function prepareChartData() {
         const historicalDataArray = new Array(fullTimeline.length).fill(null);
         
         // CRITICAL FIX: Read directly from backend cumulative_timelines to prevent data alignment bugs
-        const referenceTimeline = cumulativeTimelines['DLinear_cumulative'] || [];
+        // Use first available model as reference timeline (dynamic, not hardcoded)
+        const availableModels = Object.keys(cumulativeTimelines);
+        const referenceModelName = availableModels.length > 0 ? availableModels[0] : null;
+        const referenceTimeline = referenceModelName ? cumulativeTimelines[referenceModelName] : [];
+        
+        console.log('📊 Using reference timeline from model:', referenceModelName);
         
         fullTimeline.forEach((monthKey, index) => {
             const month = parseInt(monthKey.split('-')[1]);
@@ -957,103 +1069,238 @@ function prepareChartData() {
         });
         
         // 2. Individual Model Forecast Lines (Dotted/Dashed) - Current + Future Months
-        const modelColors = {
-            'DLinear': 'rgb(239, 68, 68)',     // Red
-            'NHiTS': 'rgb(34, 197, 94)',       // Green  
-            'NBEATS': 'rgb(168, 85, 247)',     // Purple
-            'KalmanFilter': 'rgb(251, 191, 36)', // Yellow
-            'XGBoost': 'rgb(236, 72, 153)'     // Pink
-        };
+        // Dynamic color palette for any models
+        const defaultColors = [
+            'rgb(239, 68, 68)',     // Red
+            'rgb(34, 197, 94)',     // Green  
+            'rgb(168, 85, 247)',    // Purple
+            'rgb(251, 191, 36)',    // Yellow
+            'rgb(236, 72, 153)',    // Pink
+            'rgb(14, 165, 233)',    // Sky Blue
+            'rgb(249, 115, 22)',    // Orange
+            'rgb(139, 92, 246)',    // Violet
+            'rgb(34, 197, 94)',     // Emerald
+            'rgb(244, 63, 94)'      // Rose
+        ];
         
-        // Get top 5 models from rankings
-        const top5Models = forecastData.model_rankings ? forecastData.model_rankings.slice(0, 5) : [];
+        // Create dynamic color mapping for available models
+        const modelColors = {};
+        const availableModelNames = Object.keys(cumulativeTimelines);
+        availableModelNames.forEach((modelName, index) => {
+            // Remove '_cumulative' suffix to get base model name
+            const baseModelName = modelName.replace('_cumulative', '');
+            modelColors[baseModelName] = defaultColors[index % defaultColors.length];
+        });
         
-        top5Models.forEach((modelRanking, index) => {
-            const modelName = modelRanking.model_name;
-            const modelTimeline = cumulativeTimelines[`${modelName}_cumulative`] || [];
-            const color = modelColors[modelName] || 'rgb(107, 114, 128)';
+        // NEW FORECAST LOGIC: Use fresh forecasts from new_forecast_runs if available
+        const newForecastRuns = forecastData.new_forecast_runs || null;
+        
+        // DEBUG: Comprehensive logging
+        console.log('🔍 DEBUGGING FRESH FORECAST LOGIC:');
+        console.log('  forecastData keys:', Object.keys(forecastData));
+        console.log('  Has new_forecast_runs?', !!newForecastRuns);
+        if (newForecastRuns) {
+            console.log('  new_forecast_runs keys:', Object.keys(newForecastRuns));
+            console.log('  Has cumulative_timelines?', !!newForecastRuns.cumulative_timelines);
+            if (newForecastRuns.cumulative_timelines) {
+                console.log('  Fresh timeline models:', Object.keys(newForecastRuns.cumulative_timelines));
+            }
+        }
+        console.log('  fullTimeline length:', fullTimeline.length);
+        console.log('  fullTimeline:', fullTimeline);
+        
+        if (newForecastRuns && newForecastRuns.cumulative_timelines) {
+            console.log('✅ Using NEW fresh forecast data from new_forecast_runs');
             
-            // DEBUG: Log individual model timeline data
-            console.log(`🔍 MODEL DEBUG - ${modelName}:`);
-            console.log(`Timeline length: ${modelTimeline.length}`);
-            if (modelTimeline.length > 6) {
-                console.log(`July (2025-07): ${modelTimeline[6]?.cumulative_total || 'NOT FOUND'}`);
-                console.log(`August (2025-08): ${modelTimeline[7]?.cumulative_total || 'NOT FOUND'}`);
+            const freshTimelines = newForecastRuns.cumulative_timelines;
+            
+            // Get top 5 models from rankings (same as original behavior)
+            const top5Models = forecastData.model_rankings ? forecastData.model_rankings.slice(0, 5) : [];
+            
+            console.log(`📊 Displaying top ${top5Models.length} models with fresh forecast data`);
+            
+            // Use existing color mapping for consistency
+            top5Models.forEach((modelRanking, index) => {
+                const modelName = modelRanking.model_name;
+                const modelTimelineKey = `${modelName}_cumulative`;
+                const modelTimeline = freshTimelines[modelTimelineKey] || [];
+                const color = modelColors[modelName] || defaultColors[index % defaultColors.length];
+                
+                console.log(`⚡ Processing fresh forecast for ${modelName} with ${modelTimeline.length} data points`);
+                
+                // Create forecast data array spanning full timeline with nulls for past months
+                const forecastDataArray = new Array(fullTimeline.length).fill(null);
+                
+                fullTimeline.forEach((monthKey, timelineIndex) => {
+                    const month = parseInt(monthKey.split('-')[1]);
+                    const year = parseInt(monthKey.split('-')[0]);
+                    
+                    // Only fill forecast data for current + future months (through January 2026 endpoint)
+                    if ((year === 2025 && month >= currentMonth) || year === 2026) {
+                        const timelineItem = modelTimeline.find(item => item.date === monthKey);
+                        if (timelineItem) {
+                            forecastDataArray[timelineIndex] = timelineItem.cumulative_total;
+                        }
+                    }
+                    // Past months remain null
+                });
+                
+                const modelForecastData = forecastDataArray.map((value, index) => ({
+                    x: fullTimeline[index] + '-01',
+                    y: value
+                }));
+                
+                datasets.push({
+                    label: `${modelName} (Forecast)`,
+                    data: modelForecastData,
+                    borderColor: color,
+                    backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
+                    borderWidth: 2,
+                    borderDash: [5, 5], // Dashed line for fresh forecasts
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                    fill: false,
+                    tension: 0.1,
+                    spanGaps: false // Don't connect null values
+                });
+                
+                console.log(`✅ Added fresh forecast dataset for ${modelName}`);
+            });
+            
+            // Add "All Models Average" equivalent if available in fresh data
+            // Check if there's an average or ensemble model in the fresh forecasts
+            const avgModelKeys = Object.keys(freshTimelines).filter(key => 
+                key.toLowerCase().includes('average') || 
+                key.toLowerCase().includes('ensemble') ||
+                key.toLowerCase().includes('mean')
+            );
+            
+            if (avgModelKeys.length > 0) {
+                const avgTimeline = freshTimelines[avgModelKeys[0]] || [];
+                const avgForecastDataArray = new Array(fullTimeline.length).fill(null);
+                
+                fullTimeline.forEach((monthKey, timelineIndex) => {
+                    const month = parseInt(monthKey.split('-')[1]);
+                    const year = parseInt(monthKey.split('-')[0]);
+                    
+                    // Only fill forecast data for current + future months (through January 2026 endpoint)
+                    if ((year === 2025 && month >= currentMonth) || year === 2026) {
+                        const timelineItem = avgTimeline.find(item => item.date === monthKey);
+                        if (timelineItem) {
+                            avgForecastDataArray[timelineIndex] = timelineItem.cumulative_total;
+                        }
+                    }
+                    // Past months remain null
+                });
+                
+                const avgForecastData = avgForecastDataArray.map((value, index) => ({
+                    x: fullTimeline[index] + '-01',
+                    y: value
+                }));
+                
+                datasets.push({
+                    label: 'All Models Average (Forecast)',
+                    data: avgForecastData,
+                    borderColor: 'rgb(75, 85, 99)', // Gray
+                    backgroundColor: 'rgba(75, 85, 99, 0.1)',
+                    borderWidth: 3,
+                    borderDash: [2, 2], // Dotted line for average
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    fill: false,
+                    tension: 0.1,
+                    spanGaps: false // Don't connect null values
+                });
+                
+                console.log(`✅ Added fresh forecast average dataset`);
             }
             
-            // Create forecast data array spanning full timeline with nulls for past months
-            const forecastDataArray = new Array(fullTimeline.length).fill(null);
+        } else {
+            console.log('⚠️ No fresh forecast data available, falling back to original forecast logic');
+            
+            // FALLBACK: Original forecast logic if new_forecast_runs not available
+            // Get top 5 models from rankings
+            const top5Models = forecastData.model_rankings ? forecastData.model_rankings.slice(0, 5) : [];
+            
+            top5Models.forEach((modelRanking, index) => {
+                const modelName = modelRanking.model_name;
+                const modelTimeline = cumulativeTimelines[`${modelName}_cumulative`] || [];
+                const color = modelColors[modelName] || 'rgb(107, 114, 128)';
+                
+                // Create forecast data array spanning full timeline with nulls for past months
+                const forecastDataArray = new Array(fullTimeline.length).fill(null);
+                
+                fullTimeline.forEach((monthKey, timelineIndex) => {
+                    const month = parseInt(monthKey.split('-')[1]);
+                    const year = parseInt(monthKey.split('-')[0]);
+                    
+                    // Only fill forecast data for current + future months (through January 2026 endpoint)
+                    if ((year === 2025 && month >= currentMonth) || year === 2026) {
+                        const timelineItem = modelTimeline.find(item => item.date === monthKey);
+                        if (timelineItem) {
+                            forecastDataArray[timelineIndex] = timelineItem.cumulative_total;
+                        }
+                    }
+                    // Past months remain null
+                });
+                
+                const modelForecastData = forecastDataArray.map((value, index) => ({
+                    x: fullTimeline[index] + '-01',
+                    y: value
+                }));
+                
+                datasets.push({
+                    label: `${modelName} (Forecast)`,
+                    data: modelForecastData,
+                    borderColor: color,
+                    backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
+                    borderWidth: 2,
+                    borderDash: [5, 5], // Dashed line for forecasts
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                    fill: false,
+                    tension: 0.1,
+                    spanGaps: false // Don't connect null values
+                });
+            });
+            
+            // All Models Average Forecast Line (Dotted) - Full timeline with nulls for past
+            const avgTimeline = cumulativeTimelines['all_models_cumulative'] || [];
+            const avgForecastDataArray = new Array(fullTimeline.length).fill(null);
             
             fullTimeline.forEach((monthKey, timelineIndex) => {
                 const month = parseInt(monthKey.split('-')[1]);
                 const year = parseInt(monthKey.split('-')[0]);
                 
-                // Only fill forecast data for current + future months
-                if ((year === 2025 && month >= currentMonth) || year === 2026) {
-                    const timelineItem = modelTimeline.find(item => item.date === monthKey);
+                // Only fill forecast data for current + future months (through December 2025)
+                if (year === 2025 && month >= currentMonth) {
+                    const timelineItem = avgTimeline.find(item => item.date === monthKey);
                     if (timelineItem) {
-                        forecastDataArray[timelineIndex] = timelineItem.cumulative_total;
+                        avgForecastDataArray[timelineIndex] = timelineItem.cumulative_total;
                     }
                 }
                 // Past months remain null
             });
             
-            const forecastData = forecastDataArray.map((value, index) => ({
+            const avgForecastData = avgForecastDataArray.map((value, index) => ({
                 x: fullTimeline[index] + '-01',
                 y: value
             }));
             
             datasets.push({
-                label: `${modelName} (Forecast)`,
-                data: forecastData,
-                borderColor: color,
-                backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
-                borderWidth: 2,
-                borderDash: [5, 5], // Dashed line for forecasts
-                pointRadius: 3,
-                pointHoverRadius: 6,
+                label: 'All Models Average (Forecast)',
+                data: avgForecastData,
+                borderColor: 'rgb(75, 85, 99)', // Gray
+                backgroundColor: 'rgba(75, 85, 99, 0.1)',
+                borderWidth: 3,
+                borderDash: [2, 2], // Dotted line for average
+                pointRadius: 4,
+                pointHoverRadius: 7,
                 fill: false,
                 tension: 0.1,
                 spanGaps: false // Don't connect null values
             });
-        });
-        
-        // 3. All Models Average Forecast Line (Dotted) - Full timeline with nulls for past
-        const avgTimeline = cumulativeTimelines['all_models_cumulative'] || [];
-        const avgForecastDataArray = new Array(fullTimeline.length).fill(null);
-        
-        fullTimeline.forEach((monthKey, timelineIndex) => {
-            const month = parseInt(monthKey.split('-')[1]);
-            const year = parseInt(monthKey.split('-')[0]);
-            
-            // Only fill forecast data for current + future months
-            if ((year === 2025 && month >= currentMonth) || year === 2026) {
-                const timelineItem = avgTimeline.find(item => item.date === monthKey);
-                if (timelineItem) {
-                    avgForecastDataArray[timelineIndex] = timelineItem.cumulative_total;
-                }
-            }
-            // Past months remain null
-        });
-        
-        const avgForecastData = avgForecastDataArray.map((value, index) => ({
-            x: fullTimeline[index] + '-01',
-            y: value
-        }));
-        
-        datasets.push({
-            label: 'All Models Average (Forecast)',
-            data: avgForecastData,
-            borderColor: 'rgb(75, 85, 99)', // Gray
-            backgroundColor: 'rgba(75, 85, 99, 0.1)',
-            borderWidth: 3,
-            borderDash: [2, 2], // Dotted line for average
-            pointRadius: 4,
-            pointHoverRadius: 7,
-            fill: false,
-            tension: 0.1,
-            spanGaps: false // Don't connect null values
-        });
+        }
     
     console.log('✅ Main chart with 5 ML models, historical data, and current month actual successfully created');
 
@@ -1111,8 +1358,10 @@ function getChartOptions(chartType) {
                         }
                     },
                     label: function(context) {
-                        const value = context.parsed.y;
                         const label = context.dataset.label || '';
+                        const value = context.parsed.y;
+                        
+                        // For all data (including forecasts), show the actual cumulative value
                         return `${label}: ${value.toLocaleString()} CVEs`;
                     }
                 }
@@ -1121,7 +1370,20 @@ function getChartOptions(chartType) {
                 position: 'top',
                 labels: {
                     usePointStyle: true,
-                    padding: 20
+                    padding: 20,
+                    generateLabels: function(chart) {
+                        // Use custom labels instead of Chart.js default behavior
+                        return chart.data.datasets.map((dataset, index) => {
+                            return {
+                                text: dataset.label, // Use our custom label with yearly forecast totals
+                                fillStyle: dataset.borderColor,
+                                strokeStyle: dataset.borderColor,
+                                lineWidth: dataset.borderWidth,
+                                hidden: false,
+                                index: index
+                            };
+                        });
+                    }
                 }
             }
         },
