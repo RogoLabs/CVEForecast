@@ -50,13 +50,9 @@ class CVEForecastAnalyzer:
         Args:
             enable_hyperparameter_tuning: Whether to use hyperparameter tuning from history
         """
-        self.enable_tuning = True  # Enable the new feature
-        self.tuner = HyperparameterTuner()
-        self.tuner.load_performance_history()
-        if hasattr(self.tuner, 'find_optimal_hyperparameters'):
-            self.tuned_hyperparameters = self.tuner.find_optimal_hyperparameters()
-        else:
-            self.tuned_hyperparameters = getattr(self.tuner, 'optimal_hyperparameters', {})
+        self.enable_tuning = enable_hyperparameter_tuning
+        self.tuner = HyperparameterTuner() if self.enable_tuning else None
+        self.tuned_hyperparameters = {}
     
     def _initialize_hyperparameter_tuning(self) -> None:
         """Initialize hyperparameter tuning system."""
@@ -788,8 +784,15 @@ class CVEForecastAnalyzer:
                 
             train_ts = ts[:split_point]
             val_ts = ts[split_point:]
-            
+
             logger.info(f"Using {len(train_ts)} points for training, {len(val_ts)} points for validation (complete months only)")
+
+            # Integrate tuner using the exact split
+            if self.enable_tuning and self.tuner:
+                logger.info("🔧 Running hyperparameter tuning before model evaluation...")
+                self.tuned_hyperparameters = self.tuner.tune_models(train_ts, val_ts)
+                if not self.tuned_hyperparameters:
+                    logger.warning("Hyperparameter tuning did not produce any results. Using default parameters.")
             
             # Prepare models
             models = self.prepare_models()

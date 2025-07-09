@@ -48,7 +48,7 @@ class HyperparameterTuner:
     def __init__(self, 
                  hyperparameters_config_path: str = "hyperparameters.json",
                  performance_history_path: str = "../web/performance_history.json",
-                 tuning_results_path: str = "../web/tuning_results.json"):
+                 tuning_results_path: str = None):
         """
         Initialize the systematic hyperparameter tuner.
         
@@ -59,21 +59,36 @@ class HyperparameterTuner:
         """
         self.config_path = hyperparameters_config_path
         self.history_path = performance_history_path
-        self.results_path = tuning_results_path
-        
-        # Configuration and results storage
-        self.hyperparameters_config = {}
-        self.tuning_config = {}
-        self.tuning_results = {}
+        # Session management
+        self.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if tuning_results_path is None:
+            self.tuning_results_path = f"hyperparameter_results/hyperparameter_tuning_results_{self.session_id}.json"
+        else:
+            self.tuning_results_path = tuning_results_path
+        self.tuning_results = {
+            "session_id": self.session_id,
+            "start_time": datetime.now().isoformat(),
+            "models_tuned": {}
+        }
         self.performance_history = []
         
-        # Load configuration
+        # Configuration
+        self.hyperparameters_config = {}
+        self.tuning_config = {}
         self._load_hyperparameters_config()
         
         # Search state
         self.current_model = None
         self.current_trial = 0
         self.total_trials = 0
+
+    def _save_tuning_results(self):
+        """Saves the current tuning results to a file."""
+        import os
+        os.makedirs(os.path.dirname(self.tuning_results_path), exist_ok=True)
+        with open(self.tuning_results_path, "w") as f:
+            json.dump(self.tuning_results, f, indent=2, default=str)
+        logger.info(f"Tuning results saved to {self.tuning_results_path}")
         
     def _load_hyperparameters_config(self) -> bool:
         """
@@ -508,15 +523,22 @@ class HyperparameterTuner:
         
         # Find best performing configuration
         best_result = min(evaluation_results, key=lambda x: x['metrics'].get(primary_metric, float('inf')))
-        
+
+        # Require all key metrics to be present and not None
+        metrics = best_result['metrics']
+        required_metrics = ['mape', 'mae', 'mase', 'rmsse']
+        if not all(metrics.get(m) is not None for m in required_metrics):
+            logger.warning(f"Skipping {model_name}: best result missing required metrics ({required_metrics})")
+            return None
+
         logger.info(f"🎯 Best configuration for {model_name}:")
-        logger.info(f"   MAPE: {best_result['metrics'].get('mape', 'N/A'):.4f}")
+        logger.info(f"   MAPE: {metrics.get('mape', 'N/A'):.4f}")
         logger.info(f"   Hyperparameters: {best_result['hyperparameters']}")
-        
+
         return {
             'model_name': model_name,
             'best_hyperparameters': best_result['hyperparameters'],
-            'best_performance': best_result['metrics'],
+            'best_performance': metrics,
             'total_combinations_tested': len(combinations),
             'successful_evaluations': len(evaluation_results),
             'tuning_timestamp': datetime.now().isoformat()
@@ -613,74 +635,28 @@ class HyperparameterTuner:
             logger.error(f"Failed to export optimization report: {e}")
             return False
     
-    def tune_models(self) -> bool:
+    def tune_models(self, train_ts: TimeSeries, val_ts: TimeSeries) -> dict:
         """
-        Complete hyperparameter tuning workflow.
-        
+        Complete hyperparameter tuning workflow for all models using provided train/val splits.
+
+        Args:
+            train_ts: Training time series data
+            val_ts: Validation time series data
+
         Returns:
-            True if tuning completed successfully, False otherwise
+            Dictionary of optimal hyperparameters for each model
         """
-        logger.info("🔧 Starting hyperparameter tuning workflow...")
-        
-        # Load performance history
-        if not self.load_performance_history():
-            logger.error("Cannot proceed without performance history")
-            return False
-        
-        if not self.performance_history:
-            logger.warning("No performance history available for tuning")
-            return False
-        
-        # Deep tuning loop: for each model in config, tune and store results
-        self.optimal_hyperparameters = {}
+        logger.info("🔧 Starting hyperparameter tuning workflow with provided data splits...")
+        optimal_hyperparameters = {}
         if not self.hyperparameters_config:
             logger.error("No model hyperparameter configuration loaded!")
-            return False
-        
-        # Use the last run in performance_history as the most recent data
-        if not self.performance_history:
-            logger.error("No performance history data available for tuning!")
-            return False
-        latest_run = self.performance_history[-1]
-        import pandas as pd
-        data = None
-        if 'historical_data' in latest_run:
-            data = pd.DataFrame(latest_run['historical_data'])
-            data['date'] = pd.to_datetime(data['date'])
-        elif 'data' in latest_run:
-            data = pd.DataFrame(latest_run['data'])
-            data['date'] = pd.to_datetime(data['date'])
-        else:
-            # Try to load from web/data.json as a fallback
-            import os, json
-            data_json_path = os.path.join(os.path.dirname(__file__), '../web/data.json')
-            if os.path.exists(data_json_path):
-                with open(data_json_path, 'r') as f:
-                    data_json = json.load(f)
-                if 'historical_data' in data_json:
-                    data = pd.DataFrame(data_json['historical_data'])
-                    data['date'] = pd.to_datetime(data['date'])
-                    logger.warning("Performance history did not contain usable data, but loaded historical_data from web/data.json.")
-                else:
-                    logger.error("Neither performance history nor web/data.json contains usable historical data for tuning.")
-                    return False
-            else:
-                logger.error("Performance history run does not contain usable data, and web/data.json not found. Please generate a new run with main.py first.")
-                return False
-        
-        # Build TimeSeries
-        ts = TimeSeries.from_dataframe(data, time_col='date', value_cols='cve_count', freq='MS')
-        test_size = self.tuning_config.get('test_size', 0.2)
-        split_point = int(len(ts) * (1 - test_size))
-        train_ts = ts[:split_point]
-        val_ts = ts[split_point:]
-        
+            return {}
         for model_name in self.hyperparameters_config:
             try:
                 logger.info(f"Tuning {model_name}...")
                 tune_result = self.tune_model_hyperparameters(model_name, train_ts, val_ts)
                 if tune_result and 'best_hyperparameters' in tune_result:
-                    self.optimal_hyperparameters[model_name] = {
+                    optimal_hyperparameters[model_name] = {
                         'hyperparameters': tune_result['best_hyperparameters'],
                         'expected_performance': tune_result['best_performance']
                     }
@@ -689,13 +665,10 @@ class HyperparameterTuner:
                     logger.warning(f"No tuned hyperparameters found for {model_name}")
             except Exception as e:
                 logger.warning(f"Tuning failed for {model_name}: {e}")
-        
-        if not self.optimal_hyperparameters:
+        if not optimal_hyperparameters:
             logger.warning("No optimal hyperparameters found")
-            return False
-        
-        # Export detailed report
-        self.export_optimization_report()
+        # Optionally export report here if desired
+        return optimal_hyperparameters
         
         logger.info(f"🎯 Hyperparameter tuning completed successfully!")
         logger.info(f"   Optimized {len(self.optimal_hyperparameters)} models")
@@ -705,21 +678,47 @@ class HyperparameterTuner:
 
 
 def main():
-    """Main function for testing the tuner module."""
+    """Main function for running deep tuning with correct data splits."""
     tuner = HyperparameterTuner()
-    success = tuner.tune_models()
-    
-    if success:
-        print("✅ Hyperparameter tuning completed successfully!")
-        
-        # Display some results
-        print("\nOptimized models:")
-        for model_name in tuner.optimal_hyperparameters:
-            expected_perf = tuner.get_expected_performance(model_name)
-            mape = expected_perf.get('mape') if expected_perf else None
-            print(f"  - {model_name}: Expected MAPE = {mape:.4f}" if mape else f"  - {model_name}")
+    # Try to load latest data from performance history or web/data.json
+    import os, json
+    import pandas as pd
+    from darts import TimeSeries
+    data = None
+    if tuner.load_performance_history() and tuner.performance_history:
+        latest_run = tuner.performance_history[-1]
+        if 'historical_data' in latest_run:
+            data = pd.DataFrame(latest_run['historical_data'])
+            data['date'] = pd.to_datetime(data['date'])
+        elif 'data' in latest_run:
+            data = pd.DataFrame(latest_run['data'])
+            data['date'] = pd.to_datetime(data['date'])
+    if data is None:
+        data_json_path = os.path.join(os.path.dirname(__file__), '../web/data.json')
+        if os.path.exists(data_json_path):
+            with open(data_json_path, 'r') as f:
+                data_json = json.load(f)
+            if 'historical_data' in data_json:
+                data = pd.DataFrame(data_json['historical_data'])
+                data['date'] = pd.to_datetime(data['date'])
+    if data is None:
+        print("❌ Could not find any usable historical data for tuning!")
+        return
+    ts = TimeSeries.from_dataframe(data, time_col='date', value_cols='cve_count', freq='MS')
+    test_size = tuner.tuning_config.get('test_size', 0.2) if tuner.tuning_config else 0.2
+    split_point = int(len(ts) * (1 - test_size))
+    train_ts = ts[:split_point]
+    val_ts = ts[split_point:]
+    print(f"Loaded {len(ts)} time points. Using {len(train_ts)} for training and {len(val_ts)} for validation.")
+    results = tuner.tune_models(train_ts, val_ts)
+    if results and 'models_tuned' in results:
+        print("\nTuning complete. Optimized models:")
+        for model_name, result in results['models_tuned'].items():
+            perf = result.get('expected_performance', {})
+            mape = perf.get('mape')
+            print(f"  - {model_name}: MAPE = {mape:.4f}" if mape is not None else f"  - {model_name}: No valid result")
     else:
-        print("❌ Hyperparameter tuning failed!")
+        print("❌ Hyperparameter tuning failed or produced no valid results!")
 
 
 if __name__ == "__main__":
