@@ -257,11 +257,13 @@ class CVEForecastAnalyzer:
         
         try:
             # Croston - Intermittent demand forecasting
-            models.append({
-                'model_name': 'Croston',
-                'model_object': Croston(),
-                'hyperparameters': {}
-            })
+            if not any(model['model_name'] == 'Croston' for model in models):
+                models.append({
+                    'model_name': 'Croston',
+                    'model_object': Croston(),
+                    'hyperparameters': {}
+                })
+                logger.info("Added Croston model")
             logger.info("Added Croston model")
         except Exception as e:
             logger.error(f"Failed to add Croston: {e}")

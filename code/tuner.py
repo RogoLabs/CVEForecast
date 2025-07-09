@@ -341,6 +341,12 @@ class HyperparameterTuner:
             elif model_name == 'Croston':
                 return Croston()
             
+            # Ensemble model
+            elif model_name == 'NaiveEnsemble':
+                # Assuming the 'models' parameter is a list of model names
+                ensemble_models = [self._create_model_instance(m, {}) for m in hyperparameters.get('models', [])]
+                return NaiveEnsembleModel([m for m in ensemble_models if m is not None])
+            
             else:
                 logger.warning(f"Unknown model: {model_name}")
                 return None
