@@ -119,10 +119,15 @@ class CVEForecastAnalyzer:
             else:
                 logger.info("📊 No performance history - systematic tuning will start fresh")
             
-            # For production use, we rely on centralized configuration (hyperparameters.json)
-            # The tuner is available for future systematic optimization sessions
-            self.tuned_hyperparameters = {}
-            logger.info("✅ Using centralized hyperparameter configuration for production models")
+            # Load the latest optimized hyperparameters from hyperparameter_results directory
+            self.tuned_hyperparameters = self._load_latest_hyperparameter_results()
+            if self.tuned_hyperparameters:
+                logger.info(f"🎯 Loaded optimized hyperparameters for {len(self.tuned_hyperparameters)} models from hyperparameter_results")
+                for model_name, result in self.tuned_hyperparameters.items():
+                    mape = result.get('best_performance', {}).get('mape', 'N/A')
+                    logger.info(f"  - {model_name}: MAPE = {mape}")
+            else:
+                logger.info("⚠️ No optimized hyperparameters found, falling back to centralized configuration")
                 
         except Exception as e:
             logger.warning(f"Failed to initialize hyperparameter tuning: {e}")
@@ -130,7 +135,66 @@ class CVEForecastAnalyzer:
             self.enable_tuning = False
             self.tuner = None
             self.tuned_hyperparameters = {}
-    
+
+    def _load_latest_hyperparameter_results(self) -> Dict[str, Any]:
+        """Load the latest hyperparameter tuning results from the hyperparameter_results directory.
+        
+        Returns:
+            Dictionary of model names to their best hyperparameters and performance metrics
+        """
+        try:
+            from pathlib import Path
+            import glob
+            
+            # Find hyperparameter_results directory
+            results_dir = None
+            possible_paths = [
+                Path('hyperparameter_results'),
+                Path('code/hyperparameter_results'),
+                Path(__file__).parent / 'hyperparameter_results'
+            ]
+            
+            for path in possible_paths:
+                if path.exists() and path.is_dir():
+                    results_dir = path
+                    break
+            
+            if not results_dir:
+                logger.warning("hyperparameter_results directory not found")
+                return {}
+            
+            # Find the latest results file
+            result_files = list(results_dir.glob('hyperparameter_tuning_results_*.json'))
+            if not result_files:
+                logger.warning(f"No hyperparameter tuning results found in {results_dir}")
+                return {}
+            
+            # Sort by filename to get the latest (assuming timestamp format)
+            latest_file = sorted(result_files)[-1]
+            logger.info(f"Loading hyperparameter results from {latest_file}")
+            
+            # Load and parse the results
+            with open(latest_file, 'r') as f:
+                results = json.load(f)
+            
+            # Extract model hyperparameters in the format expected by _get_model_hyperparameters
+            tuned_params = {}
+            models_tuned = results.get('models_tuned', {})
+            
+            for model_name, model_data in models_tuned.items():
+                tuned_params[model_name] = {
+                    'hyperparameters': model_data.get('best_hyperparameters', {}),
+                    'best_performance': model_data.get('best_performance', {}),
+                    'expected_performance': model_data.get('best_performance', {})
+                }
+            
+            logger.info(f"Successfully loaded tuned hyperparameters for {len(tuned_params)} models")
+            return tuned_params
+            
+        except Exception as e:
+            logger.error(f"Failed to load hyperparameter results: {e}")
+            return {}
+
     def _get_model_hyperparameters(self, model_name: str, fallback_params: Dict[str, Any] = None) -> Dict[str, Any]:
         """Get hyperparameters for a model from centralized configuration.
         
