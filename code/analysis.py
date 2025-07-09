@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Any, Optional
 import pandas as pd
 import numpy as np
+import json
 
 from darts import TimeSeries
 from config import (
@@ -42,58 +43,109 @@ logger = setup_logging()
 class CVEForecastAnalyzer:
     """Handles model preparation, evaluation, and forecasting for CVE data."""
     
-    def __init__(self, enable_hyperparameter_tuning: bool = True):
+    def __init__(self, enable_hyperparameter_tuning: bool = True, 
+                 hyperparameters_config_path: str = "hyperparameters.json"):
         """Initialize the forecast analyzer.
         
         Args:
             enable_hyperparameter_tuning: Whether to use hyperparameter tuning from history
+            hyperparameters_config_path: Path to the centralized hyperparameters configuration file
         """
         self.enable_tuning = enable_hyperparameter_tuning
+        self.config_path = hyperparameters_config_path
         self.tuner = None
         self.tuned_hyperparameters = {}
+        self.hyperparameters_config = {}
+        
+        # Load centralized hyperparameters configuration
+        self._load_hyperparameters_config()
         
         if self.enable_tuning:
             self._initialize_hyperparameter_tuning()
     
+    def _load_hyperparameters_config(self) -> None:
+        """Load centralized hyperparameters configuration from file."""
+        try:
+            # Try multiple path resolution strategies to find hyperparameters.json
+            from pathlib import Path
+            
+            # Strategy 1: Direct path (when running from code directory)
+            config_path = Path(self.config_path)
+            
+            # Strategy 2: Relative to current file location (code/hyperparameters.json)
+            if not config_path.exists():
+                config_path = Path(__file__).parent / self.config_path
+                
+            # Strategy 3: Try in code subdirectory (when running from project root)
+            if not config_path.exists():
+                config_path = Path('code') / self.config_path
+                
+            # Strategy 4: Search common locations
+            if not config_path.exists():
+                possible_paths = [
+                    Path('.') / 'code' / 'hyperparameters.json',
+                    Path('.') / 'hyperparameters.json',
+                    Path(__file__).parent.parent / 'code' / 'hyperparameters.json'
+                ]
+                for path in possible_paths:
+                    if path.exists():
+                        config_path = path
+                        break
+            
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    self.hyperparameters_config = json.load(f)
+                    logger.info(f"✅ Successfully loaded hyperparameters configuration from {config_path}")
+            else:
+                logger.error(f"❌ Hyperparameters configuration file hyperparameters.json not found in any expected location")
+                logger.info(f"   Searched: {self.config_path}, code/{self.config_path}, and other common paths")
+                self.hyperparameters_config = {}
+                
+        except Exception as e:
+            logger.error(f"Failed to load hyperparameters configuration: {e}")
+            self.hyperparameters_config = {}
+    
     def _initialize_hyperparameter_tuning(self) -> None:
-        """Initialize hyperparameter tuning system."""
+        """Initialize hyperparameter tuning system with systematic search capability."""
         try:
             logger.info("🔧 Initializing hyperparameter tuning system...")
-            self.tuner = HyperparameterTuner()
+            # Initialize tuner for systematic search capability (optional)
+            self.tuner = HyperparameterTuner(hyperparameters_config_path=self.config_path)
+            logger.info(f"✅ Hyperparameter tuner initialized for systematic optimization")
             
-            # Load performance history and find optimal hyperparameters
+            # Load performance history for potential future tuning
             if self.tuner.load_performance_history():
-                self.tuner.analyze_model_performances()
-                self.tuned_hyperparameters = self.tuner.find_optimal_hyperparameters()
-                
-                if self.tuned_hyperparameters:
-                    logger.info(f"✅ Loaded optimized hyperparameters for {len(self.tuned_hyperparameters)} models")
-                    
-                    # Log which models have tuned parameters
-                    tuned_models = list(self.tuned_hyperparameters.keys())
-                    logger.info(f"Models with tuned hyperparameters: {', '.join(tuned_models)}")
-                else:
-                    logger.info("No optimized hyperparameters available, using default parameters")
+                logger.info(f"📊 Performance history loaded - systematic tuning available")
             else:
-                logger.info("No performance history available, using default hyperparameters")
+                logger.info("📊 No performance history - systematic tuning will start fresh")
+            
+            # For production use, we rely on centralized configuration (hyperparameters.json)
+            # The tuner is available for future systematic optimization sessions
+            self.tuned_hyperparameters = {}
+            logger.info("✅ Using centralized hyperparameter configuration for production models")
                 
         except Exception as e:
             logger.warning(f"Failed to initialize hyperparameter tuning: {e}")
-            logger.info("Falling back to default hyperparameters")
+            logger.info("Continuing with centralized hyperparameter configuration")
             self.enable_tuning = False
             self.tuner = None
             self.tuned_hyperparameters = {}
     
-    def _get_model_hyperparameters(self, model_name: str, default_params: Dict[str, Any]) -> Dict[str, Any]:
-        """Get hyperparameters for a model, using tuned parameters if available.
+    def _get_model_hyperparameters(self, model_name: str, fallback_params: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Get hyperparameters for a model from centralized configuration.
         
         Args:
             model_name: Name of the model
-            default_params: Default hyperparameters to use as fallback
+            fallback_params: Fallback hyperparameters if model not found in config
             
         Returns:
-            Hyperparameters dictionary (tuned or default)
+            Hyperparameters dictionary from centralized config, tuned params, or fallback
         """
+        # Priority order:
+        # 1. Tuned hyperparameters from systematic search (if available)
+        # 2. Default parameters from centralized configuration
+        # 3. Fallback parameters (legacy support)
+        
         if self.enable_tuning and model_name in self.tuned_hyperparameters:
             tuned_params = self.tuned_hyperparameters[model_name]['hyperparameters']
             expected_perf = self.tuned_hyperparameters[model_name].get('expected_performance', {})
@@ -102,9 +154,22 @@ class CVEForecastAnalyzer:
             logger.info(f"🎯 Using tuned hyperparameters for {model_name} " 
                        f"(expected MAPE: {expected_mape:.4f})" if expected_mape else f"🎯 Using tuned hyperparameters for {model_name}")
             return tuned_params
-        else:
-            logger.debug(f"Using default hyperparameters for {model_name}")
+        
+        # Use centralized configuration as primary source
+        if 'models' in self.hyperparameters_config and model_name in self.hyperparameters_config['models']:
+            model_config = self.hyperparameters_config['models'][model_name]
+            default_params = model_config.get('default_params', {})
+            logger.debug(f"📋 Using centralized configuration for {model_name}")
             return default_params
+        
+        # Fallback to legacy parameters if provided
+        if fallback_params:
+            logger.warning(f"⚠️ Using fallback parameters for {model_name} (not found in centralized config)")
+            return fallback_params
+        
+        # Last resort: empty dict
+        logger.warning(f"❌ No hyperparameters found for {model_name}, using empty configuration")
+        return {}
     
     def prepare_models(self) -> List[Dict[str, Any]]:
         """
@@ -153,8 +218,6 @@ class CVEForecastAnalyzer:
                     'max_p': 3, 'max_q': 3,
                     'seasonal': True,
                     'stepwise': True,
-                    'suppress_warnings': True,
-                    'error_action': 'ignore',
                     'random_state': 42
                 }
                 models.append({
@@ -179,13 +242,7 @@ class CVEForecastAnalyzer:
         
         try:
             # ExponentialSmoothing - Good for trends and seasonality patterns
-            default_exp_smooth_params = {
-                'trend': 'add',
-                'seasonal': 'add',
-                'seasonal_periods': 12,
-                'damped_trend': True
-            }
-            exp_smooth_params = self._get_model_hyperparameters('ExponentialSmoothing', default_exp_smooth_params)
+            exp_smooth_params = self._get_model_hyperparameters('ExponentialSmoothing')
             models.append({
                 'model_name': 'ExponentialSmoothing',
                 'model_object': ExponentialSmoothing(**exp_smooth_params),
@@ -197,18 +254,7 @@ class CVEForecastAnalyzer:
         
         try:
             # Prophet - Facebook's robust forecasting method
-            default_prophet_params = {
-                'yearly_seasonality': True,
-                'weekly_seasonality': False,
-                'daily_seasonality': False,
-                'seasonality_mode': 'additive',
-                'changepoint_prior_scale': 0.1,
-                'seasonality_prior_scale': 1.0,
-                'n_changepoints': 15,
-                'mcmc_samples': 0,
-                'interval_width': 0.8
-            }
-            prophet_params = self._get_model_hyperparameters('Prophet', default_prophet_params)
+            prophet_params = self._get_model_hyperparameters('Prophet')
             models.append({
                 'model_name': 'Prophet',
                 'model_object': Prophet(**prophet_params),
@@ -250,8 +296,7 @@ class CVEForecastAnalyzer:
         
         try:
             # TBATS - Complex seasonality handling
-            default_tbats_params = {'season_length': 12}
-            tbats_params = self._get_model_hyperparameters('TBATS', default_tbats_params)
+            tbats_params = self._get_model_hyperparameters('TBATS')
             models.append({
                 'model_name': 'TBATS',
                 'model_object': TBATS(**tbats_params),
@@ -290,6 +335,17 @@ class CVEForecastAnalyzer:
     
     def _add_additional_statsforecast_models(self, models: List[Dict[str, Any]]) -> None:
         """Add additional StatsForecast models if available."""
+        try:
+            if STATSFORECAST_ETS_AVAILABLE and StatsForecastAutoETS is not None:
+                models.append({
+                    'model_name': 'AutoETS',
+                    'model_object': StatsForecastAutoETS(),
+                    'hyperparameters': {}
+                })
+                logger.info("Added AutoETS model")
+        except Exception as e:
+            logger.error(f"Failed to add AutoETS: {e}")
+        
         try:
             if STATSFORECAST_CES_AVAILABLE and StatsForecastAutoCES is not None:
                 models.append({
@@ -911,25 +967,39 @@ class CVEForecastAnalyzer:
                 from datetime import datetime
                 current_date = datetime.now()
                 
-                # Filter out any future or incomplete months from validation
-                valid_indices = []
-                for i, date_idx in enumerate(val_ts.time_index):
-                    # Include all past months and current month only if it's complete
-                    if (date_idx.year < current_date.year or 
-                        (date_idx.year == current_date.year and date_idx.month < current_date.month)):
-                        valid_indices.append(i)
+                # Use centralized date configuration for consistent validation filtering
+                from date_config import get_date_config
+                date_config = get_date_config()
                 
-                if len(valid_indices) > 0:
-                    # Calculate MAPE on full validation period
-                    val_filtered = val_original[valid_indices]
-                    pred_filtered = pred_original[valid_indices]
-                    model_mape = np.mean(np.abs((val_filtered - pred_filtered) / val_filtered)) * 100
-                    
-                    logger.info(f"✅ MAPE calculated on {len(valid_indices)} months of validation data (full period)")
-                else:
-                    # Fallback to all validation data if filtering fails
+                # Check if we should use full validation period (fixes 13x performance degradation)
+                use_full_validation = date_config.should_use_full_validation_period()
+                filter_current_year_only = date_config.should_filter_current_year_only()
+                
+                if use_full_validation and not filter_current_year_only:
+                    # Use full validation period for consistent MAPE calculation (same as tuning)
+                    logger.info(f"🎯 Using FULL validation period for MAPE calculation (consistent with tuning)")
                     model_mape = np.mean(np.abs((val_original - pred_original) / val_original)) * 100
-                    logger.warning(f"Validation filtering failed, using all validation data")
+                    logger.info(f"✅ MAPE calculated on {len(val_original)} months of validation data (FULL PERIOD)")
+                else:
+                    # Legacy filtering logic (causes performance degradation)
+                    logger.warning(f"⚠️ Using LIMITED validation filtering (may cause performance degradation)")
+                    valid_indices = []
+                    for i, date_idx in enumerate(val_ts.time_index):
+                        # Include all past months and current month only if it's complete
+                        if (date_idx.year < current_date.year or 
+                            (date_idx.year == current_date.year and date_idx.month < current_date.month)):
+                            valid_indices.append(i)
+                    
+                    if len(valid_indices) > 0:
+                        # Calculate MAPE on filtered validation period
+                        val_filtered = val_original[valid_indices]
+                        pred_filtered = pred_original[valid_indices]
+                        model_mape = np.mean(np.abs((val_filtered - pred_filtered) / val_filtered)) * 100
+                        logger.info(f"✅ MAPE calculated on {len(valid_indices)} months of validation data (filtered period)")
+                    else:
+                        # Fallback to all validation data if filtering fails
+                        model_mape = np.mean(np.abs((val_original - pred_original) / val_original)) * 100
+                        logger.warning(f"Validation filtering failed, using all validation data")
                 
                 if np.isnan(model_mape) or np.isinf(model_mape) or model_mape > 500:
                     logger.warning(f"Invalid MAPE ({model_mape}) for {model_name}")

@@ -1,37 +1,107 @@
 #!/usr/bin/env python3
 """
-Hyperparameter tuning module for CVE Forecast application.
-Analyzes performance history to optimize model hyperparameters.
+Systematic hyperparameter tuning module for CVE Forecast application.
+Proactively searches for optimal hyperparameters using grid search and random search.
 """
 
 import logging
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional, Tuple, Union
 import json
 from pathlib import Path
 from collections import defaultdict
 import statistics
 import numpy as np
+import pandas as pd
+from datetime import datetime
+import itertools
+import random
+from copy import deepcopy
+import time
 
-from utils import setup_logging
+from darts import TimeSeries
+from config import (
+    ARIMA, ExponentialSmoothing, Prophet, Theta, FourTheta,
+    LinearRegressionModel, RandomForestModel, XGBModel,
+    KalmanForecaster, NaiveSeasonal, NaiveDrift, NaiveMean, NaiveMovingAverage,
+    DartsAutoARIMA, NaiveEnsembleModel, RegressionEnsembleModel, 
+    LightGBMModel, CatBoostModel, FFT, TBATS, Croston,
+    TCNModel, TFTModel, NBEATSModel, NHiTSModel,
+    TransformerModel, RNNModel, BlockRNNModel,
+    TiDEModel, DLinearModel, NLinearModel, TSMixerModel,
+    STATSFORECAST_ARIMA_AVAILABLE, StatsForecastAutoARIMA,
+    STATSFORECAST_ETS_AVAILABLE, StatsForecastAutoETS,
+    STATSFORECAST_THETA_AVAILABLE, StatsForecastAutoTheta,
+    STATSFORECAST_CES_AVAILABLE, StatsForecastAutoCES,
+    STATSFORECAST_MFLES_AVAILABLE, StatsForecastAutoMFLES,
+    STATSFORECAST_TBATS_AVAILABLE, StatsForecastAutoTBATS,
+    mape, rmse, mae, mase, rmsse, ModelMode, SeasonalityMode,
+    MODEL_EVALUATION_SPLIT, FORECAST_HORIZON_MONTHS, ENSEMBLE_SIZE
+)
+from utils import setup_logging, get_model_category
 
 logger = setup_logging()
 
 
 class HyperparameterTuner:
-    """Handles hyperparameter optimization using historical performance data."""
+    """Systematic hyperparameter optimization using grid search and random search."""
     
-    def __init__(self, performance_history_path: str = "../web/performance_history.json"):
+    def __init__(self, 
+                 hyperparameters_config_path: str = "hyperparameters.json",
+                 performance_history_path: str = "../web/performance_history.json",
+                 tuning_results_path: str = "../web/tuning_results.json"):
         """
-        Initialize the hyperparameter tuner.
+        Initialize the systematic hyperparameter tuner.
         
         Args:
+            hyperparameters_config_path: Path to the hyperparameters configuration JSON file
             performance_history_path: Path to the performance history file
+            tuning_results_path: Path to save tuning results
         """
+        self.config_path = hyperparameters_config_path
         self.history_path = performance_history_path
-        self.performance_history = []
-        self.model_performance_db = defaultdict(list)
-        self.optimal_hyperparameters = {}
+        self.results_path = tuning_results_path
         
+        # Configuration and results storage
+        self.hyperparameters_config = {}
+        self.tuning_config = {}
+        self.tuning_results = {}
+        self.performance_history = []
+        
+        # Load configuration
+        self._load_hyperparameters_config()
+        
+        # Search state
+        self.current_model = None
+        self.current_trial = 0
+        self.total_trials = 0
+        
+    def _load_hyperparameters_config(self) -> bool:
+        """
+        Load hyperparameters configuration from JSON file.
+        
+        Returns:
+            True if configuration was loaded successfully, False otherwise
+        """
+        try:
+            config_file = Path(self.config_path)
+            if not config_file.exists():
+                logger.error(f"Hyperparameters configuration file {self.config_path} not found")
+                return False
+                
+            with open(config_file, 'r') as f:
+                config_data = json.load(f)
+                
+            self.hyperparameters_config = config_data.get('models', {})
+            self.tuning_config = config_data.get('tuning_config', {})
+            
+            logger.info(f"Loaded hyperparameter configurations for {len(self.hyperparameters_config)} models")
+            logger.info(f"Tuning configuration: {self.tuning_config}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error loading hyperparameters configuration: {e}")
+            return False
+    
     def load_performance_history(self) -> bool:
         """
         Load performance history from JSON file.
@@ -52,125 +122,405 @@ class HyperparameterTuner:
             logger.error(f"Error loading performance history: {e}")
             return False
     
-    def analyze_model_performances(self) -> None:
-        """Analyze historical model performances to build performance database."""
-        logger.info("Analyzing historical model performances...")
-        
-        self.model_performance_db.clear()
-        
-        for run in self.performance_history:
-            run_timestamp = run.get('timestamp', 'unknown')
-            
-            for model_perf in run.get('model_performances', []):
-                model_name = model_perf.get('model_name')
-                if not model_name:
-                    continue
-                
-                # Store performance record with all relevant data
-                performance_record = {
-                    'timestamp': run_timestamp,
-                    'metrics': model_perf.get('metrics', {}),
-                    'hyperparameters': model_perf.get('hyperparameters', {}),
-                    'model_category': model_perf.get('model_category', 'unknown')
-                }
-                
-                self.model_performance_db[model_name].append(performance_record)
-        
-        logger.info(f"Analyzed performances for {len(self.model_performance_db)} unique models")
-        
-        # Log model performance counts
-        for model_name, records in self.model_performance_db.items():
-            logger.debug(f"  {model_name}: {len(records)} performance records")
-    
-    def find_optimal_hyperparameters(self, primary_metric: str = 'mape') -> Dict[str, Dict[str, Any]]:
+    def _generate_parameter_combinations(self, model_name: str) -> List[Dict[str, Any]]:
         """
-        Find optimal hyperparameters for each model based on historical performance.
+        Generate parameter combinations for systematic search.
         
         Args:
-            primary_metric: Primary metric to optimize for (default: 'mape', lower is better)
+            model_name: Name of the model to generate combinations for
             
         Returns:
-            Dictionary mapping model names to their optimal hyperparameters
+            List of parameter combinations to test
         """
-        logger.info(f"Finding optimal hyperparameters using {primary_metric} as primary metric...")
+        if model_name not in self.hyperparameters_config:
+            logger.warning(f"No configuration found for model {model_name}")
+            return []
         
-        self.optimal_hyperparameters.clear()
-        optimization_summary = []
+        model_config = self.hyperparameters_config[model_name]
+        search_space = model_config.get('search_space', {})
+        search_method = model_config.get('search_method', 'grid')
+        default_params = model_config.get('default_params', {})
         
-        for model_name, performance_records in self.model_performance_db.items():
-            if not performance_records:
-                continue
-                
-            logger.debug(f"Optimizing hyperparameters for {model_name}...")
+        if not search_space:
+            logger.info(f"No search space defined for {model_name}, using default parameters only")
+            return [default_params]
+        
+        logger.info(f"Generating parameter combinations for {model_name} using {search_method} search")
+        
+        if search_method == 'grid':
+            return self._generate_grid_combinations(search_space, default_params)
+        elif search_method == 'random':
+            n_trials = model_config.get('n_trials', 10)
+            return self._generate_random_combinations(search_space, default_params, n_trials)
+        else:
+            logger.info(f"Search method 'none' for {model_name}, using default parameters only")
+            return [default_params]
+    
+    def _generate_grid_combinations(self, search_space: Dict[str, List], default_params: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Generate all combinations using grid search.
+        
+        Args:
+            search_space: Dictionary of parameter names to lists of values
+            default_params: Default parameter values
             
-            # Find best performing configuration
-            best_record = None
-            best_metric_value = float('inf')  # Assuming lower is better for primary metric
+        Returns:
+            List of all parameter combinations
+        """
+        if not search_space:
+            return [default_params]
+        
+        # Create parameter combinations
+        param_names = list(search_space.keys())
+        param_values = [search_space[name] for name in param_names]
+        
+        combinations = []
+        for combination in itertools.product(*param_values):
+            params = default_params.copy()
+            for i, param_name in enumerate(param_names):
+                params[param_name] = combination[i]
+            combinations.append(params)
+        
+        logger.info(f"Generated {len(combinations)} grid search combinations")
+        return combinations
+    
+    def _generate_random_combinations(self, search_space: Dict[str, List], default_params: Dict[str, Any], n_trials: int) -> List[Dict[str, Any]]:
+        """
+        Generate random combinations using random search.
+        
+        Args:
+            search_space: Dictionary of parameter names to lists of values
+            default_params: Default parameter values
+            n_trials: Number of random combinations to generate
             
-            valid_records = []
-            for record in performance_records:
-                metrics = record.get('metrics', {})
-                metric_value = metrics.get(primary_metric)
-                
-                if metric_value is not None and not (np.isnan(metric_value) or np.isinf(metric_value)):
-                    valid_records.append(record)
-                    if metric_value < best_metric_value:
-                        best_metric_value = metric_value
-                        best_record = record
+        Returns:
+            List of random parameter combinations
+        """
+        if not search_space:
+            return [default_params]
+        
+        random.seed(self.tuning_config.get('random_seed', 42))
+        
+        combinations = []
+        # Always include default parameters as first trial
+        combinations.append(default_params)
+        
+        # Generate random combinations
+        for _ in range(n_trials - 1):
+            params = default_params.copy()
+            for param_name, param_values in search_space.items():
+                params[param_name] = random.choice(param_values)
+            combinations.append(params)
+        
+        logger.info(f"Generated {len(combinations)} random search combinations")
+        return combinations
+    
+    def _create_model_instance(self, model_name: str, hyperparameters: Dict[str, Any]):
+        """
+        Create a model instance with given hyperparameters.
+        
+        Args:
+            model_name: Name of the model
+            hyperparameters: Hyperparameters to use
             
-            if best_record:
-                optimal_params = best_record['hyperparameters'].copy()
-                best_metrics = best_record['metrics'].copy()
-                
-                self.optimal_hyperparameters[model_name] = {
-                    'hyperparameters': optimal_params,
-                    'expected_performance': best_metrics,
-                    'model_category': best_record.get('model_category', 'unknown'),
-                    'based_on_runs': len(valid_records),
-                    'optimization_timestamp': best_record.get('timestamp')
-                }
-                
-                # Calculate performance statistics if multiple records exist
-                if len(valid_records) > 1:
-                    metric_values = [r['metrics'].get(primary_metric) for r in valid_records 
-                                   if r['metrics'].get(primary_metric) is not None]
-                    if metric_values:
-                        self.optimal_hyperparameters[model_name]['performance_stats'] = {
-                            'mean': statistics.mean(metric_values),
-                            'median': statistics.median(metric_values),
-                            'std': statistics.stdev(metric_values) if len(metric_values) > 1 else 0,
-                            'min': min(metric_values),
-                            'max': max(metric_values),
-                            'count': len(metric_values)
-                        }
-                
-                optimization_summary.append({
-                    'model': model_name,
-                    'best_mape': best_metric_value,
-                    'runs_analyzed': len(valid_records),
-                    'category': best_record.get('model_category', 'unknown')
-                })
-                
-                logger.info(f"✓ {model_name}: Best {primary_metric}={best_metric_value:.4f} "
-                           f"(from {len(valid_records)} runs)")
+        Returns:
+            Model instance or None if creation fails
+        """
+        try:
+            # Deep learning models common trainer kwargs
+            mps_trainer_kwargs = {
+                "enable_progress_bar": False,
+                "accelerator": "cpu",
+                "precision": "64-true"
+            }
+            
+            # Filter out None values and prepare parameters
+            clean_params = {k: v for k, v in hyperparameters.items() if v is not None}
+            
+            # Statistical models
+            if model_name == 'Prophet':
+                return Prophet(**clean_params)
+            elif model_name == 'ExponentialSmoothing':
+                return ExponentialSmoothing(**clean_params)
+            elif model_name == 'TBATS':
+                return TBATS(**clean_params)
+            elif model_name == 'AutoARIMA':
+                if STATSFORECAST_ARIMA_AVAILABLE and StatsForecastAutoARIMA is not None:
+                    return StatsForecastAutoARIMA()
+                else:
+                    return DartsAutoARIMA(**clean_params)
+            elif model_name == 'Theta':
+                season_mode = clean_params.get('season_mode', 'ADDITIVE')
+                if season_mode == 'ADDITIVE':
+                    return Theta(season_mode=SeasonalityMode.ADDITIVE)
+                elif season_mode == 'MULTIPLICATIVE':
+                    return Theta(season_mode=SeasonalityMode.MULTIPLICATIVE)
+                else:
+                    return Theta(season_mode=SeasonalityMode.NONE)
+            elif model_name == 'FourTheta':
+                season_mode = clean_params.get('season_mode', 'ADDITIVE')
+                if season_mode == 'ADDITIVE':
+                    return FourTheta(season_mode=SeasonalityMode.ADDITIVE)
+                elif season_mode == 'MULTIPLICATIVE':
+                    return FourTheta(season_mode=SeasonalityMode.MULTIPLICATIVE)
+                else:
+                    return FourTheta(season_mode=SeasonalityMode.NONE)
+            
+            # Tree-based models
+            elif model_name == 'XGBoost':
+                return XGBModel(**clean_params)
+            elif model_name == 'LightGBM':
+                return LightGBMModel(**clean_params)
+            elif model_name == 'CatBoost':
+                return CatBoostModel(**clean_params)
+            elif model_name == 'RandomForest':
+                return RandomForestModel(**clean_params)
+            
+            # Deep learning models
+            elif model_name == 'TCN':
+                params = clean_params.copy()
+                params['pl_trainer_kwargs'] = mps_trainer_kwargs
+                return TCNModel(**params)
+            elif model_name == 'NBEATS':
+                params = clean_params.copy()
+                params['pl_trainer_kwargs'] = mps_trainer_kwargs
+                return NBEATSModel(**params)
+            elif model_name == 'NHiTS':
+                params = clean_params.copy()
+                params['pl_trainer_kwargs'] = mps_trainer_kwargs
+                return NHiTSModel(**params)
+            elif model_name == 'TiDE':
+                params = clean_params.copy()
+                params['pl_trainer_kwargs'] = mps_trainer_kwargs
+                return TiDEModel(**params)
+            elif model_name == 'DLinear':
+                params = clean_params.copy()
+                params['pl_trainer_kwargs'] = mps_trainer_kwargs
+                return DLinearModel(**params)
+            elif model_name == 'NLinear':
+                params = clean_params.copy()
+                params['pl_trainer_kwargs'] = mps_trainer_kwargs
+                return NLinearModel(**params)
+            elif model_name == 'TSMixer':
+                params = clean_params.copy()
+                params['pl_trainer_kwargs'] = mps_trainer_kwargs
+                return TSMixerModel(**params)
+            
+            # Baseline models
+            elif model_name == 'LinearRegression':
+                return LinearRegressionModel(**clean_params)
+            elif model_name == 'NaiveSeasonal':
+                return NaiveSeasonal(**clean_params)
+            elif model_name == 'NaiveMean':
+                return NaiveMean()
+            elif model_name == 'NaiveDrift':
+                return NaiveDrift()
+            
+            # Auto models (no hyperparameters)
+            elif model_name == 'AutoETS' and STATSFORECAST_ETS_AVAILABLE:
+                return StatsForecastAutoETS()
+            elif model_name == 'AutoTheta' and STATSFORECAST_THETA_AVAILABLE:
+                return StatsForecastAutoTheta()
+            elif model_name == 'KalmanFilter':
+                return KalmanForecaster()
+            elif model_name == 'Croston':
+                return Croston()
+            
             else:
-                logger.warning(f"⚠ {model_name}: No valid performance records found")
+                logger.warning(f"Unknown model: {model_name}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Failed to create {model_name} model: {e}")
+            return None
+    
+    def _evaluate_model_configuration(self, model_name: str, hyperparameters: Dict[str, Any], 
+                                    train_ts: TimeSeries, val_ts: TimeSeries) -> Optional[Dict[str, Any]]:
+        """
+        Evaluate a single model configuration.
         
-        # Log optimization summary
-        if optimization_summary:
-            logger.info(f"\n=== HYPERPARAMETER OPTIMIZATION SUMMARY ===")
-            logger.info(f"Optimized parameters for {len(optimization_summary)} models")
+        Args:
+            model_name: Name of the model
+            hyperparameters: Hyperparameters to test
+            train_ts: Training time series
+            val_ts: Validation time series
             
-            # Sort by performance and show top performers
-            optimization_summary.sort(key=lambda x: x['best_mape'])
-            logger.info("Top performing model configurations:")
-            for i, summary in enumerate(optimization_summary[:5]):
-                logger.info(f"  {i+1}. {summary['model']}: {primary_metric}={summary['best_mape']:.4f} "
-                           f"({summary['runs_analyzed']} runs, {summary['category']})")
+        Returns:
+            Dictionary with evaluation results or None if evaluation failed
+        """
+        try:
+            # Create model instance
+            model = self._create_model_instance(model_name, hyperparameters)
+            if model is None:
+                return None
             
-            logger.info(f"============================================\n")
+            # Validate TimeSeries input format
+            if not isinstance(train_ts, TimeSeries) or not isinstance(val_ts, TimeSeries):
+                logger.warning(f"Invalid TimeSeries format for {model_name}")
+                return None
+            
+            # Ensure TimeSeries has proper structure
+            if len(train_ts) < 2 or len(val_ts) < 1:
+                logger.warning(f"Insufficient data for {model_name}: train={len(train_ts)}, val={len(val_ts)}")
+                return None
+            
+            start_time = time.time()
+            
+            # Train model with proper error handling
+            try:
+                model.fit(train_ts)
+            except Exception as fit_error:
+                logger.warning(f"Model {model_name} fit failed: {fit_error}")
+                return None
+            
+            # Generate predictions with proper error handling
+            try:
+                predictions = model.predict(n=len(val_ts))
+            except Exception as pred_error:
+                logger.warning(f"Model {model_name} prediction failed: {pred_error}")
+                return None
+            
+            # Validate predictions
+            if predictions is None or len(predictions) == 0:
+                logger.warning(f"Model {model_name} returned empty predictions")
+                return None
+            
+            # Apply log transformation reverse to get original scale for evaluation
+            # BUT use TimeSeries objects directly for Darts metrics (they expect TimeSeries input)
+            
+            # Calculate metrics using Darts TimeSeries-based functions
+            try:
+                # Darts metrics expect TimeSeries objects, not numpy arrays
+                mape_score = float(mape(val_ts, predictions))
+                mae_score = float(mae(val_ts, predictions))
+                rmse_score = float(rmse(val_ts, predictions))
+                
+                logger.debug(f"Basic metrics calculated: MAPE={mape_score:.4f}, MAE={mae_score:.4f}, RMSE={rmse_score:.4f}")
+                
+            except Exception as metric_error:
+                logger.warning(f"Darts TimeSeries metric calculation failed: {metric_error}")
+                # Fallback to manual metric calculation with numpy arrays
+                try:
+                    # Extract values manually for fallback calculation
+                    if hasattr(predictions, 'values'):
+                        pred_vals = predictions.values().flatten()
+                    else:
+                        pred_vals = predictions.pd_dataframe().values.flatten()
+                        
+                    if hasattr(val_ts, 'values'):
+                        val_vals = val_ts.values().flatten()
+                    else:
+                        val_vals = val_ts.pd_dataframe().values.flatten()
+                    
+                    # Manual MAPE calculation
+                    mape_score = float(np.mean(np.abs((val_vals - pred_vals) / np.maximum(np.abs(val_vals), 1e-8)) * 100))
+                    mae_score = float(np.mean(np.abs(val_vals - pred_vals)))
+                    rmse_score = float(np.sqrt(np.mean((val_vals - pred_vals) ** 2)))
+                    
+                    logger.debug(f"Fallback metrics calculated: MAPE={mape_score:.4f}, MAE={mae_score:.4f}, RMSE={rmse_score:.4f}")
+                    
+                except Exception as fallback_error:
+                    logger.warning(f"Fallback metric calculation also failed: {fallback_error}")
+                    return None
+            
+            # Calculate advanced metrics (MASE, RMSSE) with proper error handling
+            try:
+                mase_score = float(mase(val_ts, predictions, train_ts))
+                rmsse_score = float(rmsse(val_ts, predictions, train_ts))
+                logger.debug(f"Advanced metrics calculated: MASE={mase_score:.4f}, RMSSE={rmsse_score:.4f}")
+            except Exception as advanced_metric_error:
+                logger.debug(f"Advanced metrics calculation failed (normal): {advanced_metric_error}")
+                mase_score = None
+                rmsse_score = None
+            
+            training_time = time.time() - start_time
+            
+            return {
+                'model_name': model_name,
+                'hyperparameters': hyperparameters,
+                'metrics': {
+                    'mape': mape_score,
+                    'mae': mae_score,
+                    'rmse': rmse_score,
+                    'mase': mase_score,
+                    'rmsse': rmsse_score
+                },
+                'training_time': training_time,
+                'status': 'success'
+            }
+            
+        except Exception as e:
+            logger.warning(f"Model {model_name} failed evaluation: {e}")
+            return {
+                'model_name': model_name,
+                'hyperparameters': hyperparameters,
+                'metrics': {},
+                'training_time': 0,
+                'status': 'failed',
+                'error': str(e)
+            }
+    
+    def tune_model_hyperparameters(self, model_name: str, train_ts: TimeSeries, val_ts: TimeSeries, 
+                                  primary_metric: str = 'mape') -> Optional[Dict[str, Any]]:
+        """
+        Systematically tune hyperparameters for a single model.
         
-        return self.optimal_hyperparameters
+        Args:
+            model_name: Name of the model to tune
+            train_ts: Training time series data
+            val_ts: Validation time series data
+            primary_metric: Primary metric to optimize for
+            
+        Returns:
+            Dictionary with best hyperparameters and performance or None if tuning failed
+        """
+        if model_name not in self.hyperparameters_config:
+            logger.warning(f"No configuration found for model {model_name}")
+            return None
+            
+        logger.info(f"🔧 Starting systematic hyperparameter tuning for {model_name}...")
+        
+        # Generate parameter combinations to test
+        combinations = self._generate_parameter_combinations(model_name)
+        
+        if not combinations:
+            logger.warning(f"No parameter combinations generated for {model_name}")
+            return None
+        
+        logger.info(f"Testing {len(combinations)} parameter combinations for {model_name}")
+        
+        # Evaluate each combination
+        evaluation_results = []
+        for i, combination in enumerate(combinations):
+            logger.info(f"  [{i+1}/{len(combinations)}] Testing configuration: {combination}")
+            
+            result = self._evaluate_model_configuration(model_name, combination, train_ts, val_ts)
+            if result is not None and result['status'] == 'success':
+                evaluation_results.append(result)
+                mape_score = result['metrics'].get('mape', float('inf'))
+                logger.info(f"    ✓ Success: MAPE = {mape_score:.4f}")
+            else:
+                logger.warning(f"    ✗ Failed: {result.get('error', 'Unknown error') if result else 'Model creation failed'}")
+        
+        if not evaluation_results:
+            logger.error(f"All parameter combinations failed for {model_name}")
+            return None
+        
+        # Find best performing configuration
+        best_result = min(evaluation_results, key=lambda x: x['metrics'].get(primary_metric, float('inf')))
+        
+        logger.info(f"🎯 Best configuration for {model_name}:")
+        logger.info(f"   MAPE: {best_result['metrics'].get('mape', 'N/A'):.4f}")
+        logger.info(f"   Hyperparameters: {best_result['hyperparameters']}")
+        
+        return {
+            'model_name': model_name,
+            'best_hyperparameters': best_result['hyperparameters'],
+            'best_performance': best_result['metrics'],
+            'total_combinations_tested': len(combinations),
+            'successful_evaluations': len(evaluation_results),
+            'tuning_timestamp': datetime.now().isoformat()
+        }
     
     def get_tuned_hyperparameters(self, model_name: str) -> Optional[Dict[str, Any]]:
         """

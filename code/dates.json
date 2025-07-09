@@ -1,0 +1,85 @@
+{
+  "version": "1.0",
+  "description": "Centralized date configuration for CVE Forecast system - ensures consistency across all scripts",
+  "created": "2025-07-08T20:33:00Z",
+  "last_updated": "2025-07-08T20:33:00Z",
+  
+  "validation_periods": {
+    "description": "Validation data periods used for model evaluation and tuning",
+    "full_validation_start": "2017-01-01",
+    "full_validation_end": "2025-03-31",
+    "validation_months_count": 99,
+    "notes": "Use full historical period for consistent MAPE calculation across tuning and production"
+  },
+  
+  "data_cutoffs": {
+    "description": "Data availability and processing cutoffs",
+    "historical_data_start": "2017-01-01",
+    "last_complete_month": "2025-03-31",
+    "current_incomplete_month": "2025-07-01",
+    "data_pipeline_cutoff": "2025-03-31",
+    "notes": "Historical data stops at March 2025, April-July 2025 data missing/incomplete"
+  },
+  
+  "forecast_periods": {
+    "description": "Forecasting horizons and target periods",
+    "forecast_start": "2025-07-01",
+    "forecast_end": "2026-01-31",
+    "forecast_horizon_months": 7,
+    "target_year": 2025,
+    "notes": "Dynamic forecasting from current month through January 2026"
+  },
+  
+  "evaluation_settings": {
+    "description": "Model evaluation and validation settings",
+    "use_full_validation_period": true,
+    "exclude_incomplete_months": true,
+    "validation_split_ratio": 0.8,
+    "test_split_ratio": 0.2,
+    "notes": "Ensure tuning and production use identical validation methodology"
+  },
+  
+  "temporal_filters": {
+    "description": "Date filtering logic for consistent data processing",
+    "filter_current_year_only": false,
+    "include_partial_months": false,
+    "validation_end_buffer_days": 0,
+    "notes": "Disable current_year filtering that caused MAPE calculation errors"
+  },
+  
+  "model_training": {
+    "description": "Training data periods for model development",
+    "training_start": "2017-01-01",
+    "training_end": "2024-12-31",
+    "validation_start": "2020-04-01",
+    "validation_end": "2025-03-31",
+    "notes": "Consistent train/validation split across all models and scripts"
+  },
+  
+  "system_settings": {
+    "description": "System-wide temporal configurations",
+    "timezone": "UTC",
+    "date_format": "YYYY-MM-DD",
+    "month_format": "YYYY-MM",
+    "processing_buffer_days": 3,
+    "notes": "Standardized date formats and processing parameters"
+  },
+  
+  "migration_notes": {
+    "description": "Implementation notes for centralized date management",
+    "affected_scripts": [
+      "analysis.py",
+      "tuner.py", 
+      "main.py",
+      "data_processor.py",
+      "file_io.py"
+    ],
+    "key_fixes": [
+      "Replace hardcoded current_year filtering with full validation period",
+      "Ensure identical validation datasets in tuning vs production",
+      "Standardize date cutoffs across all model evaluation",
+      "Fix MAPE calculation to use consistent validation periods"
+    ],
+    "expected_impact": "Restore 2.67% MAPE performance by fixing validation data inconsistency"
+  }
+}

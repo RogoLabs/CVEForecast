@@ -1,0 +1,151 @@
+{
+  "session_id": "20250708_204319",
+  "start_time": "2025-07-08T20:43:19.181644",
+  "models_tuned": {
+    "Prophet": {
+      "model_name": "Prophet",
+      "best_hyperparameters": {
+        "yearly_seasonality": false,
+        "weekly_seasonality": false,
+        "daily_seasonality": false,
+        "seasonality_mode": "additive",
+        "changepoint_prior_scale": 0.2,
+        "seasonality_prior_scale": 0.1,
+        "n_changepoints": 10,
+        "mcmc_samples": 0,
+        "interval_width": 0.8
+      },
+      "best_performance": {
+        "mape": 2.5567105132253127,
+        "mae": 0.2022637074267673,
+        "rmse": 0.30824963981261494,
+        "mase": 1.1986627383708455,
+        "rmsse": 1.3591898510828073
+      },
+      "total_combinations_tested": 600,
+      "successful_evaluations": 600,
+      "tuning_timestamp": "2025-07-08T20:45:15.139191",
+      "tuning_duration_seconds": 72.801209
+    },
+    "XGBoost": {
+      "model_name": "XGBoost",
+      "best_hyperparameters": {
+        "lags": 12,
+        "n_estimators": 300,
+        "max_depth": 3,
+        "learning_rate": 0.05,
+        "subsample": 0.7,
+        "colsample_bytree": 0.7,
+        "reg_alpha": 0.0,
+        "reg_lambda": 0.5,
+        "random_state": 42
+      },
+      "best_performance": {
+        "mape": 3.937273451899481,
+        "mae": 0.3182298675226326,
+        "rmse": 0.3779009471048753,
+        "mase": 1.8859057281651979,
+        "rmsse": 1.6663089446974495
+      },
+      "total_combinations_tested": 15,
+      "successful_evaluations": 15,
+      "tuning_timestamp": "2025-07-08T20:45:15.649723",
+      "tuning_duration_seconds": 0.510409
+    },
+    "TCN": {
+      "model_name": "TCN",
+      "best_hyperparameters": {
+        "input_chunk_length": 6,
+        "output_chunk_length": 1,
+        "n_epochs": 50,
+        "random_state": 42,
+        "pl_trainer_kwargs": {
+          "enable_progress_bar": false,
+          "accelerator": "cpu",
+          "precision": "64-true"
+        },
+        "kernel_size": 5,
+        "num_filters": 8,
+        "dropout": 0.3
+      },
+      "best_performance": {
+        "mape": 3.18231972526517,
+        "mae": 0.2552875430202112,
+        "rmse": 0.32707413278689174,
+        "mase": 1.512894573532747,
+        "rmsse": 1.4421941972289063
+      },
+      "total_combinations_tested": 12,
+      "successful_evaluations": 12,
+      "tuning_timestamp": "2025-07-08T20:45:21.195959",
+      "tuning_duration_seconds": 5.546135
+    },
+    "DLinear": {
+      "model_name": "DLinear",
+      "best_hyperparameters": {
+        "input_chunk_length": 12,
+        "output_chunk_length": 1,
+        "n_epochs": 100,
+        "random_state": 42,
+        "pl_trainer_kwargs": {
+          "enable_progress_bar": false,
+          "accelerator": "cpu",
+          "precision": "64-true"
+        }
+      },
+      "best_performance": {
+        "mape": 1.9934104872792262,
+        "mae": 0.15377071318634425,
+        "rmse": 0.3144391953420252,
+        "mase": 0.9112817444816043,
+        "rmsse": 1.386481954533121
+      },
+      "total_combinations_tested": 20,
+      "successful_evaluations": 20,
+      "tuning_timestamp": "2025-07-08T20:45:23.677738",
+      "tuning_duration_seconds": 2.481689
+    },
+    "LinearRegression": {
+      "model_name": "LinearRegression",
+      "best_hyperparameters": {
+        "lags": 24,
+        "lags_past_covariates": null,
+        "output_chunk_length": 1
+      },
+      "best_performance": {
+        "mape": 2.224070470676021,
+        "mae": 0.17288066417295078,
+        "rmse": 0.3135248668392205,
+        "mase": 1.0245318498571916,
+        "rmsse": 1.3824503325584017
+      },
+      "total_combinations_tested": 6,
+      "successful_evaluations": 6,
+      "tuning_timestamp": "2025-07-08T20:45:23.700358",
+      "tuning_duration_seconds": 0.022518
+    }
+  },
+  "summary": {
+    "total_models": 5,
+    "successful_tuning": 5,
+    "failed_tuning": 0,
+    "success_rate_percent": 100.0,
+    "average_duration_per_model": 24.9037582,
+    "top_3_models": [
+      [
+        "DLinear",
+        1.9934104872792262
+      ],
+      [
+        "LinearRegression",
+        2.224070470676021
+      ],
+      [
+        "Prophet",
+        2.5567105132253127
+      ]
+    ]
+  },
+  "end_time": "2025-07-08T20:45:23.700435",
+  "total_duration_seconds": 124.518791
+}

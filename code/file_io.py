@@ -635,21 +635,58 @@ class FileIOManager:
     
     def _write_data_file(self, output_data: Dict[str, Any], output_path: str) -> None:
         """
-        Write the output data to a JSON file with comprehensive NaN cleaning.
+        Write the output data to a JSON file with comprehensive NaN cleaning and robust path resolution.
         
         Args:
             output_data: Complete output data structure
             output_path: Path to save the output file
         """
-        ensure_directory_exists(output_path)
+        # Apply comprehensive path resolution (same strategy as hyperparameters.json fix)
+        from pathlib import Path
         
-        # Clean all NaN values for valid JSON serialization
-        cleaned_data = self._clean_nan_values(output_data)
-        
-        with open(output_path, 'w') as f:
-            json.dump(cleaned_data, f, indent=2)
-        
-        logger.info(f"Successfully saved data file with {len(output_data)} top-level sections")
+        try:
+            # Strategy 1: Direct path (when running from code directory)
+            resolved_path = Path(output_path)
+            
+            # Strategy 2: Relative to current file location
+            if not resolved_path.parent.exists() or str(resolved_path).startswith('../'):
+                if output_path == '../web/data.json' or 'web/data.json' in output_path:
+                    # Handle web/data.json specifically
+                    resolved_path = Path(__file__).parent.parent / 'web' / 'data.json'
+                    
+                    # Strategy 3: Try from current working directory
+                    if not resolved_path.parent.exists():
+                        resolved_path = Path('web') / 'data.json'
+                        
+                    # Strategy 4: Search common locations for web directory
+                    if not resolved_path.parent.exists():
+                        possible_paths = [
+                            Path('.') / 'web' / 'data.json',
+                            Path('..') / 'web' / 'data.json',
+                            Path(__file__).parent.parent / 'web' / 'data.json'
+                        ]
+                        for path in possible_paths:
+                            if path.parent.exists():
+                                resolved_path = path
+                                break
+            
+            # Ensure directory exists
+            resolved_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Clean all NaN values for valid JSON serialization
+            cleaned_data = self._clean_nan_values(output_data)
+            
+            # Write the file
+            with open(resolved_path, 'w') as f:
+                json.dump(cleaned_data, f, indent=2)
+            
+            logger.info(f"✅ Successfully saved updated data file to {resolved_path}")
+            logger.info(f"📊 Data file contains {len(output_data)} top-level sections")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to save data file to {output_path}: {e}")
+            logger.error(f"   Attempted path resolution: {resolved_path if 'resolved_path' in locals() else 'N/A'}")
+            raise
     
     def load_json_file(self, file_path: str) -> Dict[str, Any]:
         """
@@ -721,14 +758,43 @@ class FileIOManager:
     
     def save_updated_data_file(self, data: Dict[str, Any], file_path: str) -> None:
         """
-        Save updated data.json file with fresh forecast results.
+        Save updated data.json file with fresh forecast results using comprehensive path resolution.
         
         Args:
             data: Updated data dictionary including new_forecast_runs
             file_path: Path to save the updated data file
         """
+        # Apply comprehensive path resolution (same strategy as hyperparameters.json fix)
+        from pathlib import Path
+        
         try:
-            ensure_directory_exists(file_path)
+            # Strategy 1: Direct path (when running from code directory)
+            resolved_path = Path(file_path)
+            
+            # Strategy 2: Relative to current file location
+            if not resolved_path.parent.exists() or str(resolved_path).startswith('../'):
+                if file_path == '../web/data.json' or 'web/data.json' in file_path:
+                    # Handle web/data.json specifically
+                    resolved_path = Path(__file__).parent.parent / 'web' / 'data.json'
+                    
+                    # Strategy 3: Try from current working directory
+                    if not resolved_path.parent.exists():
+                        resolved_path = Path('web') / 'data.json'
+                        
+                    # Strategy 4: Search common locations for web directory
+                    if not resolved_path.parent.exists():
+                        possible_paths = [
+                            Path('.') / 'web' / 'data.json',
+                            Path('..') / 'web' / 'data.json',
+                            Path(__file__).parent.parent / 'web' / 'data.json'
+                        ]
+                        for path in possible_paths:
+                            if path.parent.exists():
+                                resolved_path = path
+                                break
+            
+            # Ensure directory exists
+            resolved_path.parent.mkdir(parents=True, exist_ok=True)
             
             # Clean NaN values before saving
             cleaned_data = self._clean_nan_values(data)
@@ -736,10 +802,12 @@ class FileIOManager:
             # Update generation timestamp
             cleaned_data['generated_at'] = datetime.now().isoformat()
             
-            with open(file_path, 'w') as f:
+            # Write the file
+            with open(resolved_path, 'w') as f:
                 json.dump(cleaned_data, f, indent=2)
             
-            logger.info(f"Successfully saved updated data file to {file_path}")
+            logger.info(f"🎉 Successfully saved updated data file to {resolved_path}")
+            logger.info(f"✅ Optimized forecast results now deployed to website!")
             
             # Log summary of new forecast runs
             if 'new_forecast_runs' in cleaned_data:
