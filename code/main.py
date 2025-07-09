@@ -164,15 +164,16 @@ class CVEForecastEngine:
         logger.info(f"🔄 Fresh forecasts generated for {successful_models}/{total_models} models")
         logger.info(f"💾 Updated data file saved to: {output_path}")
         
-        # Display fresh forecast summary
-        if fresh_forecast_data.get('yearly_forecast_totals'):
-            logger.info("\n📊 Fresh Forecast Summary (Top 5 by Total):")
-            sorted_forecasts = sorted(
-                fresh_forecast_data['yearly_forecast_totals'].items(), 
-                key=lambda x: x[1], reverse=True
-            )
-            for i, (model, total) in enumerate(sorted_forecasts[:5]):
-                logger.info(f"  {i+1}. {model}: {total:,} CVEs")
+        # Display fresh forecast summary by MAPE (to match website)
+        if fresh_forecast_data.get('yearly_forecast_totals') and existing_data.get('model_rankings'):
+            logger.info("\n📊 Fresh Forecast Summary (Top 5 by MAPE):")
+            # Sort by MAPE (ascending)
+            sorted_models = sorted(existing_data['model_rankings'], key=lambda x: x['mape'])[:5]
+            for i, model_info in enumerate(sorted_models):
+                model = model_info['model_name']
+                mape = model_info['mape']
+                total = fresh_forecast_data['yearly_forecast_totals'].get(model, 'N/A')
+                logger.info(f"  {i+1}. {model}: {total:,} CVEs | MAPE: {mape:.4f}")
         
         logger.info("\n🎉 Fresh forecast data is now available in the new_forecast_runs section!")
     

@@ -631,9 +631,64 @@ class HyperparameterTuner:
             logger.warning("No performance history available for tuning")
             return False
         
-        # Analyze performances and find optimal parameters
-        self.analyze_model_performances()
-        self.find_optimal_hyperparameters()
+        # Deep tuning loop: for each model in config, tune and store results
+        self.optimal_hyperparameters = {}
+        if not self.hyperparameters_config:
+            logger.error("No model hyperparameter configuration loaded!")
+            return False
+        
+        # Use the last run in performance_history as the most recent data
+        if not self.performance_history:
+            logger.error("No performance history data available for tuning!")
+            return False
+        latest_run = self.performance_history[-1]
+        import pandas as pd
+        data = None
+        if 'historical_data' in latest_run:
+            data = pd.DataFrame(latest_run['historical_data'])
+            data['date'] = pd.to_datetime(data['date'])
+        elif 'data' in latest_run:
+            data = pd.DataFrame(latest_run['data'])
+            data['date'] = pd.to_datetime(data['date'])
+        else:
+            # Try to load from web/data.json as a fallback
+            import os, json
+            data_json_path = os.path.join(os.path.dirname(__file__), '../web/data.json')
+            if os.path.exists(data_json_path):
+                with open(data_json_path, 'r') as f:
+                    data_json = json.load(f)
+                if 'historical_data' in data_json:
+                    data = pd.DataFrame(data_json['historical_data'])
+                    data['date'] = pd.to_datetime(data['date'])
+                    logger.warning("Performance history did not contain usable data, but loaded historical_data from web/data.json.")
+                else:
+                    logger.error("Neither performance history nor web/data.json contains usable historical data for tuning.")
+                    return False
+            else:
+                logger.error("Performance history run does not contain usable data, and web/data.json not found. Please generate a new run with main.py first.")
+                return False
+        
+        # Build TimeSeries
+        ts = TimeSeries.from_dataframe(data, time_col='date', value_cols='cve_count', freq='MS')
+        test_size = self.tuning_config.get('test_size', 0.2)
+        split_point = int(len(ts) * (1 - test_size))
+        train_ts = ts[:split_point]
+        val_ts = ts[split_point:]
+        
+        for model_name in self.hyperparameters_config:
+            try:
+                logger.info(f"Tuning {model_name}...")
+                tune_result = self.tune_model_hyperparameters(model_name, train_ts, val_ts)
+                if tune_result and 'best_hyperparameters' in tune_result:
+                    self.optimal_hyperparameters[model_name] = {
+                        'hyperparameters': tune_result['best_hyperparameters'],
+                        'expected_performance': tune_result['best_performance']
+                    }
+                    logger.info(f"✓ Tuned {model_name}: {tune_result['best_hyperparameters']}")
+                else:
+                    logger.warning(f"No tuned hyperparameters found for {model_name}")
+            except Exception as e:
+                logger.warning(f"Tuning failed for {model_name}: {e}")
         
         if not self.optimal_hyperparameters:
             logger.warning("No optimal hyperparameters found")

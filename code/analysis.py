@@ -796,27 +796,47 @@ class CVEForecastAnalyzer:
             if not models:
                 logger.error("No models were successfully prepared")
                 return []
-            
+
             logger.info(f"Prepared {len(models)} models for evaluation")
-            
+
+            # --- Hyperparameter Tuning: ensure tuner uses same split as evaluation ---
+            if self.enable_tuning and hasattr(self.tuner, 'tune_model_hyperparameters'):
+                logger.info("Tuning hyperparameters for each model using the same train/val split as evaluation...")
+                for model_info in models:
+                    model_name = model_info['model_name']
+                    try:
+                        tune_result = self.tuner.tune_model_hyperparameters(model_name, train_ts, val_ts)
+                        if tune_result and 'best_hyperparameters' in tune_result:
+                            if not hasattr(self, 'tuned_hyperparameters') or self.tuned_hyperparameters is None:
+                                self.tuned_hyperparameters = {}
+                            self.tuned_hyperparameters[model_name] = {
+                                'hyperparameters': tune_result['best_hyperparameters'],
+                                'metrics': tune_result['best_performance']
+                            }
+                            logger.info(f"Tuned hyperparameters for {model_name}: {tune_result['best_hyperparameters']}")
+                        else:
+                            logger.warning(f"No tuned hyperparameters found for {model_name}")
+                    except Exception as e:
+                        logger.warning(f"Tuning failed for {model_name}: {e}")
+
             # 🎯 WORKING EVALUATION LOOP - Validated to work successfully
             successful_results = []
             failed_models = []
-            
+
             for i, model_info in enumerate(models):
                 model_name = model_info['model_name']
                 logger.info(f"[{i+1}/{len(models)}] Evaluating {model_name}...")
-                
+
                 try:
                     result = self._evaluate_single_model(model_info, train_ts, val_ts)
-                    
+
                     if result is not None:
                         successful_results.append(result)
                         logger.info(f"✓ {model_name} succeeded - MAPE: {result['mape']:.4f}")
                     else:
                         failed_models.append(model_name)
                         logger.warning(f"✗ {model_name} failed evaluation")
-                        
+
                 except Exception as e:
                     failed_models.append(model_name)
                     logger.warning(f"✗ {model_name} exception: {e}")
