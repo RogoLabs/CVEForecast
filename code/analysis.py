@@ -39,6 +39,8 @@ from tuner import HyperparameterTuner
 logger = setup_logging()
 
 
+from tuner import HyperparameterTuner
+
 class CVEForecastAnalyzer:
     """Handles model preparation, evaluation, and forecasting for CVE data."""
     
@@ -48,12 +50,13 @@ class CVEForecastAnalyzer:
         Args:
             enable_hyperparameter_tuning: Whether to use hyperparameter tuning from history
         """
-        self.enable_tuning = enable_hyperparameter_tuning
-        self.tuner = None
-        self.tuned_hyperparameters = {}
-        
-        if self.enable_tuning:
-            self._initialize_hyperparameter_tuning()
+        self.enable_tuning = True  # Enable the new feature
+        self.tuner = HyperparameterTuner()
+        self.tuner.load_performance_history()
+        if hasattr(self.tuner, 'find_optimal_hyperparameters'):
+            self.tuned_hyperparameters = self.tuner.find_optimal_hyperparameters()
+        else:
+            self.tuned_hyperparameters = getattr(self.tuner, 'optimal_hyperparameters', {})
     
     def _initialize_hyperparameter_tuning(self) -> None:
         """Initialize hyperparameter tuning system."""
@@ -94,14 +97,9 @@ class CVEForecastAnalyzer:
         Returns:
             Hyperparameters dictionary (tuned or default)
         """
-        if self.enable_tuning and model_name in self.tuned_hyperparameters:
-            tuned_params = self.tuned_hyperparameters[model_name]['hyperparameters']
-            expected_perf = self.tuned_hyperparameters[model_name].get('expected_performance', {})
-            expected_mape = expected_perf.get('mape')
-            
-            logger.info(f"🎯 Using tuned hyperparameters for {model_name} " 
-                       f"(expected MAPE: {expected_mape:.4f})" if expected_mape else f"🎯 Using tuned hyperparameters for {model_name}")
-            return tuned_params
+        if self.enable_tuning and self.tuned_hyperparameters.get(model_name):
+            logger.info(f"Using tuned hyperparameters for {model_name}")
+            return self.tuned_hyperparameters[model_name]['hyperparameters']
         else:
             logger.debug(f"Using default hyperparameters for {model_name}")
             return default_params
