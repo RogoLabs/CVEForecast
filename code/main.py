@@ -1,309 +1,236 @@
-#!/usr/bin/env python3
-"""
-Main entry point for the CVE Forecast application.
-Orchestrates the complete workflow from data processing to forecast generation.
-"""
-
-import argparse
+import json
 import logging
-import sys
 from pathlib import Path
-from typing import Optional, Dict, List, Any
-
 import pandas as pd
+from darts import TimeSeries
 
-from config import DEFAULT_CVE_DATA_PATH, DEFAULT_OUTPUT_PATH
 from utils import setup_logging
-from data_processor import CVEDataProcessor
-from analysis import CVEForecastAnalyzer
-from file_io import FileIOManager
+from data_loader import load_cve_data
+from model_trainer import train_and_evaluate_model
 
-logger = setup_logging()
-
+import datetime
+import numpy as np
 
 class CVEForecastEngine:
-    """Main engine that orchestrates the CVE forecasting workflow."""
-    
-    def __init__(self, data_path: Optional[str] = None):
-        """
-        Initialize the CVE forecast engine.
+    """Orchestrates the CVE forecasting workflow."""
+
+    def __init__(self, config_path: str):
+        self.config_path = config_path
+        self.config = None
+        self.series = None
+        self.historical_series = None
+        self.current_month_series = None
+        self.model_results = []
+        self.all_forecasts = {}
+
+    def load_configuration(self):
+        print("Loading configuration...")
+        with open(self.config_path, 'r') as f:
+            self.config = json.load(f)
+
+    def setup_logging(self):
+        print("Setting up logging...")
+        setup_logging(self.config['logging'])
+        self.logger = logging.getLogger(__name__)
+
+    def process_data(self):
+        print("Processing data...")
+        monthly_counts = load_cve_data(self.config)
+        full_series = TimeSeries.from_dataframe(monthly_counts, freq='M', fill_missing_dates=True, value_cols='cve_count')
         
-        Args:
-            data_path: Optional path to CVE data directory
-        """
-        self.data_path = data_path
-        self.data_processor = CVEDataProcessor(data_path)
-        self.analyzer = CVEForecastAnalyzer()
-        self.file_manager = FileIOManager()
+        # The last entry is the current, partial month.
+        self.historical_series = full_series[:-1]
+        self.current_month_series = full_series[-1:]
+        self.series = self.historical_series # Use historical for training
+        self.full_series = full_series # Keep for summary stats
+
+    def train_and_evaluate_models(self):
+        print("Training and evaluating models...")
+        enabled_models = {name: config for name, config in self.config['models'].items() if config['enabled']}
         
-    def run(self, output_path: str = DEFAULT_OUTPUT_PATH) -> None:
-        """
-        Execute the CVE forecasting workflow with fresh forecast generation.
-        
-        Args:
-            output_path: Path to save the generated data file
-        """
-        try:
-            logger.info("🔄 Starting CVE Forecast generation with fresh forecasts...")
-            self._run_fresh_forecast_mode(output_path)
+        for i, (model_name, model_config) in enumerate(enabled_models.items()):
+            print(f"  ({i+1}/{len(enabled_models)}) Training {model_name}...")
+            model, metrics = train_and_evaluate_model(model_name, model_config, self.series, self.config['model_evaluation'])
+            if model and metrics:
+                self.model_results.append({"model_name": model_name, "model": model, "metrics": metrics})
+
+    def generate_all_forecasts(self):
+        print("Generating forecasts for all models...")
+        # Adjust forecast horizon to start from the month after the historical data ends
+        today = datetime.date.today()
+        last_historical_month = self.historical_series.end_time().to_pydatetime().date()
+        months_to_forecast = ( (self.config['model_evaluation']['forecast_end_year'] - last_historical_month.year) * 12
+                               + self.config['model_evaluation']['forecast_end_month'] - last_historical_month.month )
+        for result in self.model_results:
+            model_name = result['model_name']
+            model = result['model']
+            try:
+                # Retrain on full historical series, ensuring correct dtype for DL models
+                series_to_fit = self.historical_series
+                if model_name in ["TCN", "NBEATS", "NHiTS", "TiDE", "DLinear", "TSMixer"]:
+                    series_to_fit = self.historical_series.astype(np.float32)
                 
-        except KeyboardInterrupt:
-            logger.info("\n🛑 Process interrupted by user")
-            sys.exit(1)
-        except Exception as e:
-            logger.error(f"❌ Error in CVE forecast generation: {e}")
-            logger.exception("Full error details:")
-            sys.exit(1)
-    
-    def _run_standard_mode(self, output_path: str) -> None:
-        """
-        Execute the standard CVE forecasting workflow.
+                model.fit(series_to_fit)
+                forecast = model.predict(months_to_forecast)
+                self.all_forecasts[model_name] = forecast
+                print(f"  -> Forecast generated for {model_name}")
+            except Exception as e:
+                self.logger.error(f"Failed to generate forecast for {model_name}: {e}")
+
+    def _get_historical_data(self):
+        df = self.historical_series.to_dataframe()
+        df['date'] = df.index.strftime('%Y-%m')
+        df['cve_count'] = df['cve_count'].astype(int)
+        return df.reset_index(drop=True).to_dict('records')
+
+    def _get_current_month_actual(self):
+        today = datetime.date.today()
+        last_day_of_month = (today.replace(day=28) + datetime.timedelta(days=4)).replace(day=1) - datetime.timedelta(days=1)
         
-        Args:
-            output_path: Path to save the generated data file
-        """
-        # Step 1: Load existing performance history
-        logger.info("📊 Loading performance history...")
-        performance_history = self.file_manager.load_performance_history()
-        logger.info(f"Loaded {len(performance_history)} previous runs from performance history")
-        
-        # Step 2: Parse CVE data
-        logger.info("🔍 Parsing CVE data...")
-        data = self.data_processor.parse_cve_data()
-        
-        # Validate data quality
-        quality_metrics = self.data_processor.validate_data_quality(data)
-        
-        if quality_metrics['total_records'] == 0:
-            logger.error("No valid CVE data found. Cannot proceed with forecasting.")
-            sys.exit(1)
-        
-        # Step 3: Evaluate models with comprehensive hyperparameter tracking
-        logger.info("🤖 Evaluating models with hyperparameter tracking...")
-        model_results = self.analyzer.evaluate_models(data)
-        
-        if not model_results:
-            logger.error("No models successfully evaluated. Cannot proceed with forecasting.")
-            sys.exit(1)
+        current_cve_count = int(self.current_month_series.values()[0][0])
+        historical_total = int(self.historical_series.to_dataframe()['cve_count'].sum())
+
+        return {
+            "date": today.strftime('%Y-%m'),
+            "cve_count": current_cve_count,
+            "cumulative_total": historical_total + current_cve_count,
+            "days_elapsed": today.day,
+            "total_days": last_day_of_month.day,
+            "progress_percentage": round((today.day / last_day_of_month.day) * 100, 1)
+        }
+
+    def _get_cumulative_timelines(self, historical_data, forecasts, current_month_data):
+        """Generate cumulative timelines matching the v.02 file_io.py logic exactly."""
+        cumulative_timelines = {}
+        historical_2025_data = [item for item in historical_data if item['date'].startswith('2025')]
+
+        # Generate timeline for each model
+        for model_name, model_forecasts in forecasts.items():
+            if not model_forecasts: continue
+            timeline, running_total = [], 0
+            timeline.append({"date": "2025-01", "cumulative_total": 0})
+
+            for item in historical_2025_data:
+                timeline.append({"date": item['date'], "cumulative_total": running_total})
+                running_total += item['cve_count']
             
-        # Step 4: Create performance record for this run
-        logger.info("📈 Creating performance record for this run...")
-        run_record = self.analyzer.create_run_record(data, model_results)
-        logger.info(f"Created run record with {len(run_record['model_performances'])} model performances")
-        
-        # Step 5: Update performance history
-        performance_history.append(run_record)
-        logger.info(f"Added new run to history. Total runs: {len(performance_history)}")
-        
-        # Step 6: Save updated performance history
-        logger.info("💾 Saving updated performance history...")
-        self.file_manager.save_performance_history(performance_history)
-        
-        # Step 7: Generate forecasts
-        logger.info("🔮 Generating forecasts...")
-        forecasts = self.analyzer.generate_forecasts(data, model_results)
-        
-        # Step 8: Save data file for web interface
-        logger.info("📄 Saving forecast data file...")
-        self.file_manager.save_data_file(data, model_results, forecasts, output_path)
-        
-        # Step 9: Report completion
-        logger.info("\n✅ CVE Forecast generation completed successfully!")
-        logger.info(f"📊 Performance history now contains {len(performance_history)} runs")
-        logger.info(f"🎯 Best model this run: {model_results[0]['model_name']} (MAPE: {model_results[0]['mape']:.4f})")
-        logger.info(f"💾 Data file saved to: {output_path}")
-        
-        # Step 10: Display summary statistics
-        self._display_summary_statistics(data, model_results, forecasts)
-    
-    def _run_fresh_forecast_mode(self, output_path: str) -> None:
-        """
-        Execute the fresh forecast generation workflow.
-        
-        Args:
-            output_path: Path to save the updated data file
-        """
-        # Step 1: Load existing data.json to get model rankings
-        logger.info("📂 Loading existing data.json to get model rankings...")
-        existing_data = self.file_manager.load_existing_data_file(output_path)
-        
-        if not existing_data or 'model_rankings' not in existing_data:
-            logger.error("No existing data.json found or missing model_rankings. Run standard mode first.")
-            sys.exit(1)
-        
-        model_rankings = existing_data['model_rankings']
-        logger.info(f"Found {len(model_rankings)} models in existing rankings")
-        
-        # Step 2: Extract historical data from existing data.json (CRITICAL FIX for baseline bug)
-        logger.info("📊 Using historical data from existing data.json...")
-        data = self._extract_historical_data_from_json(existing_data)
-        
-        # Validate data quality
-        if len(data) == 0:
-            logger.error("No valid historical data found in data.json. Cannot proceed with forecasting.")
-            sys.exit(1)
-        
-        # Step 3: Generate fresh forecasts by retraining models
-        logger.info("🔄 Generating fresh forecasts by retraining models...")
-        fresh_forecast_data = self.analyzer.generate_fresh_forecasts(data, model_rankings)
-        
-        # Step 4: Update existing data.json with fresh forecasts
-        logger.info("📝 Updating data.json with fresh forecast results...")
-        existing_data['new_forecast_runs'] = fresh_forecast_data
-        
-        # Step 5: Save updated data file
-        logger.info("💾 Saving updated data file with fresh forecasts...")
-        self.file_manager.save_updated_data_file(existing_data, output_path)
-        
-        # Step 6: Report completion
-        logger.info("\n✅ Fresh CVE forecast generation completed successfully!")
-        
-        successful_models = len(fresh_forecast_data.get('yearly_forecast_totals', {}))
-        total_models = len(model_rankings)
-        
-        logger.info(f"🔄 Fresh forecasts generated for {successful_models}/{total_models} models")
-        logger.info(f"💾 Updated data file saved to: {output_path}")
-        
-        # Display fresh forecast summary
-        if fresh_forecast_data.get('yearly_forecast_totals'):
-            logger.info("\n📊 Fresh Forecast Summary (Top 5 by Total):")
-            sorted_forecasts = sorted(
-                fresh_forecast_data['yearly_forecast_totals'].items(), 
-                key=lambda x: x[1], reverse=True
-            )
-            for i, (model, total) in enumerate(sorted_forecasts[:5]):
-                logger.info(f"  {i+1}. {model}: {total:,} CVEs")
-        
-        logger.info("\n🎉 Fresh forecast data is now available in the new_forecast_runs section!")
-    
-    def _extract_historical_data_from_json(self, existing_data: Dict[str, Any]) -> pd.DataFrame:
-        """
-        Extract historical data from existing data.json and convert to DataFrame.
-        
-        Args:
-            existing_data: Loaded data.json content
+            if current_month_data:
+                current_month_forecast_val = next((f['cve_count'] for f in model_forecasts if f['date'] == current_month_data['date']), None)
+                timeline.append({"date": current_month_data['date'], "cumulative_total": running_total})
+                if current_month_forecast_val is not None:
+                    running_total += current_month_forecast_val
+
+            # Add forecast months, ensuring not to double-count the current month
+            for forecast in model_forecasts:
+                if current_month_data and forecast['date'] == current_month_data['date']:
+                    continue
+                timeline.append({"date": forecast['date'], "cumulative_total": running_total})
+                running_total += forecast['cve_count']
             
-        Returns:
-            DataFrame with historical data
-        """
-        if 'historical_data' not in existing_data:
-            logger.error("No historical_data found in existing data.json. Run standard mode first.")
-            sys.exit(1)
-        
-        # Convert historical data back to DataFrame format for model training
-        historical_data = existing_data['historical_data']
-        data_records = []
-        
-        for record in historical_data:
-            data_records.append({
-                'date': pd.to_datetime(record['date']),
-                'cve_count': record['cve_count']
-            })
-        
-        data = pd.DataFrame(data_records)
-        logger.info(f"✅ Loaded {len(data)} historical data records from existing data.json")
-        
-        # Show the data range for debugging
-        if len(data) > 0:
-            logger.info(f"📅 Data range: {data['date'].min().strftime('%Y-%m')} to {data['date'].max().strftime('%Y-%m')}")
-            logger.info(f"📊 Total CVEs: {data['cve_count'].sum():,}")
-        
-        return data
-    
-    def _display_summary_statistics(self, data: pd.DataFrame, 
-                                   model_results: List[Dict[str, Any]], 
-                                   forecasts: Dict[str, Any]) -> None:
-        """
-        Display summary statistics of the forecasting results.
-        
-        Args:
-            data: Historical CVE data DataFrame
-            model_results: List of model evaluation results
-            forecasts: Dictionary of forecasts by model
-        """
-        logger.info("\n📊 Summary Statistics:")
-        logger.info(f"  Historical data points: {len(data):,}")
-        logger.info(f"  Date range: {data['date'].min().strftime('%Y-%m')} to {data['date'].max().strftime('%Y-%m')}")
-        logger.info(f"  Total CVEs in dataset: {data['cve_count'].sum():,}")
-        logger.info(f"  Average CVEs per month: {data['cve_count'].mean():.1f}")
-        logger.info(f"  Successful models: {len(model_results)}")
-        logger.info(f"  Total forecasts generated: {sum(len(forecasts[model]) for model in forecasts)}")
-        
-        # Model performance
-        if model_results:
-            best_model = model_results[0]
-            worst_model = model_results[-1]
-            
-            logger.info(f"🏆 Best model: {best_model['model_name']} (MAPE: {best_model['mape']:.4f})")
-            logger.info(f"📉 Worst model: {worst_model['model_name']} (MAPE: {worst_model['mape']:.4f})")
-            logger.info(f"🤖 Total models evaluated: {len(model_results)}")
-        
-        # Forecast statistics
+            timeline.append({"date": "2026-01", "cumulative_total": running_total})
+            cumulative_timelines[f"{model_name}_cumulative"] = timeline
+
+        # Add all_models_cumulative average
         if forecasts:
-            total_forecasts = sum(len(f) for f in forecasts.values())
-            logger.info(f"🔮 Total forecasts generated: {total_forecasts}")
-            logger.info(f"📝 Models with forecasts: {len(forecasts)}")
+            all_models_timeline, running_total = [], 0
+            all_models_timeline.append({"date": "2025-01", "cumulative_total": 0})
+
+            for item in historical_2025_data:
+                all_models_timeline.append({"date": item['date'], "cumulative_total": running_total})
+                running_total += item['cve_count']
+            
+            if current_month_data:
+                all_models_timeline.append({"date": current_month_data['date'], "cumulative_total": running_total})
+                current_month_forecasts = [f['cve_count'] for f_list in forecasts.values() for f in f_list if f['date'] == current_month_data['date']]
+                if current_month_forecasts:
+                    running_total += np.mean(current_month_forecasts)
+
+            # Determine all unique forecast dates, excluding the current month if already handled
+            all_forecast_dates = sorted(list(set(f['date'] for f_list in forecasts.values() for f in f_list)))
+            for date in all_forecast_dates:
+                if current_month_data and date == current_month_data['date']:
+                    continue # Already processed the current month's forecast average
+                
+                avg_forecast = np.mean([f['cve_count'] for f_list in forecasts.values() for f in f_list if f['date'] == date])
+                # Only add if there are valid forecasts for this date
+                if not np.isnan(avg_forecast):
+                    all_models_timeline.append({"date": date, "cumulative_total": running_total})
+                    running_total += avg_forecast
+
+            all_models_timeline.append({"date": "2026-01", "cumulative_total": running_total})
+            cumulative_timelines['all_models_cumulative'] = all_models_timeline
+
+        return cumulative_timelines
+
+    def _get_summary(self):
+        """Build the summary object matching the v.02 file_io.py logic exactly."""
+        full_df = self.full_series.to_dataframe()
+        return {
+            'total_historical_cves': int(full_df['cve_count'].sum()),
+            'data_period': {
+                'start': full_df.index.min().strftime('%Y-%m-%d'),
+                'end': full_df.index.max().strftime('%Y-%m-%d')
+            },
+            'forecast_period': {
+                'start': datetime.date(datetime.date.today().year, datetime.date.today().month, 1).strftime('%Y-%m-%d'),
+                'end': datetime.date(datetime.date.today().year + 1, 1, 31).strftime('%Y-%m-%d')
+            }
+        }
+
+    def save_results(self):
+        print("Saving results...")
         
-        logger.info("-" * 50)
+        model_rankings = sorted([
+            {"model_name": r['model_name'], **r['metrics']} for r in self.model_results
+        ], key=lambda x: x['mape'] if x.get('mape') is not None else float('inf'))
 
+        historical_data = self._get_historical_data()
+        current_month_actual = self._get_current_month_actual()
+        historical_cumulative_total = current_month_actual['cumulative_total']
 
-def main():
-    """Main entry point for the application."""
-    parser = argparse.ArgumentParser(
-        description='Generate CVE forecasts by retraining models on complete historical data',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python main.py                                    # Generate fresh forecasts with default settings
-  python main.py --data-path ./cvelistV5            # Specify CVE data path
-  python main.py --output ./output/data.json        # Specify output file
-  python main.py --data-path ./data --output ./web/data.json  # Custom paths
-        """
-    )
-    
-    parser.add_argument(
-        '--data-path', 
-        help='Path to the CVE data directory (default: cvelistV5 in project root)',
-        default=None
-    )
-    
-    parser.add_argument(
-        '--output', 
-        default=DEFAULT_OUTPUT_PATH,
-        help=f'Output path for the generated data file (default: {DEFAULT_OUTPUT_PATH})'
-    )
-    
+        forecasts_out = {name: [{"date": ts.strftime('%Y-%m'), "cve_count": int(round(val[0]))} 
+                                for ts, val in zip(forecast.time_index, forecast.values())] 
+                         for name, forecast in self.all_forecasts.items()}
 
-    
-    parser.add_argument(
-        '--log-level',
-        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
-        default='INFO',
-        help='Set the logging level (default: INFO)'
-    )
-    
-    parser.add_argument(
-        '--version',
-        action='version',
-        version='CVE Forecast Engine 2.0.0'
-    )
-    
-    args = parser.parse_args()
-    
-    # Setup logging with specified level
-    logger = setup_logging(args.log_level)
-    
-    # Validate output directory
-    output_path = Path(args.output)
-    if not output_path.parent.exists():
-        logger.info(f"Creating output directory: {output_path.parent}")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    # Initialize and run the engine
-    logger.info("Initializing CVE Forecast Engine...")
-    engine = CVEForecastEngine(data_path=args.data_path)
-    engine.run(output_path=str(output_path))
+        final_json = {
+            "generated_at": datetime.datetime.now().isoformat(),
+            "model_rankings": model_rankings,
+            "historical_data": historical_data,
+            "current_month_actual": current_month_actual,
+            "forecasts": forecasts_out,
+            "yearly_forecast_totals": {name: int(v.sum().values()[0][0]) for name, v in self.all_forecasts.items()},
+            "cumulative_timelines": self._get_cumulative_timelines(historical_data, forecasts_out, current_month_actual),
+            "summary": self._get_summary()
+        }
 
+        output_path = self.config['file_paths']['output_data']
+        with open(output_path, 'w') as f:
+            # Custom JSON encoder for numpy types
+            class NumpyEncoder(json.JSONEncoder):
+                def default(self, obj):
+                    if isinstance(obj, (np.integer, np.floating)):
+                        return float(obj)
+                    return super(NumpyEncoder, self).default(obj)
+            json.dump(final_json, f, indent=2, cls=NumpyEncoder)
+        print(f"Results saved to {output_path}")
+
+    def run(self):
+        self.load_configuration()
+        self.setup_logging()
+        self.process_data()
+        self.train_and_evaluate_models()
+        self.generate_all_forecasts()
+        self.save_results()
+
+        best_model = self.model_results[0] if self.model_results else None
+        print("\n--- CVE Forecast Complete ---")
+        if best_model:
+            print(f"Best performing model: {best_model['model_name']}")
+            print(f"MAPE: {best_model['metrics']['mape']:.2f}%")
+        else:
+            print("No models were successfully trained.")
+        print(f"Output file: {self.config['file_paths']['output_data']}")
 
 if __name__ == "__main__":
-    main()
+    engine = CVEForecastEngine('config.json')
+    engine.run()

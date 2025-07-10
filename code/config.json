@@ -1,0 +1,282 @@
+{
+  "file_paths": {
+    "cve_data": "../cvelistV5",
+    "output_data": "../web/data.json",
+    "performance_history": "../web/performance_history.json",
+    "hyperparameter_results": "hyperparameter_results/"
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(levelname)s - %(message)s"
+  },
+  "data_processing": {
+    "start_date_filter": "2017-01-01"
+  },
+  "model_evaluation": {
+    "split_ratio": 0.8,
+    "forecast_horizon_months": 12,
+    "forecast_end_year": 2026,
+    "forecast_end_month": 1
+  },
+  "models": {
+    "Prophet": {
+      "enabled": true,
+      "hyperparameters": {
+        "yearly_seasonality": true,
+        "weekly_seasonality": false,
+        "daily_seasonality": false,
+        "seasonality_mode": "additive",
+        "changepoint_prior_scale": 0.1,
+        "seasonality_prior_scale": 1.0,
+        "n_changepoints": 15,
+        "mcmc_samples": 0,
+        "interval_width": 0.8
+      }
+    },
+    "ExponentialSmoothing": {
+      "enabled": true,
+      "hyperparameters": {
+        "trend": "add",
+        "seasonal": "add",
+        "seasonal_periods": 12,
+        "damped_trend": true
+      }
+    },
+    "TBATS": {
+        "enabled": true,
+        "hyperparameters": {
+            "season_length": 12
+        }
+    },
+    "XGBoost": {
+      "enabled": true,
+      "hyperparameters": {
+        "lags": 24,
+        "n_estimators": 200,
+        "max_depth": 6,
+        "learning_rate": 0.1,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.1,
+        "reg_lambda": 0.1,
+        "random_state": 42
+      }
+    },
+    "LightGBM": {
+        "enabled": true,
+        "hyperparameters": {
+            "lags": 12,
+            "n_estimators": 100,
+            "max_depth": 4,
+            "learning_rate": 0.05,
+            "subsample": 0.9,
+            "colsample_bytree": 0.9,
+            "reg_alpha": 0.5,
+            "reg_lambda": 0.5,
+            "random_state": 42
+        }
+    },
+    "CatBoost": {
+        "enabled": true,
+        "hyperparameters": {
+            "lags": 24,
+            "iterations": 200,
+            "depth": 6,
+            "learning_rate": 0.1,
+            "l2_leaf_reg": 3,
+            "subsample": 0.8,
+            "random_state": 42,
+            "verbose": false
+        }
+    },
+    "TCN": {
+        "enabled": true,
+        "hyperparameters": {
+            "input_chunk_length": 12,
+            "output_chunk_length": 1,
+            "n_epochs": 50,
+            "random_state": 42,
+            "pl_trainer_kwargs": {
+                "accelerator": "auto"
+            },
+            "kernel_size": 3,
+            "num_filters": 16,
+            "dropout": 0.1
+        }
+    },
+    "NBEATS": {
+        "enabled": true,
+        "hyperparameters": {
+            "input_chunk_length": 12,
+            "output_chunk_length": 1,
+            "n_epochs": 50,
+            "random_state": 42,
+            "pl_trainer_kwargs": {
+                "accelerator": "auto"
+            },
+            "num_blocks": 3,
+            "num_layers": 3,
+            "layer_widths": 512
+        }
+    },
+    "NHiTS": {
+        "enabled": true,
+        "hyperparameters": {
+            "input_chunk_length": 6,
+            "output_chunk_length": 1,
+            "n_epochs": 30,
+            "random_state": 42,
+            "pl_trainer_kwargs": {
+                "accelerator": "auto"
+            },
+            "num_blocks": 3,
+            "num_layers": 3,
+            "layer_widths": 512
+        }
+    },
+    "TiDE": {
+        "enabled": true,
+        "hyperparameters": {
+            "input_chunk_length": 12,
+            "output_chunk_length": 1,
+            "n_epochs": 50,
+            "random_state": 42,
+            "pl_trainer_kwargs": {
+                "accelerator": "auto"
+            },
+            "num_encoder_layers": 2,
+            "num_decoder_layers": 2,
+            "decoder_output_dim": 16,
+            "hidden_size": 128,
+            "temporal_width_past": 4,
+            "temporal_width_future": 4,
+            "dropout": 0.1
+        }
+    },
+    "DLinear": {
+        "enabled": true,
+        "hyperparameters": {
+            "input_chunk_length": 12,
+            "output_chunk_length": 1,
+            "n_epochs": 100,
+            "random_state": 42,
+            "pl_trainer_kwargs": {
+                "accelerator": "auto"
+            },
+            "kernel_size": 25,
+            "const_init": true,
+            "use_static_covariates": true
+        }
+    },
+    "TSMixer": {
+        "enabled": true,
+        "hyperparameters": {
+            "input_chunk_length": 12,
+            "output_chunk_length": 1,
+            "n_epochs": 50,
+            "random_state": 42,
+            "pl_trainer_kwargs": {
+                "accelerator": "auto"
+            },
+            "hidden_size": 256,
+            "num_blocks": 4,
+            "dropout": 0.1
+        }
+    },
+    "RandomForest": {
+        "enabled": true,
+        "hyperparameters": {
+            "lags": 12,
+            "n_estimators": 100,
+            "max_depth": 10,
+            "min_samples_split": 2,
+            "min_samples_leaf": 1,
+            "random_state": 42
+        }
+    },
+    "LinearRegression": {
+        "enabled": true,
+        "hyperparameters": {
+            "lags": 12,
+            "lags_past_covariates": null,
+            "output_chunk_length": 1
+        }
+    },
+    "AutoARIMA": {
+        "enabled": true,
+        "hyperparameters": {
+            "start_p": 0,
+            "start_q": 0,
+            "max_p": 3,
+            "max_q": 3,
+            "seasonal": true,
+            "stepwise": true,
+            "random_state": 42
+        }
+    },
+    "AutoETS": {
+        "enabled": false,
+        "hyperparameters": {}
+    },
+    "AutoTheta": {
+        "enabled": false,
+        "hyperparameters": {}
+    },
+    "Theta": {
+        "enabled": true,
+        "hyperparameters": {
+            "season_mode": "ADDITIVE"
+        }
+    },
+    "FourTheta": {
+        "enabled": true,
+        "hyperparameters": {
+            "season_mode": "ADDITIVE"
+        }
+    },
+    "KalmanFilter": {
+        "enabled": true,
+        "hyperparameters": {}
+    },
+    "Croston": {
+        "enabled": true,
+        "hyperparameters": {}
+    },
+    "AutoCES": {
+        "enabled": false,
+        "hyperparameters": {}
+    },
+    "AutoMFLES": {
+        "enabled": false,
+        "hyperparameters": {}
+    },
+    "AutoTBATS": {
+        "enabled": false,
+        "hyperparameters": {}
+    },
+    "NaiveMean": {
+        "enabled": true,
+        "hyperparameters": {}
+    },
+    "NaiveDrift": {
+        "enabled": true,
+        "hyperparameters": {}
+    },
+    "NaiveSeasonal": {
+        "enabled": true,
+        "hyperparameters": {
+            "K": 12
+        }
+    },
+    "NaiveEnsemble": {
+        "enabled": false,
+        "hyperparameters": {
+            "models": [
+                "NaiveMean",
+                "NaiveDrift",
+                "NaiveSeasonal"
+            ]
+        }
+    }
+  }
+}

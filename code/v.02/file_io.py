@@ -155,6 +155,7 @@ class FileIOManager:
             data, historical_data, rankings, forecasts, yearly_forecast_totals,
             cumulative_timelines, best_model_validation, all_models_validation
         )
+        output_data['generated_at'] = datetime.now().isoformat()
         
         # Save the data file
         self._write_data_file(output_data, output_path)
