@@ -159,49 +159,77 @@ class CVEForecastEngine:
     def _get_cumulative_timelines(self, historical_data, forecasts, current_month_data):
         """Generate cumulative timelines for all models and the ensemble average."""
         cumulative_timelines = {}
-        historical_2025_data = {item['date']: item['cve_count'] for item in historical_data if item['date'].startswith('2025')}
+
+        # Filter for and sort 2025 historical data to establish a baseline
+        historical_2025_df = pd.DataFrame([item for item in historical_data if item['date'].startswith('2025')])
+        if not historical_2025_df.empty:
+            historical_2025_df['date'] = pd.to_datetime(historical_2025_df['date'])
+            historical_2025_df = historical_2025_df.sort_values(by='date')
 
         # --- Generate timeline for each individual model ---
         for model_name, model_forecasts in forecasts.items():
             if not model_forecasts:
                 continue
+
+            model_timeline = []
+            running_total = 0
+
+            # Create the historical portion of the timeline for 2025
+            # Start with a zero point for Jan 1st to anchor the chart
+            model_timeline.append({"date": "2025-01", "cumulative_total": 0})
             
-            model_forecast_map = {fc['date']: fc['cve_count'] for fc in model_forecasts}
-            timeline, running_total = [], 0
+            # Process historical months for 2025, building the cumulative total
+            for _, row in historical_2025_df.iterrows():
+                running_total += row['cve_count']
+                # Append a point for the END of each historical month
+                next_month = row['date'].month + 1 if row['date'].month < 12 else 1
+                next_year = row['date'].year if row['date'].month < 12 else row['date'].year + 1
+                month_end_str = f"{next_year}-{str(next_month).zfill(2)}"
+                model_timeline.append({
+                    "date": month_end_str,
+                    "cumulative_total": running_total
+                })
 
-            for month_num in range(1, 13):
-                date_str = f"2025-{month_num:02d}"
-                timeline.append({"date": date_str, "cumulative_total": running_total})
+            # The 'running_total' now correctly holds the sum of all completed months in 2025.
+            
+            # Process forecasted months, adding to the historical running_total
+            sorted_forecasts = sorted(model_forecasts, key=lambda x: x['date'])
+            
+            for forecast in sorted_forecasts:
+                # The forecast for a month is added to the running total.
+                running_total += forecast['cve_count']
                 
-                if date_str in historical_2025_data:
-                    running_total += historical_2025_data[date_str]
-                # BUG FIX: Removed the elif that was using the partial actuals for the current month.
-                # This ensures that the forecasted value is used for the current month.
-                elif date_str in model_forecast_map:
-                    running_total += model_forecast_map[date_str]
+                # The new cumulative total is for the END of that forecast month.
+                forecast_date = datetime.datetime.strptime(forecast['date'], '%Y-%m').date()
+                next_month = forecast_date.month + 1 if forecast_date.month < 12 else 1
+                next_year = forecast_date.year if forecast_date.month < 12 else forecast_date.year + 1
+                month_end_str = f"{next_year}-{str(next_month).zfill(2)}"
+                
+                model_timeline.append({
+                    "date": month_end_str,
+                    "cumulative_total": running_total
+                })
 
-            timeline.append({"date": "2026-01", "cumulative_total": running_total})
-            cumulative_timelines[f"{model_name}_cumulative"] = timeline
+            cumulative_timelines[f"{model_name}_cumulative"] = model_timeline
 
         # --- Generate timeline for the average of all models ---
-        if forecasts:
-            all_models_timeline, running_total = [], 0
-            all_forecast_dates = sorted(list(set(f['date'] for f_list in forecasts.values() for f in f_list)))
+        if cumulative_timelines:
+            all_dates = sorted(list(set(point['date'] for timeline in cumulative_timelines.values() for point in timeline)))
+            avg_timeline = []
+            for date_str in all_dates:
+                monthly_totals = []
+                for model_name in forecasts.keys():
+                    model_timeline_key = f"{model_name}_cumulative"
+                    if model_timeline_key in cumulative_timelines:
+                        point = next((p for p in cumulative_timelines[model_timeline_key] if p['date'] == date_str), None)
+                        if point:
+                            monthly_totals.append(point['cumulative_total'])
+                
+                if monthly_totals:
+                    avg_total = sum(monthly_totals) / len(monthly_totals)
+                    avg_timeline.append({"date": date_str, "cumulative_total": round(avg_total)})
             
-            for month_num in range(1, 13):
-                date_str = f"2025-{month_num:02d}"
-                all_models_timeline.append({"date": date_str, "cumulative_total": running_total})
-
-                if date_str in historical_2025_data:
-                    running_total += historical_2025_data[date_str]
-                # BUG FIX: Removed the elif that was using the partial actuals for the current month.
-                elif date_str in all_forecast_dates:
-                    avg_forecast = np.mean([f['cve_count'] for f_list in forecasts.values() for f in f_list if f['date'] == date_str])
-                    if not np.isnan(avg_forecast):
-                        running_total += avg_forecast
-
-            all_models_timeline.append({"date": "2026-01", "cumulative_total": running_total})
-            cumulative_timelines['all_models_cumulative'] = all_models_timeline
+            cumulative_timelines['all_models_cumulative'] = avg_timeline
 
         return cumulative_timelines
 
