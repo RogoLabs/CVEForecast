@@ -136,16 +136,21 @@ class CVEForecastEngine:
         return df.reset_index(drop=True).to_dict('records')
 
     def _get_current_month_actual(self):
+        """Calculates the actual CVE data for the current, partial month."""
         today = datetime.date.today()
         last_day_of_month = (today.replace(day=28) + datetime.timedelta(days=4)).replace(day=1) - datetime.timedelta(days=1)
         
         current_cve_count = int(self.current_month_series.values()[0][0])
-        historical_total = int(self.historical_series.to_dataframe()['cve_count'].sum())
+        
+        # BUG FIX: Calculate the year-to-date total instead of the full historical total.
+        # This filters the historical series to only include months from the current year.
+        hist_df = self.historical_series.to_dataframe()
+        year_to_date_total = int(hist_df[hist_df.index.year == today.year]['cve_count'].sum())
 
         return {
             "date": today.strftime('%Y-%m'),
             "cve_count": current_cve_count,
-            "cumulative_total": historical_total + current_cve_count,
+            "cumulative_total": year_to_date_total + current_cve_count,
             "days_elapsed": today.day,
             "total_days": last_day_of_month.day,
             "progress_percentage": round((today.day / last_day_of_month.day) * 100, 1)
