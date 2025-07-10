@@ -11,127 +11,6 @@ let chartType = 'cumulative';
 const TOP_MODELS_COUNT = 5;
 
 // SINGLE SOURCE OF TRUTH: Pre-calculated forecast totals object
-let forecastTotals = {};
-
-/**
- * Calculate all forecast totals once and store in forecastTotals object
- * This is the SINGLE SOURCE OF TRUTH for all UI components
- */
-function calculateAllForecastTotals() {
-    if (!forecastData || !forecastData.historical_data) {
-        console.error('No forecast data available for calculations');
-        return;
-    }
-    
-    // Clear previous calculations
-    forecastTotals = {};
-    
-    // Step 1: Calculate base historical + current month total
-    let baseHistoricalTotal = 0;
-    
-    // Sum 2025 historical data only
-    forecastData.historical_data.forEach(item => {
-        if (item.date && item.date.startsWith('2025')) {
-            baseHistoricalTotal += item.cve_count;
-        }
-    });
-    
-    // Current month actual is for visual reference only - NOT included in yearly forecast totals
-    // (Current month data point remains visible on chart but doesn't count toward yearly total)
-    
-    // Step 2: Identify the best performing model (#1 ranked)
-    let bestModelName = 'Unknown';
-    if (forecastData.model_rankings && forecastData.model_rankings.length > 0) {
-        bestModelName = forecastData.model_rankings[0].model_name;
-    }
-    
-    // Step 3: Calculate individual model totals
-    if (forecastData.forecasts) {
-        const currentMonth = new Date().getMonth() + 1;
-        
-        Object.keys(forecastData.forecasts).forEach(modelName => {
-            const modelForecasts = forecastData.forecasts[modelName];
-            let modelForecastTotal = 0;
-            
-            if (modelForecasts) {
-                modelForecasts.forEach(forecast => {
-                    const [year, month] = forecast.date.split('-').map(Number);
-                    // Only include future months to avoid double-counting current month
-                    if (month > currentMonth || year > 2025) {
-                        modelForecastTotal += forecast.cve_count;
-                    }
-                });
-            }
-            
-            // Store complete total: historical + current + forecast
-            forecastTotals[modelName] = Math.round(baseHistoricalTotal + modelForecastTotal);
-        });
-    }
-    
-    // Step 4: Calculate "All Models" average
-    const modelNames = Object.keys(forecastData.forecasts || {});
-    if (modelNames.length > 0) {
-        const currentMonth = new Date().getMonth() + 1;
-        const monthlyAverages = {};
-        
-        // Group forecasts by month to calculate averages
-        modelNames.forEach(modelName => {
-            const modelForecasts = forecastData.forecasts[modelName];
-            if (modelForecasts) {
-                modelForecasts.forEach(forecast => {
-                    const [year, month] = forecast.date.split('-').map(Number);
-                    // Only include future months
-                    if (month > currentMonth || year > 2025) {
-                        if (!monthlyAverages[forecast.date]) {
-                            monthlyAverages[forecast.date] = [];
-                        }
-                        monthlyAverages[forecast.date].push(forecast.cve_count);
-                    }
-                });
-            }
-        });
-        
-        // Calculate average for each month and sum
-        let allModelsAverageTotal = 0;
-        Object.keys(monthlyAverages).forEach(monthKey => {
-            const monthValues = monthlyAverages[monthKey];
-            const monthAverage = monthValues.reduce((sum, val) => sum + val, 0) / monthValues.length;
-            allModelsAverageTotal += monthAverage;
-        });
-        
-        forecastTotals['all_models_average'] = Math.round(baseHistoricalTotal + allModelsAverageTotal);
-    }
-    
-    // Step 5: Store best model total separately for dashboard card
-    if (bestModelName !== 'Unknown' && forecastTotals[bestModelName]) {
-        forecastTotals['best_model_total'] = forecastTotals[bestModelName];
-        forecastTotals['best_model_name'] = bestModelName;
-    }
-    
-    console.log('📊 Forecast Totals Calculated:', forecastTotals);
-    
-    // Update debug panel if it exists
-    updateDebugPanel();
-}
-
-/**
- * Update debug panel with backend pre-calculated forecast totals
- */
-function updateDebugPanel() {
-    const debugPanel = document.getElementById('debugPanel');
-    if (!debugPanel) return;
-    
-    // Use backend pre-calculated totals instead of JavaScript calculations
-    const backendTotals = forecastData.yearly_forecast_totals || {};
-    
-    // Display the backend pre-calculated totals
-    debugPanel.innerHTML = `
-        <h3 style="margin: 0 0 10px 0; color: #1f2937; font-weight: bold;">🔧 Debug Panel - Backend Pre-Calculated Totals</h3>
-        <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">Single source of truth from Python backend (cve_forecast.py):</p>
-        <pre style="background: #f9fafb; padding: 12px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 12px; overflow-x: auto; margin: 0;">${JSON.stringify(backendTotals, null, 2)}</pre>
-    `;
-}
-
 // Initialize the dashboard
 document.addEventListener('DOMContentLoaded', function() {
     loadForecastData();
@@ -591,6 +470,10 @@ function populateValidationTable() {
         document.getElementById('avgPercentError').textContent = '-';
     }
 }
+
+/**
+ * Update data period info
+ */
 function updateDataPeriodInfo() {
     const summary = forecastData.summary;
     
@@ -652,83 +535,6 @@ function updateCurrentYearForecast() {
     const dataSource = (forecastData.new_forecast_runs && forecastData.new_forecast_runs.yearly_forecast_totals) ? 'Dynamic Forecast' : 'Standard Forecast';
     document.getElementById('forecastDescription').textContent = 
         `Total CVEs: Published + Forecasted (${bestModelName} - ${dataSource})`;
-}
-
-/**
- * SINGLE SOURCE OF TRUTH: Calculate yearly forecast total for any model selection
- * This function is the authoritative calculation used by all UI components
- * @param {string} selectedModel - Either "all" for average of all models, or specific model name
- * @returns {number} - Rounded integer total of forecasted CVEs for the year
- */
-function calculateYearlyForecastTotal(selectedModel) {
-    if (!forecastData || !forecastData.historical_data) return 0;
-    
-    let total = 0;
-    
-    // Step 1: Sum all historical data cve_count (completed months)
-    forecastData.historical_data.forEach(item => {
-        // Only include 2025 data, not decades of historical data
-        if (item.date && item.date.startsWith('2025')) {
-            total += item.cve_count;
-        }
-    });
-    
-    // Step 2: Add current month actual if available
-    if (forecastData.current_month_actual) {
-        total += forecastData.current_month_actual.cve_count;
-    }
-    
-    // Step 3: Add forecast totals based on selected model
-    if (selectedModel === 'all') {
-        // Calculate average of all model forecasts for each remaining month
-        const allModelNames = Object.keys(forecastData.forecasts);
-        if (allModelNames.length === 0) return Math.round(total);
-        
-        // Group forecasts by month to calculate averages
-        const monthlyAverages = {};
-        
-        allModelNames.forEach(modelName => {
-            const modelForecasts = forecastData.forecasts[modelName];
-            if (modelForecasts) {
-                modelForecasts.forEach(forecast => {
-                    // Only include future months to avoid double-counting current month
-                    const [year, month] = forecast.date.split('-').map(Number);
-                    const currentMonth = new Date().getMonth() + 1;
-                    
-                    if (month > currentMonth || year > 2025) {
-                        if (!monthlyAverages[forecast.date]) {
-                            monthlyAverages[forecast.date] = [];
-                        }
-                        monthlyAverages[forecast.date].push(forecast.cve_count);
-                    }
-                });
-            }
-        });
-        
-        // Calculate average for each month and add to total
-        Object.keys(monthlyAverages).forEach(monthKey => {
-            const monthValues = monthlyAverages[monthKey];
-            const monthAverage = monthValues.reduce((sum, val) => sum + val, 0) / monthValues.length;
-            total += monthAverage;
-        });
-        
-    } else {
-        // Use specific model forecasts
-        if (forecastData.forecasts[selectedModel]) {
-            const modelForecasts = forecastData.forecasts[selectedModel];
-            const currentMonth = new Date().getMonth() + 1;
-            
-            modelForecasts.forEach(forecast => {
-                // Only include future months to avoid double-counting current month
-                const [year, month] = forecast.date.split('-').map(Number);
-                if (month > currentMonth || year > 2025) {
-                    total += forecast.cve_count;
-                }
-            });
-        }
-    }
-    
-    return Math.round(total);
 }
 
 /**
@@ -905,77 +711,6 @@ function createChart() {
         console.error('Error creating chart:', error);
         throw error;
     }
-}
-
-/**
- * Convert monthly data to cumulative sum
- * Shows cumulative total of CVEs published BEFORE the first day of each month
- */
-function calculateCumulativeSum(monthlyData) {
-    const result = [];
-    let cumulativeSum = 0;
-    
-    for (let i = 0; i < monthlyData.length; i++) {
-        const item = monthlyData[i];
-        
-        // The data point shows CVEs published BEFORE this month
-        result.push({
-            date: item.date,
-            cve_count: cumulativeSum  // Total before this month
-        });
-        
-        // Add this month's CVEs to the running total for next iteration
-        cumulativeSum += item.cve_count;
-    }
-    
-    return result;
-}
-
-/**
- * Debug function to verify chart data alignment
- * Logs all datasets with their 12-month structure for verification
- */
-function debugChartDataAlignment(datasets, fullYearMonths) {
-    console.log('=== CHART DATA ALIGNMENT DEBUG ===');
-    console.log('Full year timeline:', fullYearMonths);
-    
-    let debugOutput = [];
-    
-    datasets.forEach((dataset, datasetIndex) => {
-        debugOutput.push(`\n--- Dataset ${datasetIndex + 1}: ${dataset.label} ---`);
-        
-        dataset.data.forEach((point, pointIndex) => {
-            const month = fullYearMonths[pointIndex];
-            const value = point.y;
-            const status = value === null ? 'NULL' : value;
-            
-            debugOutput.push(`Month: ${month}, Model: ${dataset.label}, Value: ${status}`);
-        });
-    });
-    
-    const fullDebugText = debugOutput.join('\n');
-    console.log(fullDebugText);
-    
-    // Also log a summary
-    console.log('\n=== ALIGNMENT SUMMARY ===');
-    console.log(`Total datasets: ${datasets.length}`);
-    console.log(`Points per dataset: ${datasets[0]?.data?.length || 0}`);
-    console.log(`Expected points per dataset: 13 (Jan 2025 - Jan 2026)`);
-    
-    // Verify all datasets have same length
-    const allSameLength = datasets.every(dataset => dataset.data.length === 13);
-    console.log(`All datasets have 13 points: ${allSameLength}`);
-    
-    if (!allSameLength) {
-        console.warn('⚠️ DATA ALIGNMENT ISSUE: Not all datasets have 13 points!');
-        datasets.forEach((dataset, index) => {
-            console.warn(`Dataset ${index + 1} (${dataset.label}): ${dataset.data.length} points`);
-        });
-    } else {
-        console.log('✅ Data alignment verified: All datasets have consistent 13-month structure (Jan 2025 - Jan 2026)');
-    }
-    
-    console.log('=== END DEBUG ===\n');
 }
 
 /**
@@ -1322,15 +1057,6 @@ function prepareChartData() {
 }
 
 /**
- * Get cumulative total of historical data up to specified month
- */
-function getHistoricalCumulativeTotal(monthKey) {
-    let cumulativeTotal = 0;
-    
-    // Sum all historical data up to and including the specified month
-    for (const item of forecastData.historical_data) {
-        if (item.date <= monthKey && item.date.startsWith('2025')) {
-            cumulativeTotal += item.cve_count;
         }
     }
     

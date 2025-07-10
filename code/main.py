@@ -176,12 +176,19 @@ class CVEForecastEngine:
         }
 
     def _get_cumulative_timelines(self, historical_data, forecasts, current_month_data):
-        """Generate cumulative timelines for all models and the ensemble average."""
+        """
+        Generate cumulative timelines for all models and the ensemble average, strictly following:
+        - Start at 0 for Jan 2025 (cumulative_total=0)
+        - Only include completed months for the historical line
+        - Add the current (partial) month as a separate point
+        - Forecasts start after the current month, cumulative from the last completed month
+        - Do not double-count the current month in forecasts
+        """
         import copy
         cumulative_timelines = {}
 
-        # Build a lookup for historical data by date
-        historical_lookup = {item['date']: item['cve_count'] for item in historical_data}
+        # Get the first month (Jan 2025) and last completed month
+        first_month = historical_data[0]['date'] if historical_data else None
         last_hist_date = historical_data[-1]['date'] if historical_data else None
         last_hist_cumulative = sum(item['cve_count'] for item in historical_data)
         current_month_date = current_month_data['date']
@@ -191,6 +198,10 @@ class CVEForecastEngine:
         for model_name, model_forecasts in forecasts.items():
             timeline = []
             cumulative = 0
+            # 0. Start at 0 for the first month (Jan 2025)
+            if first_month:
+                start_year, start_month = map(int, first_month.split('-'))
+                timeline.append({"date": f"{start_year}-01", "cumulative_total": 0})
             # 1. Add all historical data points (completed months)
             for item in historical_data:
                 cumulative += item['cve_count']
@@ -227,6 +238,7 @@ class CVEForecastEngine:
             cumulative_timelines['all_models_cumulative'] = avg_timeline
 
         return cumulative_timelines
+
 
     def _get_summary(self):
         """Build the summary object matching the v.02 file_io.py logic exactly."""
