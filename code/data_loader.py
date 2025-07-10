@@ -15,7 +15,9 @@ def load_cve_data(config: dict) -> pd.DataFrame:
         A pandas DataFrame with monthly CVE counts.
     """
     cve_data_path = Path(config['file_paths']['cve_data'])
-    start_date_filter = config['data_processing']['start_date_filter']
+    data_processing_config = config.get('data_processing', {})
+    filter_by_date = data_processing_config.get('filter_by_date', False)
+    start_date_filter = data_processing_config.get('start_date_filter')
     
     logger = logging.getLogger(__name__)
     logger.info(f"Starting CVE data processing from: {cve_data_path}")
@@ -77,9 +79,22 @@ def load_cve_data(config: dict) -> pd.DataFrame:
     df = df.set_index('date')
     monthly_counts = df.resample('M').size().to_frame('cve_count')
 
-    # Filter by start date
-    monthly_counts = monthly_counts[monthly_counts.index >= pd.to_datetime(start_date_filter)]
+    # Ensure all months are present in the range, filling missing ones with 0
+    if not monthly_counts.empty:
+        start_date, end_date = monthly_counts.index.min(), monthly_counts.index.max()
+        full_date_range = pd.date_range(start=start_date, end=end_date, freq='M')
+        monthly_counts = monthly_counts.reindex(full_date_range, fill_value=0)
+
+    # Conditionally filter by start date
+    if filter_by_date and start_date_filter:
+        logger.info(f"Applying date filter. Keeping data from {start_date_filter} onwards.")
+        monthly_counts = monthly_counts[monthly_counts.index >= pd.to_datetime(start_date_filter)]
+    else:
+        logger.info("No date filter applied. Processing all historical data.")
     
-    logger.info(f"Aggregated data into {len(monthly_counts)} monthly periods from {monthly_counts.index.min().strftime('%Y-%m')} to {monthly_counts.index.max().strftime('%Y-%m')}.")
+    if not monthly_counts.empty:
+        logger.info(f"Aggregated data into {len(monthly_counts)} monthly periods from {monthly_counts.index.min().strftime('%Y-%m')} to {monthly_counts.index.max().strftime('%Y-%m')}.")
+    else:
+        logger.warning("Resulting DataFrame is empty after processing and filtering.")
 
     return monthly_counts

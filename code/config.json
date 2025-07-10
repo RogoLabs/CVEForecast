@@ -10,13 +10,15 @@
     "format": "%(asctime)s - %(levelname)s - %(message)s"
   },
   "data_processing": {
+    "filter_by_date": true,
     "start_date_filter": "2017-01-01"
   },
   "model_evaluation": {
     "split_ratio": 0.8,
     "forecast_horizon_months": 12,
     "forecast_end_year": 2026,
-    "forecast_end_month": 1
+    "forecast_end_month": 1,
+    "ensemble_size": 5
   },
   "models": {
     "Prophet": {

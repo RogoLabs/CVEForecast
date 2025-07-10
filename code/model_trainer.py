@@ -56,7 +56,7 @@ def train_and_evaluate_model(model_name: str, model_config: dict, series: TimeSe
     model_class = MODEL_MAPPING.get(model_name)
     if not model_class:
         logger.warning(f"Model {model_name} not found in mapping. Skipping.")
-        return None, None
+        return None, None, None
 
     try:
         # Split data
@@ -101,8 +101,30 @@ def train_and_evaluate_model(model_name: str, model_config: dict, series: TimeSe
         mae_str = f"{metrics.get('mae', 0):.2f}" if metrics.get('mae') is not None else "N/A"
         logger.info(f"{model_name} - MAPE: {mape_str}, MASE: {mase_str}, RMSSE: {rmsse_str}, MAE: {mae_str}")
 
-        return model, metrics
+        # Generate detailed validation data
+        validation_data = []
+        val_df = val.to_dataframe()
+        pred_df = predictions.to_dataframe()
+
+        for i in range(len(val)):
+            timestamp = val.time_index[i]
+            actual = val_df.iloc[i, 0]
+            predicted = pred_df.iloc[i, 0]
+            error = abs(actual - predicted)
+            percent_error = (error / actual) * 100 if actual != 0 else 0
+            
+            validation_data.append({
+                "date": timestamp.strftime('%Y-%m'),
+                "actual": float(actual),
+                "predicted": float(predicted),
+                "error": float(error),
+                "percent_error": float(percent_error)
+            })
+
+        logger.info(f"{model_name} - MAPE: {mape_str}, MASE: {mase_str}, RMSSE: {rmsse_str}, MAE: {mae_str}")
+
+        return model, metrics, validation_data
 
     except Exception as e:
         logger.error(f"Failed to train or evaluate {model_name}: {e}", exc_info=True)
-        return None, None
+        return None, None, None
