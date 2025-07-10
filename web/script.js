@@ -719,58 +719,58 @@ function createChart() {
  * NO JavaScript calculations needed - all data pre-calculated by Python backend
  */
 function prepareChartData() {
-    const { cumulative_timelines, model_rankings, current_month_actual } = forecastData;
+    const { cumulative_timelines, model_rankings } = forecastData;
     const datasets = [];
 
-    // Stop processing if essential data is missing
-    if (!cumulative_timelines || !model_rankings || !current_month_actual) {
-        console.error("Cannot prepare chart data: cumulative_timelines or model_rankings are missing.");
+    if (!cumulative_timelines || !model_rankings) {
+        console.error("Chart data cannot be prepared: cumulative_timelines is missing.");
         return { datasets: [] };
     }
 
-    // 1. All Models Average (as the solid "Actual" line, including current month's partial progress)
-    // The backend now correctly bakes the partial current month into this timeline.
-    if (cumulative_timelines.all_models_cumulative) {
-        datasets.push({
-            label: 'Published CVEs (Actual)',
-            data: cumulative_timelines.all_models_cumulative.map(d => ({ x: new Date(d.date), y: d.cumulative_total })),
-            borderColor: 'rgb(59, 130, 246)',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            borderWidth: 3,
-            pointRadius: 3,
-            pointHoverRadius: 6,
-            fill: false,
-            tension: 0.1
-        });
-    }
+    // Use the "all_models_cumulative" as the single source of truth for the historical line
+    const actualsTimeline = cumulative_timelines.all_models_cumulative || [];
 
-    // 2. Add Forecast Data for Top 5 Models
+    // Find the last actual data point to anchor the forecasts
+    const lastActualPoint = actualsTimeline.length > 0 ? actualsTimeline[actualsTimeline.length - 1] : null;
+
+    // 1. Published CVEs (Actual) - Solid Blue Line
+    datasets.push({
+        label: 'Published CVEs (Actual)',
+        data: actualsTimeline.map(d => ({ x: new Date(d.date), y: d.cumulative_total })),
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderWidth: 3,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        tension: 0.1
+    });
+
+    // 2. Forecast Data for Top 5 Models - Dashed/Dotted Lines
     const topModels = model_rankings.slice(0, 5);
-    const colors = [
-        'rgb(239, 68, 68)',   // Red
-        'rgb(34, 197, 94)',   // Green
-        'rgb(168, 85, 247)',  // Purple
-        'rgb(249, 115, 22)',  // Orange
-        'rgb(14, 165, 233)'   // Sky Blue
-    ];
+    const colors = ['rgb(239, 68, 68)', 'rgb(34, 197, 94)', 'rgb(168, 85, 247)', 'rgb(249, 115, 22)', 'rgb(14, 165, 233)'];
 
     topModels.forEach((model, index) => {
         const modelTimelineKey = `${model.model_name}_cumulative`;
-        const modelTimeline = cumulative_timelines[modelTimelineKey];
-        
-        if (modelTimeline) {
-            // Filter the data to only show the forecast part (from the current month onward)
-            const forecastDataPoints = modelTimeline.filter(d => new Date(d.date) >= new Date(current_month_actual.date));
+        const modelForecastTimeline = cumulative_timelines[modelTimelineKey];
 
+        if (modelForecastTimeline && lastActualPoint) {
+            // THE CRITICAL FIX: Prepend the last actual point to each forecast dataset.
+            // This "stitches" the forecast line to the end of the actuals line.
+            const stitchedData = [
+                { x: new Date(lastActualPoint.date), y: lastActualPoint.cumulative_total },
+                ...modelForecastTimeline
+                    .filter(d => new Date(d.date) > new Date(lastActualPoint.date))
+                    .map(d => ({ x: new Date(d.date), y: d.cumulative_total }))
+            ];
+            
             datasets.push({
                 label: `${model.model_name} (Forecast)`,
-                data: forecastDataPoints.map(d => ({ x: new Date(d.date), y: d.cumulative_total })),
+                data: stitchedData,
                 borderColor: colors[index % colors.length],
                 borderWidth: 2,
-                borderDash: [5, 5], // Dashed line for forecasts
+                borderDash: [5, 5],
                 pointRadius: 3,
                 pointHoverRadius: 6,
-                fill: false,
                 tension: 0.1
             });
         }
