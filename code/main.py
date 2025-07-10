@@ -160,7 +160,7 @@ class CVEForecastEngine:
         """Generate cumulative timelines for all models and the ensemble average."""
         cumulative_timelines = {}
         
-        # Create a dictionary of all actual CVE counts for 2025 from historical data
+        # Create a dictionary of actual CVE counts for 2025 from historical data
         historical_2025_counts = {
             item['date']: item['cve_count'] for item in historical_data if item['date'].startswith('2025')
         }
@@ -170,12 +170,17 @@ class CVEForecastEngine:
             if not model_forecasts:
                 continue
 
-            model_timeline_data = []
             running_total = 0
+            
+            # This list will hold the final cumulative data points
+            timeline = []
+            # Start the chart on Jan 1st with a zero value
+            timeline.append({"date": "2025-01", "cumulative_total": 0})
             
             # Create a full 12-month series of data, using actuals where available, otherwise use the forecast
             for month_num in range(1, 13):
                 date_str = f"2025-{month_num:02d}"
+                monthly_value = 0
                 
                 if date_str in historical_2025_counts:
                     # Use actual historical data for past months
@@ -183,20 +188,22 @@ class CVEForecastEngine:
                 else:
                     # Use the model's forecasted data for current and future months
                     forecast_item = next((f for f in model_forecasts if f['date'] == date_str), None)
-                    monthly_value = forecast_item['cve_count'] if forecast_item else 0
+                    if forecast_item:
+                        monthly_value = forecast_item['cve_count']
 
                 running_total += monthly_value
-                model_timeline_data.append({"date": date_str, "cumulative_total": running_total})
+                # The date for the data point should be the *start* of the next month
+                next_month = month_num + 1 if month_num < 12 else 1
+                next_year = 2025 if month_num < 12 else 2026
+                next_month_date_str = f"{next_year}-{str(next_month).zfill(2)}"
+                
+                timeline.append({"date": next_month_date_str, "cumulative_total": round(running_total)})
 
-            # Prepend the starting point for the chart at Jan 1st, 2025
-            final_timeline = [{"date": "2025-01", "cumulative_total": 0}] + model_timeline_data
-            
-            cumulative_timelines[f"{model_name}_cumulative"] = final_timeline
+            cumulative_timelines[f"{model_name}_cumulative"] = timeline
 
         # --- Recalculate the All Models Average timeline based on the corrected individual timelines ---
         if cumulative_timelines:
             all_dates = sorted(list(set(point['date'] for timeline in cumulative_timelines.values() for point in timeline)))
-            
             avg_timeline = []
             for date_str in all_dates:
                 monthly_totals = []
