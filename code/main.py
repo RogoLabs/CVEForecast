@@ -175,59 +175,58 @@ class CVEForecastEngine:
             "progress_percentage": round((today.day / last_day_of_month.day) * 100, 1)
         }
 
-def _get_cumulative_timelines(self, historical_data, forecasts, current_month_data):
-    """Generate cumulative timelines using a clear, vectorized approach."""
-    cumulative_timelines = {}
-    
-    # Establish the full timeline from Jan 2025 to Jan 2026
-    current_year = datetime.datetime.now().year
-    timeline_dates = pd.to_datetime([f"{current_year}-{month}-01" for month in range(1, 13)] + [f"{current_year + 1}-01-01"])
+    def _get_cumulative_timelines(self, historical_data, forecasts, current_month_data):
+        """Generate cumulative timelines using a clear, vectorized approach."""
+        cumulative_timelines = {}
+        
+        # Establish the full timeline from Jan 2025 to Jan 2026
+        current_year = datetime.datetime.now().year
+        timeline_dates = pd.to_datetime([f"{current_year}-{month}-01" for month in range(1, 13)] + [f"{current_year + 1}-01-01"])
 
-    # Create a map of historical counts for easy lookup
-    historical_counts_map = {item['date']: item['cve_count'] for item in historical_data}
-    
-    # --- Generate timeline for each individual forecast model ---
-    for model_name, model_forecasts in forecasts.items():
-        if not model_forecasts: continue
-        forecast_map = {item['date']: item['cve_count'] for item in model_forecasts}
+        # Create a map of historical counts for easy lookup
+        historical_counts_map = {item['date']: item['cve_count'] for item in historical_data}
         
-        # Build a single array of monthly values for the entire year
-        monthly_values = [
-            historical_counts_map.get(dt.strftime('%Y-%m'), forecast_map.get(dt.strftime('%Y-%m'), 0))
-            for dt in timeline_dates[:-1] # Iterate through Jan to Dec
-        ]
-        
-        # Use numpy.cumsum for a fast and reliable cumulative sum
-        cumulative_values = np.cumsum(monthly_values)
-        
-        # Prepend the zero-point for Jan 1st to align with the timeline
-        final_cumulative_values = np.insert(cumulative_values, 0, 0)
-        
-        timeline = [
-            {"date": dt.strftime('%Y-%m'), "cumulative_total": int(round(val))}
-            for dt, val in zip(timeline_dates, final_cumulative_values)
-        ]
-        cumulative_timelines[f"{model_name}_cumulative"] = timeline
-        
-    # --- Generate the "All Models Average" cumulative timeline ---
-    if cumulative_timelines:
-        all_dates = [dt.strftime('%Y-%m') for dt in timeline_dates]
-        avg_timeline = []
-        for i, date_str in enumerate(all_dates):
-            monthly_totals = [
-                model_timeline[i]['cumulative_total']
-                for model_timeline in cumulative_timelines.values()
-                if len(model_timeline) > i and model_timeline[i]['date'] == date_str
+        # --- Generate timeline for each individual forecast model ---
+        for model_name, model_forecasts in forecasts.items():
+            if not model_forecasts: continue
+            forecast_map = {item['date']: item['cve_count'] for item in model_forecasts}
+            
+            # Build a single array of monthly values for the entire year
+            monthly_values = [
+                historical_counts_map.get(dt.strftime('%Y-%m'), forecast_map.get(dt.strftime('%Y-%m'), 0))
+                for dt in timeline_dates[:-1] # Iterate through Jan to Dec
             ]
-            if monthly_totals:
-                avg_timeline.append({
-                    "date": date_str,
-                    "cumulative_total": round(sum(monthly_totals) / len(monthly_totals))
-                })
-        cumulative_timelines['all_models_cumulative'] = avg_timeline
+            
+            # Use numpy.cumsum for a fast and reliable cumulative sum
+            cumulative_values = np.cumsum(monthly_values)
+            
+            # Prepend the zero-point for Jan 1st to align with the timeline
+            final_cumulative_values = np.insert(cumulative_values, 0, 0)
+            
+            timeline = [
+                {"date": dt.strftime('%Y-%m'), "cumulative_total": int(round(val))}
+                for dt, val in zip(timeline_dates, final_cumulative_values)
+            ]
+            cumulative_timelines[f"{model_name}_cumulative"] = timeline
+            
+        # --- Generate the "All Models Average" cumulative timeline ---
+        if cumulative_timelines:
+            all_dates = [dt.strftime('%Y-%m') for dt in timeline_dates]
+            avg_timeline = []
+            for i, date_str in enumerate(all_dates):
+                monthly_totals = [
+                    model_timeline[i]['cumulative_total']
+                    for model_timeline in cumulative_timelines.values()
+                    if len(model_timeline) > i and model_timeline[i]['date'] == date_str
+                ]
+                if monthly_totals:
+                    avg_timeline.append({
+                        "date": date_str,
+                        "cumulative_total": round(sum(monthly_totals) / len(monthly_totals))
+                    })
+            cumulative_timelines['all_models_cumulative'] = avg_timeline
 
-    return cumulative_timelines
-
+        return cumulative_timelines
 
     def _get_summary(self):
         """Build the summary object matching the v.02 file_io.py logic exactly."""
@@ -243,6 +242,48 @@ def _get_cumulative_timelines(self, historical_data, forecasts, current_month_da
                 'end': datetime.date(datetime.date.today().year + 1, 1, 31).strftime('%Y-%m-%d')
             }
         }
+
+    def _get_current_year_actual_cumulative(self, historical_data, current_month_data):
+        """
+        Generates a simple, clean cumulative timeline of actual known data for the current year.
+        This is the single source of truth for the "Published CVEs (Actual)" chart line.
+        """
+        self.logger.info("Generating the definitive cumulative timeline for actual CVEs.")
+        
+        # Use the current system date to ensure dynamic behavior
+        current_year = datetime.datetime.now().year
+        
+        # Filter for the current year's historical data
+        current_year_historical = [item for item in historical_data if item['date'].startswith(str(current_year))]
+        
+        # Sort to be absolutely sure of the order
+        current_year_historical.sort(key=lambda x: x['date'])
+        
+        # Start the timeline with Jan 1st having a value of 0
+        actual_timeline = [{"date": f"{current_year}-01", "cumulative_total": 0}]
+        
+        cumulative_total = 0
+        
+        # Iterate through the completed months of the current year
+        for item in current_year_historical:
+            cumulative_total += item['cve_count']
+            month_num = int(item['date'].split('-')[1])
+            
+            # The data point for a completed month is placed at the start of the *next* month
+            next_month_date = f"{current_year}-{month_num + 1:02d}"
+            actual_timeline.append({"date": next_month_date, "cumulative_total": cumulative_total})
+
+        # Add the final data point, which includes the partial data for the current month
+        if current_month_data:
+            cumulative_total += current_month_data['cve_count']
+            current_month_num = int(current_month_data['date'].split('-')[1])
+            
+            # The date for this point is the start of the month AFTER the current one
+            next_month_after_current = f"{current_year}-{current_month_num + 1:02d}"
+            actual_timeline.append({"date": next_month_after_current, "cumulative_total": cumulative_total})
+            
+        self.logger.info(f"Generated actuals timeline with {len(actual_timeline)} data points, ending at {actual_timeline[-1]['date']}.")
+        return actual_timeline
 
     def save_results(self):
         model_rankings = sorted([
@@ -274,11 +315,18 @@ def _get_cumulative_timelines(self, historical_data, forecasts, current_month_da
         # This summary is now created here to be used in the final printout
         self.summary = self._get_summary()
 
+        # Call the new method to get the definitive actuals timeline
+        current_year_actual_cumulative = self._get_current_year_actual_cumulative(historical_data, current_month_actual)
+
         final_json = {
             "generated_at": datetime.datetime.now().isoformat(),
             "model_rankings": model_rankings,
             "historical_data": historical_data,
             "current_month_actual": current_month_actual,
+            
+            # Add the new, clean array to the JSON output
+            "current_year_actual_cumulative": current_year_actual_cumulative,
+            
             "forecasts": forecasts_out,
             "all_models_validation": self.all_models_validation,
             "yearly_forecast_totals": {name: int(v.sum().values()[0][0]) for name, v in self.final_forecasts.items()},
