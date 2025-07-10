@@ -175,8 +175,8 @@ class CVEForecastEngine:
                 
                 if date_str in historical_2025_data:
                     running_total += historical_2025_data[date_str]
-                elif current_month_data and date_str == current_month_data['date']:
-                    running_total += current_month_data['cve_count']
+                # BUG FIX: Removed the elif that was using the partial actuals for the current month.
+                # This ensures that the forecasted value is used for the current month.
                 elif date_str in model_forecast_map:
                     running_total += model_forecast_map[date_str]
 
@@ -194,8 +194,7 @@ class CVEForecastEngine:
 
                 if date_str in historical_2025_data:
                     running_total += historical_2025_data[date_str]
-                elif current_month_data and date_str == current_month_data['date']:
-                    running_total += current_month_data['cve_count']
+                # BUG FIX: Removed the elif that was using the partial actuals for the current month.
                 elif date_str in all_forecast_dates:
                     avg_forecast = np.mean([f['cve_count'] for f_list in forecasts.values() for f in f_list if f['date'] == date_str])
                     if not np.isnan(avg_forecast):
@@ -229,9 +228,22 @@ class CVEForecastEngine:
         historical_data = self._get_historical_data()
         current_month_actual = self._get_current_month_actual()
 
-        forecasts_out = {name: [{"date": ts.strftime('%Y-%m'), "cve_count": int(round(val[0]))} 
-                                for ts, val in zip(forecast.time_index, forecast.values())] 
-                         for name, forecast in self.final_forecasts.items()}
+        forecasts_out = {}
+        current_month_date = current_month_actual['date']
+        current_month_count = current_month_actual['cve_count']
+
+        for name, forecast in self.final_forecasts.items():
+            forecast_list = []
+            for ts, val in zip(forecast.time_index, forecast.values()):
+                date_str = ts.strftime('%Y-%m')
+                cve_count = int(round(val[0]))
+                
+                # Adjust the forecast for the current month if it's lower than the actual partial count
+                if date_str == current_month_date and cve_count < current_month_count:
+                    cve_count = current_month_count
+                    
+                forecast_list.append({"date": date_str, "cve_count": cve_count})
+            forecasts_out[name] = forecast_list
 
         self.logger.info(f"Validation data to be saved: {json.dumps(self.all_models_validation, indent=2)}")
 
