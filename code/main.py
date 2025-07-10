@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 import sys
 from pathlib import Path
 import pandas as pd
@@ -160,64 +161,63 @@ class CVEForecastEngine:
         """Generate cumulative timelines for all models and the ensemble average."""
         cumulative_timelines = {}
         
-        # Create a dictionary of actual CVE counts for 2025 from historical data
         historical_2025_counts = {
             item['date']: item['cve_count'] for item in historical_data if item['date'].startswith('2025')
         }
 
-        # --- Generate timeline for each individual model ---
         for model_name, model_forecasts in forecasts.items():
             if not model_forecasts:
                 continue
 
+            model_forecast_map = {fc['date']: fc['cve_count'] for fc in model_forecasts}
+            timeline = []
             running_total = 0
             
-            # This list will hold the final cumulative data points
-            timeline = []
-            # Start the chart on Jan 1st with a zero value
-            timeline.append({"date": "2025-01", "cumulative_total": 0})
-            
-            # Create a full 12-month series of data, using actuals where available, otherwise use the forecast
-            for month_num in range(1, 13):
-                date_str = f"2025-{month_num:02d}"
-                monthly_value = 0
-                
-                if date_str in historical_2025_counts:
-                    # Use actual historical data for past months
-                    monthly_value = historical_2025_counts[date_str]
-                else:
-                    # Use the model's forecasted data for current and future months
-                    forecast_item = next((f for f in model_forecasts if f['date'] == date_str), None)
-                    if forecast_item:
-                        monthly_value = forecast_item['cve_count']
+            current_month_date_str = current_month_data.get('date')
+            current_month_dt = datetime.datetime.strptime(current_month_date_str, '%Y-%m')
 
-                running_total += monthly_value
-                # The date for the data point should be the *start* of the next month
-                next_month = month_num + 1 if month_num < 12 else 1
-                next_year = 2025 if month_num < 12 else 2026
-                next_month_date_str = f"{next_year}-{str(next_month).zfill(2)}"
-                
-                timeline.append({"date": next_month_date_str, "cumulative_total": round(running_total)})
+            # Build timeline for months before the current month
+            for month_num in range(1, current_month_dt.month):
+                date_str = f"2025-{month_num:02d}"
+                timeline.append({"date": date_str, "cumulative_total": round(running_total)})
+                running_total += historical_2025_counts.get(date_str, 0)
+
+            # Add the single, correct data point for the current month, including its partial data
+            running_total += current_month_data.get('cve_count', 0)
+            timeline.append({"date": current_month_date_str, "cumulative_total": round(running_total)})
+
+            # Build the rest of the timeline using forecasts for future months
+            for month_num in range(current_month_dt.month + 1, 13):
+                date_str = f"2025-{month_num:02d}"
+                running_total += model_forecast_map.get(date_str, 0)
+                timeline.append({"date": date_str, "cumulative_total": round(running_total)})
+
+            # Add the final point for the start of the next year
+            running_total += model_forecast_map.get('2026-01', 0)
+            timeline.append({"date": "2026-01", "cumulative_total": round(running_total)})
 
             cumulative_timelines[f"{model_name}_cumulative"] = timeline
 
-        # --- Recalculate the All Models Average timeline based on the corrected individual timelines ---
+        # --- Recalculate the All Models Average timeline ---
         if cumulative_timelines:
+            # Get all unique dates, but handle the duplicated current month date
             all_dates = sorted(list(set(point['date'] for timeline in cumulative_timelines.values() for point in timeline)))
             avg_timeline = []
+
             for date_str in all_dates:
                 monthly_totals = []
                 for model_name in forecasts.keys():
                     timeline_key = f"{model_name}_cumulative"
                     if timeline_key in cumulative_timelines:
-                        point = next((p for p in cumulative_timelines[timeline_key] if p['date'] == date_str), None)
-                        if point:
-                            monthly_totals.append(point['cumulative_total'])
-                
+                        points = [p for p in cumulative_timelines[timeline_key] if p['date'] == date_str]
+                        if points:
+                            # If there are two points for the same date (current month), use the higher value
+                            monthly_totals.append(max(p['cumulative_total'] for p in points))
+            
                 if monthly_totals:
                     avg_total = sum(monthly_totals) / len(monthly_totals)
                     avg_timeline.append({"date": date_str, "cumulative_total": round(avg_total)})
-            
+        
             cumulative_timelines['all_models_cumulative'] = avg_timeline
 
         return cumulative_timelines
