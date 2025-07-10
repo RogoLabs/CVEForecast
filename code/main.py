@@ -7,29 +7,41 @@ from darts import TimeSeries
 
 from utils import setup_logging
 from data_loader import load_cve_data
+from darts.metrics import mae, mape, mase, rmsse
 from model_trainer import train_and_evaluate_model
 
 import datetime
 import numpy as np
+import os
 
 class CVEForecastEngine:
     """Orchestrates the CVE forecasting workflow."""
 
-    def __init__(self, config_path: str):
-        self.config_path = config_path
-        self.config = None
+    def __init__(self, config_path='config.json'):
+        """Initialize the engine, load config, and set up paths."""
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if not os.path.isabs(config_path):
+            config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), config_path)
+        
+        with open(config_path, 'r') as f:
+            self.config = json.load(f)
+
+        for key, path in self.config['file_paths'].items():
+            if not os.path.isabs(path):
+                self.config['file_paths'][key] = os.path.join(project_root, path)
+        
+        self.setup_logging()
+
         self.series = None
         self.historical_series = None
         self.current_month_series = None
-        self.model_results = []
+        self.forecasts = {}
+        self.model_results = {}
         self.final_forecasts = {}
         self.all_models_validation = {}
 
-    def load_configuration(self):
-        with open(self.config_path, 'r') as f:
-            self.config = json.load(f)
-
     def setup_logging(self):
+        """Set up logging based on the configuration."""
         setup_logging(self.config['logging'])
         self.logger = logging.getLogger(__name__)
 
@@ -51,15 +63,49 @@ class CVEForecastEngine:
             if progress_callback:
                 progress_callback(f"Evaluating Models ({i+1}/{total_models}): {model_name}")
             
-            model, metrics, validation_data = train_and_evaluate_model(model_name, model_config, self.series, self.config['model_evaluation'])
-            if model and metrics:
-                self.model_results.append({"model_name": model_name, "model": model, "metrics": metrics})
-                if validation_data:
-                    self.all_models_validation[model_name] = validation_data
+            model, train, val, predictions = train_and_evaluate_model(model_name, model_config, self.series, self.config['model_evaluation'])
+            if model and predictions:
+                metrics = {}
+                for metric_name, metric_func in [('mape', mape), ('mae', mae), ('mase', mase), ('rmsse', rmsse)]:
+                    try:
+                        if metric_name in ['mase', 'rmsse']:
+                            metrics[metric_name] = metric_func(val, predictions, train)
+                        else:
+                            metrics[metric_name] = metric_func(val, predictions)
+                    except Exception as e:
+                        self.logger.warning(f"Could not compute {metric_name.upper()} for {model_name}: {e}")
+                        metrics[metric_name] = None
+
+                mape_str = f"{metrics.get('mape', 0):.2f}%" if metrics.get('mape') is not None else "N/A"
+                mase_str = f"{metrics.get('mase', 0):.2f}" if metrics.get('mase') is not None else "N/A"
+                rmsse_str = f"{metrics.get('rmsse', 0):.2f}" if metrics.get('rmsse') is not None else "N/A"
+                mae_str = f"{metrics.get('mae', 0):.2f}" if metrics.get('mae') is not None else "N/A"
+                self.logger.info(f"{model_name} - MAPE: {mape_str}, MASE: {mase_str}, RMSSE: {rmsse_str}, MAE: {mae_str}")
+
+                self.model_results[model_name] = {"model_name": model_name, "model": model, "metrics": metrics}
+
+                # Generate detailed validation data
+                validation_data = []
+                val_df = val.to_dataframe()
+                pred_df = predictions.to_dataframe()
+                for i in range(len(val)):
+                    timestamp = val.time_index[i]
+                    actual = val_df.iloc[i, 0]
+                    predicted = pred_df.iloc[i, 0]
+                    error = abs(actual - predicted)
+                    percent_error = (error / actual) * 100 if actual != 0 else 0
+                    validation_data.append({
+                        "date": timestamp.strftime('%Y-%m'),
+                        "actual": float(actual),
+                        "predicted": float(predicted),
+                        "error": float(error),
+                        "percent_error": float(percent_error)
+                    })
+                self.all_models_validation[model_name] = validation_data
 
     def generate_final_forecasts(self, progress_callback=None):
         ensemble_size = self.config['model_evaluation']['ensemble_size']
-        top_models = sorted(self.model_results, key=lambda x: x['metrics'].get('mape', float('inf')))[:ensemble_size]
+        top_models = sorted([self.model_results[r] for r in self.model_results], key=lambda x: x['metrics'].get('mape', float('inf')))[:ensemble_size]
 
         last_historical_month = self.historical_series.end_time().to_pydatetime().date()
         months_to_forecast = ( (self.config['model_evaluation']['forecast_end_year'] - last_historical_month.year) * 12
@@ -106,62 +152,49 @@ class CVEForecastEngine:
         }
 
     def _get_cumulative_timelines(self, historical_data, forecasts, current_month_data):
-        """Generate cumulative timelines matching the v.02 file_io.py logic exactly."""
+        """Generate cumulative timelines for all models and the ensemble average."""
         cumulative_timelines = {}
-        historical_2025_data = [item for item in historical_data if item['date'].startswith('2025')]
+        historical_2025_data = {item['date']: item['cve_count'] for item in historical_data if item['date'].startswith('2025')}
 
-        # Generate timeline for each model
+        # --- Generate timeline for each individual model ---
         for model_name, model_forecasts in forecasts.items():
-            if not model_forecasts: continue
+            if not model_forecasts:
+                continue
+            
+            model_forecast_map = {fc['date']: fc['cve_count'] for fc in model_forecasts}
             timeline, running_total = [], 0
-            timeline.append({"date": "2025-01", "cumulative_total": 0})
 
-            for item in historical_2025_data:
-                timeline.append({"date": item['date'], "cumulative_total": running_total})
-                running_total += item['cve_count']
-            
-            if current_month_data:
-                current_month_forecast_val = next((f['cve_count'] for f in model_forecasts if f['date'] == current_month_data['date']), None)
-                timeline.append({"date": current_month_data['date'], "cumulative_total": running_total})
-                if current_month_forecast_val is not None:
-                    running_total += current_month_forecast_val
+            for month_num in range(1, 13):
+                date_str = f"2025-{month_num:02d}"
+                timeline.append({"date": date_str, "cumulative_total": running_total})
+                
+                if date_str in historical_2025_data:
+                    running_total += historical_2025_data[date_str]
+                elif current_month_data and date_str == current_month_data['date']:
+                    running_total += current_month_data['cve_count']
+                elif date_str in model_forecast_map:
+                    running_total += model_forecast_map[date_str]
 
-            # Add forecast months, ensuring not to double-count the current month
-            for forecast in model_forecasts:
-                if current_month_data and forecast['date'] == current_month_data['date']:
-                    continue
-                timeline.append({"date": forecast['date'], "cumulative_total": running_total})
-                running_total += forecast['cve_count']
-            
             timeline.append({"date": "2026-01", "cumulative_total": running_total})
             cumulative_timelines[f"{model_name}_cumulative"] = timeline
 
-        # Add all_models_cumulative average
+        # --- Generate timeline for the average of all models ---
         if forecasts:
             all_models_timeline, running_total = [], 0
-            all_models_timeline.append({"date": "2025-01", "cumulative_total": 0})
-
-            for item in historical_2025_data:
-                all_models_timeline.append({"date": item['date'], "cumulative_total": running_total})
-                running_total += item['cve_count']
-            
-            if current_month_data:
-                all_models_timeline.append({"date": current_month_data['date'], "cumulative_total": running_total})
-                current_month_forecasts = [f['cve_count'] for f_list in forecasts.values() for f in f_list if f['date'] == current_month_data['date']]
-                if current_month_forecasts:
-                    running_total += np.mean(current_month_forecasts)
-
-            # Determine all unique forecast dates, excluding the current month if already handled
             all_forecast_dates = sorted(list(set(f['date'] for f_list in forecasts.values() for f in f_list)))
-            for date in all_forecast_dates:
-                if current_month_data and date == current_month_data['date']:
-                    continue # Already processed the current month's forecast average
-                
-                avg_forecast = np.mean([f['cve_count'] for f_list in forecasts.values() for f in f_list if f['date'] == date])
-                # Only add if there are valid forecasts for this date
-                if not np.isnan(avg_forecast):
-                    all_models_timeline.append({"date": date, "cumulative_total": running_total})
-                    running_total += avg_forecast
+            
+            for month_num in range(1, 13):
+                date_str = f"2025-{month_num:02d}"
+                all_models_timeline.append({"date": date_str, "cumulative_total": running_total})
+
+                if date_str in historical_2025_data:
+                    running_total += historical_2025_data[date_str]
+                elif current_month_data and date_str == current_month_data['date']:
+                    running_total += current_month_data['cve_count']
+                elif date_str in all_forecast_dates:
+                    avg_forecast = np.mean([f['cve_count'] for f_list in forecasts.values() for f in f_list if f['date'] == date_str])
+                    if not np.isnan(avg_forecast):
+                        running_total += avg_forecast
 
             all_models_timeline.append({"date": "2026-01", "cumulative_total": running_total})
             cumulative_timelines['all_models_cumulative'] = all_models_timeline
@@ -185,7 +218,7 @@ class CVEForecastEngine:
 
     def save_results(self):
         model_rankings = sorted([
-            {"model_name": r['model_name'], **r['metrics']} for r in self.model_results
+            {"model_name": r['model_name'], **r['metrics']} for r in self.model_results.values()
         ], key=lambda x: x['mape'] if x.get('mape') is not None else float('inf'))
 
         historical_data = self._get_historical_data()
@@ -231,34 +264,25 @@ class CVEForecastEngine:
         self.output_path = output_path
 
     def run(self):
-        def progress_indicator(message):
-            # Ensure the message doesn't exceed terminal width by truncating it
-            max_len = 100
-            message = (message[:max_len-3] + '...') if len(message) > max_len else message
-            sys.stdout.write(f'\r\033[K{message}')
-            sys.stdout.flush()
+        """Execute the full CVE forecasting workflow."""
+        self.logger.info('CVE Forecast Engine Initialized')
 
-        progress_indicator("Initializing Forecast Engine...")
-        self.load_configuration()
-        self.setup_logging()
-
-        progress_indicator("Processing Data...")
+        self.logger.info('Processing Data...')
         self.process_data()
 
-        self.train_and_evaluate_models(progress_indicator)
-        self.generate_final_forecasts(progress_indicator)
+        self.train_and_evaluate_models()
+        self.generate_final_forecasts()
 
-        progress_indicator("Saving Results...")
+        self.logger.info('Saving Results...')
         self.save_results()
-        sys.stdout.write('\r\033[K') # Clear the progress line
+        self.logger.info('CVE Forecast Engine finished successfully.')
 
         # Final Summary
-        best_model = self.model_results[0] if self.model_results else None
+        best_model = next(iter(self.model_results.values())) if self.model_results else None
         print("\n--- CVE Forecast Complete ---")
         if best_model:
             print(f"  Best Model: {best_model['model_name']} (MAPE: {best_model['metrics']['mape']:.4f}%)")
-        else:
-            print("  No models were successfully trained.")
+        print(f"  Forecast data saved to: {self.config['file_paths']['output_data']}")
         
         print(f"  Processed {self.summary['total_historical_cves']:,} CVE records.")
         print(f"  Historical Data: {self.summary['data_period']['start']} to {self.summary['data_period']['end']}")
@@ -266,7 +290,5 @@ class CVEForecastEngine:
         print("---------------------------")
 
 if __name__ == "__main__":
-    # Construct path to config.json relative to the script's location
-    config_path = Path(__file__).parent / 'config.json'
-    engine = CVEForecastEngine(config_path)
+    engine = CVEForecastEngine()
     engine.run()

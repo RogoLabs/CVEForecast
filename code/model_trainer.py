@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from darts import TimeSeries
 from darts.models import (
+    ExponentialSmoothing,
     Prophet, ExponentialSmoothing, TBATS, XGBModel, LightGBMModel, CatBoostModel,
     TCNModel, NBEATSModel, NHiTSModel, TiDEModel, DLinearModel, TSMixerModel,
     RandomForest, LinearRegressionModel, AutoARIMA, Theta, FourTheta,
@@ -70,8 +71,13 @@ def train_and_evaluate_model(model_name: str, model_config: dict, series: TimeSe
 
         # Handle special cases for hyperparameters
         params = model_config['hyperparameters'].copy()
-        if model_name in ["Theta", "FourTheta"] and 'season_mode' in params:
-            params['season_mode'] = SeasonalityMode[params['season_mode']]
+        if model_name == 'ExponentialSmoothing':
+            if 'trend' in params:
+                params['trend'] = Trend[params['trend'].upper()]
+            if 'seasonal' in params:
+                params['seasonal'] = SeasonalityMode[params['seasonal'].upper()]
+        elif model_name in ["Theta", "FourTheta"] and 'season_mode' in params:
+            params['season_mode'] = SeasonalityMode[params['season_mode'].upper()]
         
         # Instantiate model
         model = model_class(**params)
@@ -82,49 +88,8 @@ def train_and_evaluate_model(model_name: str, model_config: dict, series: TimeSe
         # Make predictions
         predictions = model.predict(len(val))
 
-        # Evaluate model
-        metrics = {}
-        for metric_name, metric_func in [('mape', mape), ('mae', mae), ('mase', mase), ('rmsse', rmsse)]:
-            try:
-                # MASE and RMSSE require the training series
-                if metric_name in ['mase', 'rmsse']:
-                    metrics[metric_name] = metric_func(val, train, predictions)
-                else:
-                    metrics[metric_name] = metric_func(val, predictions)
-            except Exception as e:
-                logger.warning(f"Could not compute {metric_name.upper()} for {model_name}: {e}")
-                metrics[metric_name] = None
-
-        mape_str = f"{metrics.get('mape', 0):.2f}%" if metrics.get('mape') is not None else "N/A"
-        mase_str = f"{metrics.get('mase', 0):.2f}" if metrics.get('mase') is not None else "N/A"
-        rmsse_str = f"{metrics.get('rmsse', 0):.2f}" if metrics.get('rmsse') is not None else "N/A"
-        mae_str = f"{metrics.get('mae', 0):.2f}" if metrics.get('mae') is not None else "N/A"
-        logger.info(f"{model_name} - MAPE: {mape_str}, MASE: {mase_str}, RMSSE: {rmsse_str}, MAE: {mae_str}")
-
-        # Generate detailed validation data
-        validation_data = []
-        val_df = val.to_dataframe()
-        pred_df = predictions.to_dataframe()
-
-        for i in range(len(val)):
-            timestamp = val.time_index[i]
-            actual = val_df.iloc[i, 0]
-            predicted = pred_df.iloc[i, 0]
-            error = abs(actual - predicted)
-            percent_error = (error / actual) * 100 if actual != 0 else 0
-            
-            validation_data.append({
-                "date": timestamp.strftime('%Y-%m'),
-                "actual": float(actual),
-                "predicted": float(predicted),
-                "error": float(error),
-                "percent_error": float(percent_error)
-            })
-
-        logger.info(f"{model_name} - MAPE: {mape_str}, MASE: {mase_str}, RMSSE: {rmsse_str}, MAE: {mae_str}")
-
-        return model, metrics, validation_data
+        return model, train, val, predictions
 
     except Exception as e:
         logger.error(f"Failed to train or evaluate {model_name}: {e}", exc_info=True)
-        return None, None, None
+        return None, None, None, None
