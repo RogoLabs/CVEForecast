@@ -820,17 +820,21 @@ function createChart() {
                                 const year = date.getUTCFullYear();
                                 const month = String(date.getUTCMonth() + 1).padStart(2, '0');
                                 const dateStr = `${year}-${month}`;
-                                
-                                // Check if this is the current month and add special information
+
+                                // If this is the current month, only show the actual (partial) value for the historical data series
                                 if (forecastData.current_month_actual && 
-                                    dateStr === forecastData.current_month_actual.date &&
-                                    point.datasetIndex === 0) { // Only for the historical data series
-                                    const progress = forecastData.current_month_actual;
-                                    return [
-                                        `${point.dataset.label}: ${value} CVEs`,
-                                        `Days elapsed: ${progress.days_elapsed} of ${progress.total_days}`,
-                                        `Month progress: ${progress.progress_percentage.toFixed(2)}%`
-                                    ];
+                                    dateStr === forecastData.current_month_actual.date) {
+                                    if (point.datasetIndex === 0) {
+                                        const progress = forecastData.current_month_actual;
+                                        return [
+                                            `${point.dataset.label}: ${value} CVEs`,
+                                            `Days elapsed: ${progress.days_elapsed} of ${progress.total_days}`,
+                                            `Month progress: ${progress.progress_percentage.toFixed(2)}%`
+                                        ];
+                                    } else {
+                                        // Suppress forecast data for current month in tooltip
+                                        return null;
+                                    }
                                 }
                                 
                                 return `${point.dataset.label}: ${value}`;
@@ -843,12 +847,16 @@ function createChart() {
                                 const year = date.getUTCFullYear();
                                 const month = String(date.getUTCMonth() + 1).padStart(2, '0');
                                 const dateStr = `${year}-${month}`;
-                                
-                                // Add extra context for current month
+
+                                // If this is the current month, only show extra context for the actual (partial) value
                                 if (forecastData.current_month_actual && 
-                                    dateStr === forecastData.current_month_actual.date &&
-                                    point.datasetIndex === 0) {
-                                    return '📊 Partial month data';
+                                    dateStr === forecastData.current_month_actual.date) {
+                                    if (point.datasetIndex === 0) {
+                                        return '📊 Partial month data';
+                                    } else {
+                                        // Suppress forecast data for current month in tooltip
+                                        return null;
+                                    }
                                 }
                                 
                                 return null;
