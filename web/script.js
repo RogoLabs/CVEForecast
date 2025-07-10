@@ -719,90 +719,22 @@ function createChart() {
  * NO JavaScript calculations needed - all data pre-calculated by Python backend
  */
 function prepareChartData() {
-    // Simplified: Always show main cumulative chart with all models
-    const selectedModel = 'all';
-    const timeRange = 'this_year';
-    const chartType = 'cumulative';
-    
-    console.log('Using backend pre-calculated data for model:', selectedModel, 'chart type:', chartType);
-    
-    // Use backend pre-calculated cumulative timelines (no calculations needed)
-    const cumulativeTimelines = forecastData.cumulative_timelines || {};
-    
-    if (chartType === 'monthly') {
-        // For monthly view, we still need the original monthly data structure
-        return prepareMonthlyChartData(selectedModel, timeRange);
-    }
-    
-    // CRITICAL FIX: All datasets must span full timeline to prevent Chart.js alignment issues
+    const { cumulative_timelines, model_rankings, current_month_actual } = forecastData;
     const datasets = [];
-    const currentMonth = 7; // July 2025
-    
-    // Create consistent timeline for all datasets (Jan 2025 - Jan 2026 endpoint)
-    const fullTimeline = [];
-    for (let month = 1; month <= 12; month++) {
-        fullTimeline.push(`2025-${String(month).padStart(2, '0')}`);
+
+    // Stop processing if essential data is missing
+    if (!cumulative_timelines || !model_rankings || !current_month_actual) {
+        console.error("Cannot prepare chart data: cumulative_timelines or model_rankings are missing.");
+        return { datasets: [] };
     }
-    fullTimeline.push('2026-01'); // Add January 2026 as year-end cumulative endpoint
-    
-    // MAIN CHART: Historical + 5 Model Forecasts + Average (all with full timeline)
-    // Simplified: Always show main chart with all models
-        
-        // 1. Historical Data (Solid Blue Line) - Full timeline with nulls for future
-        const historicalDataArray = new Array(fullTimeline.length).fill(null);
-        
-        // CRITICAL FIX: Read directly from backend cumulative_timelines to prevent data alignment bugs
-        // Use first available model as reference timeline (dynamic, not hardcoded)
-        const availableModels = Object.keys(cumulativeTimelines);
-        const referenceModelName = availableModels.length > 0 ? availableModels[0] : null;
-        const referenceTimeline = referenceModelName ? cumulativeTimelines[referenceModelName] : [];
-        
-        console.log('📊 Using reference timeline from model:', referenceModelName);
-        
-        fullTimeline.forEach((monthKey, index) => {
-            const month = parseInt(monthKey.split('-')[1]);
-            const year = parseInt(monthKey.split('-')[0]);
-            
-            if (year === 2025 && month < currentMonth) {
-                // Historical months - read directly from backend cumulative timeline
-                const backendItem = referenceTimeline.find(item => item.date === monthKey);
-                if (backendItem) {
-                    historicalDataArray[index] = backendItem.cumulative_total;
-                }
-            } else if (year === 2025 && month === currentMonth) {
-                // Current month - use pre-calculated cumulative_total from current_month_actual
-                if (forecastData.current_month_actual && forecastData.current_month_actual.cumulative_total) {
-                    historicalDataArray[index] = forecastData.current_month_actual.cumulative_total;
-                }
-            }
-            // Future months remain null
-        });
-        
-        console.log('✅ Using backend cumulative timeline data directly - no JavaScript recalculation');
-        
-        console.log('✅ Cumulative chart starts at January 1st, 2025 with value:', historicalDataArray[0]);
-        
-        const historicalData = historicalDataArray.map((value, index) => ({
-            x: fullTimeline[index] + '-01',
-            y: value
-        }));
-        
-        // DEBUG: Log chart data structure and alignment
-        console.log('🔍 CHART DATA ALIGNMENT DEBUG:');
-        console.log('Full timeline:', fullTimeline);
-        console.log('Historical data array values (first 8):', historicalDataArray.slice(0, 8));
-        console.log('Historical Chart.js data points (first 8):', historicalData.slice(0, 8));
-        
-        // Debug specific months to identify alignment issue
-        console.log('🔍 SPECIFIC MONTH ALIGNMENT:');
-        console.log('Timeline[1] (Feb):', fullTimeline[1], '-> Value:', historicalDataArray[1]);
-        console.log('Timeline[2] (Mar):', fullTimeline[2], '-> Value:', historicalDataArray[2]);
-        console.log('Expected: Feb should be 4314, Mar should be 8027');
-        
+
+    // 1. All Models Average (as the solid "Actual" line, including current month's partial progress)
+    // The backend now correctly bakes the partial current month into this timeline.
+    if (cumulative_timelines.all_models_cumulative) {
         datasets.push({
             label: 'Published CVEs (Actual)',
-            data: historicalData,
-            borderColor: 'rgb(59, 130, 246)', // Solid blue
+            data: cumulative_timelines.all_models_cumulative.map(d => ({ x: new Date(d.date), y: d.cumulative_total })),
+            borderColor: 'rgb(59, 130, 246)',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
             borderWidth: 3,
             pointRadius: 3,
@@ -810,257 +742,41 @@ function prepareChartData() {
             fill: false,
             tension: 0.1
         });
-        
-        // 2. Individual Model Forecast Lines (Dotted/Dashed) - Current + Future Months
-        // Dynamic color palette for any models
-        const defaultColors = [
-            'rgb(239, 68, 68)',     // Red
-            'rgb(34, 197, 94)',     // Green  
-            'rgb(168, 85, 247)',    // Purple
-            'rgb(251, 191, 36)',    // Yellow
-            'rgb(236, 72, 153)',    // Pink
-            'rgb(14, 165, 233)',    // Sky Blue
-            'rgb(249, 115, 22)',    // Orange
-            'rgb(139, 92, 246)',    // Violet
-            'rgb(34, 197, 94)',     // Emerald
-            'rgb(244, 63, 94)'      // Rose
-        ];
-        
-        // Create dynamic color mapping for available models
-        const modelColors = {};
-        const availableModelNames = Object.keys(cumulativeTimelines);
-        availableModelNames.forEach((modelName, index) => {
-            // Remove '_cumulative' suffix to get base model name
-            const baseModelName = modelName.replace('_cumulative', '');
-            modelColors[baseModelName] = defaultColors[index % defaultColors.length];
-        });
-        
-        // NEW FORECAST LOGIC: Use fresh forecasts from new_forecast_runs if available
-        const newForecastRuns = forecastData.new_forecast_runs || null;
-        
-        // DEBUG: Comprehensive logging
-        console.log('🔍 DEBUGGING FRESH FORECAST LOGIC:');
-        console.log('  forecastData keys:', Object.keys(forecastData));
-        console.log('  Has new_forecast_runs?', !!newForecastRuns);
-        if (newForecastRuns) {
-            console.log('  new_forecast_runs keys:', Object.keys(newForecastRuns));
-            console.log('  Has cumulative_timelines?', !!newForecastRuns.cumulative_timelines);
-            if (newForecastRuns.cumulative_timelines) {
-                console.log('  Fresh timeline models:', Object.keys(newForecastRuns.cumulative_timelines));
-            }
-        }
-        console.log('  fullTimeline length:', fullTimeline.length);
-        console.log('  fullTimeline:', fullTimeline);
-        
-        if (newForecastRuns && newForecastRuns.cumulative_timelines) {
-            console.log('✅ Using NEW fresh forecast data from new_forecast_runs');
-            
-            const freshTimelines = newForecastRuns.cumulative_timelines;
-            
-            // Get top 5 models from rankings (same as original behavior)
-            const top5Models = forecastData.model_rankings ? forecastData.model_rankings.slice(0, 5) : [];
-            
-            console.log(`📊 Displaying top ${top5Models.length} models with fresh forecast data`);
-            
-            // Use existing color mapping for consistency
-            top5Models.forEach((modelRanking, index) => {
-                const modelName = modelRanking.model_name;
-                const modelTimelineKey = `${modelName}_cumulative`;
-                const modelTimeline = freshTimelines[modelTimelineKey] || [];
-                const color = modelColors[modelName] || defaultColors[index % defaultColors.length];
-                
-                console.log(`⚡ Processing fresh forecast for ${modelName} with ${modelTimeline.length} data points`);
-                
-                // Create forecast data array spanning full timeline with nulls for past months
-                const forecastDataArray = new Array(fullTimeline.length).fill(null);
-                
-                fullTimeline.forEach((monthKey, timelineIndex) => {
-                    const month = parseInt(monthKey.split('-')[1]);
-                    const year = parseInt(monthKey.split('-')[0]);
-                    
-                    // Only fill forecast data for current + future months (through January 2026 endpoint)
-                    if ((year === 2025 && month >= currentMonth) || year === 2026) {
-                        const timelineItem = modelTimeline.find(item => item.date === monthKey);
-                        if (timelineItem) {
-                            forecastDataArray[timelineIndex] = timelineItem.cumulative_total;
-                        }
-                    }
-                    // Past months remain null
-                });
-                
-                const modelForecastData = forecastDataArray.map((value, index) => ({
-                    x: fullTimeline[index] + '-01',
-                    y: value
-                }));
-                
-                datasets.push({
-                    label: `${modelName} (Forecast)`,
-                    data: modelForecastData,
-                    borderColor: color,
-                    backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
-                    borderWidth: 2,
-                    borderDash: [5, 5], // Dashed line for fresh forecasts
-                    pointRadius: 3,
-                    pointHoverRadius: 6,
-                    fill: false,
-                    tension: 0.1,
-                    spanGaps: false // Don't connect null values
-                });
-                
-                console.log(`✅ Added fresh forecast dataset for ${modelName}`);
-            });
-            
-            // Add "All Models Average" equivalent if available in fresh data
-            // Check if there's an average or ensemble model in the fresh forecasts
-            const avgModelKeys = Object.keys(freshTimelines).filter(key => 
-                key.toLowerCase().includes('average') || 
-                key.toLowerCase().includes('ensemble') ||
-                key.toLowerCase().includes('mean')
-            );
-            
-            if (avgModelKeys.length > 0) {
-                const avgTimeline = freshTimelines[avgModelKeys[0]] || [];
-                const avgForecastDataArray = new Array(fullTimeline.length).fill(null);
-                
-                fullTimeline.forEach((monthKey, timelineIndex) => {
-                    const month = parseInt(monthKey.split('-')[1]);
-                    const year = parseInt(monthKey.split('-')[0]);
-                    
-                    // Only fill forecast data for current + future months (through January 2026 endpoint)
-                    if ((year === 2025 && month >= currentMonth) || year === 2026) {
-                        const timelineItem = avgTimeline.find(item => item.date === monthKey);
-                        if (timelineItem) {
-                            avgForecastDataArray[timelineIndex] = timelineItem.cumulative_total;
-                        }
-                    }
-                    // Past months remain null
-                });
-                
-                const avgForecastData = avgForecastDataArray.map((value, index) => ({
-                    x: fullTimeline[index] + '-01',
-                    y: value
-                }));
-                
-                datasets.push({
-                    label: 'All Models Average (Forecast)',
-                    data: avgForecastData,
-                    borderColor: 'rgb(75, 85, 99)', // Gray
-                    backgroundColor: 'rgba(75, 85, 99, 0.1)',
-                    borderWidth: 3,
-                    borderDash: [2, 2], // Dotted line for average
-                    pointRadius: 4,
-                    pointHoverRadius: 7,
-                    fill: false,
-                    tension: 0.1,
-                    spanGaps: false // Don't connect null values
-                });
-                
-                console.log(`✅ Added fresh forecast average dataset`);
-            }
-            
-        } else {
-            console.log('⚠️ No fresh forecast data available, falling back to original forecast logic');
-            
-            // FALLBACK: Original forecast logic if new_forecast_runs not available
-            // Get top 5 models from rankings
-            const top5Models = forecastData.model_rankings ? forecastData.model_rankings.slice(0, 5) : [];
-            
-            top5Models.forEach((modelRanking, index) => {
-                const modelName = modelRanking.model_name;
-                const modelTimeline = cumulativeTimelines[`${modelName}_cumulative`] || [];
-                const color = modelColors[modelName] || 'rgb(107, 114, 128)';
-                
-                // Create forecast data array spanning full timeline with nulls for past months
-                const forecastDataArray = new Array(fullTimeline.length).fill(null);
-                
-                fullTimeline.forEach((monthKey, timelineIndex) => {
-                    const month = parseInt(monthKey.split('-')[1]);
-                    const year = parseInt(monthKey.split('-')[0]);
-                    
-                    // Only fill forecast data for current + future months (through January 2026 endpoint)
-                    if ((year === 2025 && month >= currentMonth) || year === 2026) {
-                        const timelineItem = modelTimeline.find(item => item.date === monthKey);
-                        if (timelineItem) {
-                            forecastDataArray[timelineIndex] = timelineItem.cumulative_total;
-                        }
-                    }
-                    // Past months remain null
-                });
-                
-                const modelForecastData = forecastDataArray.map((value, index) => ({
-                    x: fullTimeline[index] + '-01',
-                    y: value
-                }));
-                
-                datasets.push({
-                    label: `${modelName} (Forecast)`,
-                    data: modelForecastData,
-                    borderColor: color,
-                    backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
-                    borderWidth: 2,
-                    borderDash: [5, 5], // Dashed line for forecasts
-                    pointRadius: 3,
-                    pointHoverRadius: 6,
-                    fill: false,
-                    tension: 0.1,
-                    spanGaps: false // Don't connect null values
-                });
-            });
-            
-            // All Models Average Forecast Line (Dotted) - Full timeline with nulls for past
-            const avgTimeline = cumulativeTimelines['all_models_cumulative'] || [];
-            const avgForecastDataArray = new Array(fullTimeline.length).fill(null);
-            
-            fullTimeline.forEach((monthKey, timelineIndex) => {
-                const month = parseInt(monthKey.split('-')[1]);
-                const year = parseInt(monthKey.split('-')[0]);
-                
-                // Only fill forecast data for current + future months (through December 2025)
-                if (year === 2025 && month >= currentMonth) {
-                    const timelineItem = avgTimeline.find(item => item.date === monthKey);
-                    if (timelineItem) {
-                        avgForecastDataArray[timelineIndex] = timelineItem.cumulative_total;
-                    }
-                }
-                // Past months remain null
-            });
-            
-            const avgForecastData = avgForecastDataArray.map((value, index) => ({
-                x: fullTimeline[index] + '-01',
-                y: value
-            }));
-            
-            datasets.push({
-                label: 'All Models Average (Forecast)',
-                data: avgForecastData,
-                borderColor: 'rgb(75, 85, 99)', // Gray
-                backgroundColor: 'rgba(75, 85, 99, 0.1)',
-                borderWidth: 3,
-                borderDash: [2, 2], // Dotted line for average
-                pointRadius: 4,
-                pointHoverRadius: 7,
-                fill: false,
-                tension: 0.1,
-                spanGaps: false // Don't connect null values
-            });
-        }
-    
-    console.log('✅ Main chart with 5 ML models, historical data, and current month actual successfully created');
-
-
-    
-    // Return chart configuration with backend pre-calculated data
-    return {
-        datasets: datasets,
-        options: getChartOptions(chartType)
-    };
-}
-
-/**
-        }
     }
-    
-    return cumulativeTotal;
+
+    // 2. Add Forecast Data for Top 5 Models
+    const topModels = model_rankings.slice(0, 5);
+    const colors = [
+        'rgb(239, 68, 68)',   // Red
+        'rgb(34, 197, 94)',   // Green
+        'rgb(168, 85, 247)',  // Purple
+        'rgb(249, 115, 22)',  // Orange
+        'rgb(14, 165, 233)'   // Sky Blue
+    ];
+
+    topModels.forEach((model, index) => {
+        const modelTimelineKey = `${model.model_name}_cumulative`;
+        const modelTimeline = cumulative_timelines[modelTimelineKey];
+        
+        if (modelTimeline) {
+            // Filter the data to only show the forecast part (from the current month onward)
+            const forecastDataPoints = modelTimeline.filter(d => new Date(d.date) >= new Date(current_month_actual.date));
+
+            datasets.push({
+                label: `${model.model_name} (Forecast)`,
+                data: forecastDataPoints.map(d => ({ x: new Date(d.date), y: d.cumulative_total })),
+                borderColor: colors[index % colors.length],
+                borderWidth: 2,
+                borderDash: [5, 5], // Dashed line for forecasts
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                fill: false,
+                tension: 0.1
+            });
+        }
+    });
+
+    return { datasets };
 }
 
 /**
