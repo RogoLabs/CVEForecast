@@ -217,29 +217,20 @@ function createOrUpdateChart() {
 }
 
 /**
- * Prepares the datasets for the chart.
- * This simplified version ONLY plots the pre-calculated actual cumulative data
- * to ensure it is rendered correctly before adding forecasts back.
+ * Prepares the datasets for the chart, including actuals and all forecasts.
  */
 function prepareChartData() {
-    const { current_year_actual_cumulative } = forecastData;
+    const { actuals_cumulative, cumulative_timelines } = forecastData;
     const datasets = [];
 
-    if (!current_year_actual_cumulative) {
-        console.error("The required 'current_year_actual_cumulative' data is missing from data.json.");
+    if (!actuals_cumulative) {
+        console.error("The required 'actuals_cumulative' data is missing from data.json.");
         return { datasets: [] };
     }
 
-    // Create a single dataset for the "Published CVEs (Actual)" line
-    // Ensure data is unique by date to prevent duplicate points
-    const uniqueActuals = current_year_actual_cumulative.filter((value, index, self) =>
-        index === self.findIndex((t) => (
-            t.date === value.date
-        ))
-    );
-
-    const actualsData = uniqueActuals.map(d => ({
-        x: new Date(`${d.date}-01T00:00:00Z`), // Ensure correct date parsing
+    // --- 1. Prepare the "Published CVEs (Actual)" dataset ---
+    const actualsData = actuals_cumulative.map(d => ({
+        x: new Date(d.date), // Dates are now full ISO strings
         y: d.cumulative_total
     }));
 
@@ -252,10 +243,70 @@ function prepareChartData() {
         tension: 0.1,
         fill: false,
     });
-    
-    // Temporarily disable all forecast lines to isolate and fix the actuals line
-    console.log("Chart prepared with ONLY actual data. Forecasts are temporarily disabled.");
 
+    // --- 2. Prepare datasets for top 5 models + average, with default visibility ---
+    const { model_rankings } = forecastData;
+
+    // Define the color gradient for forecast models
+    const bestColor = [22, 163, 74]; // Green for best
+    const worstColor = [200, 200, 200]; // Light grey
+
+    const interpolateColor = (color1, color2, factor) => {
+        const result = color1.slice();
+        for (let i = 0; i < 3; i++) {
+            result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+        }
+        return `rgb(${result.join(', ')})`;
+    };
+
+    // Get the top 5 forecast models that have data
+    const topFiveModels = model_rankings
+        .filter(m => cumulative_timelines[m.model_name + '_cumulative'])
+        .slice(0, 5);
+
+    topFiveModels.forEach((model, index) => {
+        const modelKey = `${model.model_name}_cumulative`;
+        const modelData = cumulative_timelines[modelKey].map(d => ({
+            x: new Date(d.date),
+            y: d.cumulative_total
+        }));
+
+        const factor = topFiveModels.length > 1 ? index / (topFiveModels.length - 1) : 0;
+        const color = interpolateColor(bestColor, worstColor, factor);
+
+        datasets.push({
+            label: `${model.model_name} (Forecast)`,
+            data: modelData,
+            borderColor: color,
+            borderWidth: 2,
+            pointBackgroundColor: color,
+            borderDash: [5, 5],
+            tension: 0.1,
+            fill: false,
+            hidden: index !== 0, // Hide all but the best model by default
+        });
+    });
+
+    // Handle 'all_models_cumulative' separately and make it visible by default
+    if (cumulative_timelines.all_models_cumulative) {
+        const avgData = cumulative_timelines.all_models_cumulative.map(d => ({
+            x: new Date(d.date),
+            y: d.cumulative_total
+        }));
+        datasets.push({
+            label: 'Model Average (Forecast)',
+            data: avgData,
+            borderColor: 'rgb(239, 68, 68)', // Red for average
+            borderWidth: 2,
+            pointBackgroundColor: 'rgb(239, 68, 68)',
+            borderDash: [5, 5],
+            tension: 0.1,
+            fill: false,
+            hidden: false, // Ensure the average is visible
+        });
+    }
+
+    console.log(`Chart prepared with ${datasets.length} datasets.`);
     return { datasets };
 }
 
