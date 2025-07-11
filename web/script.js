@@ -231,7 +231,14 @@ function prepareChartData() {
     }
 
     // Create a single dataset for the "Published CVEs (Actual)" line
-    const actualsData = current_year_actual_cumulative.map(d => ({
+    // Ensure data is unique by date to prevent duplicate points
+    const uniqueActuals = current_year_actual_cumulative.filter((value, index, self) =>
+        index === self.findIndex((t) => (
+            t.date === value.date
+        ))
+    );
+
+    const actualsData = uniqueActuals.map(d => ({
         x: new Date(`${d.date}-01T00:00:00Z`), // Ensure correct date parsing
         y: d.cumulative_total
     }));
