@@ -318,19 +318,25 @@ class CVEForecastEngine:
         # Call the new method to get the definitive actuals timeline
         current_year_actual_cumulative = self._get_current_year_actual_cumulative(historical_data, current_month_actual)
 
+        cumulative_timelines = self._get_cumulative_timelines(historical_data, forecasts_out, current_month_actual)
+
+        yearly_forecast_totals = {}
+        for model_name, timeline in cumulative_timelines.items():
+            if timeline:
+                # Strip suffix to get the base model name for the key
+                base_model_name = model_name.replace('_cumulative', '')
+                yearly_forecast_totals[base_model_name] = timeline[-1]['cumulative_total']
+
         final_json = {
             "generated_at": datetime.datetime.now().isoformat(),
             "model_rankings": model_rankings,
             "historical_data": historical_data,
             "current_month_actual": current_month_actual,
-            
-            # Add the new, clean array to the JSON output
             "current_year_actual_cumulative": current_year_actual_cumulative,
-            
             "forecasts": forecasts_out,
             "all_models_validation": self.all_models_validation,
-            "yearly_forecast_totals": {name: int(v.sum().values()[0][0]) for name, v in self.final_forecasts.items()},
-            "cumulative_timelines": self._get_cumulative_timelines(historical_data, forecasts_out, current_month_actual),
+            "yearly_forecast_totals": yearly_forecast_totals,
+            "cumulative_timelines": cumulative_timelines,
             "summary": self.summary
         }
 
