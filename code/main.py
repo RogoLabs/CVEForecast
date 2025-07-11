@@ -367,6 +367,15 @@ class CVEForecastEngine:
                 base_model_name = model_name.replace('_cumulative', '')
                 yearly_forecast_totals[base_model_name] = timeline[-1]['cumulative_total']
 
+        # Calculate forecast vs published for each model
+        forecast_vs_published_data = {}
+        for model_name in self.final_forecasts.keys():
+            table_data, summary_stats = self._calculate_forecast_vs_published(model_name)
+            forecast_vs_published_data[model_name] = {
+                'table_data': table_data,
+                'summary_stats': summary_stats
+            }
+
         final_json = {
             "generated_at": self.current_datetime.isoformat(),
             "model_rankings": model_rankings,
@@ -376,7 +385,8 @@ class CVEForecastEngine:
             "all_models_validation": self.all_models_validation,
             "yearly_forecast_totals": yearly_forecast_totals,
             "cumulative_timelines": cumulative_timelines,
-            "summary": self.summary
+            "summary": self.summary,
+            "forecast_vs_published": forecast_vs_published_data
         }
 
         output_path = self.config['file_paths']['output_data']
@@ -396,6 +406,55 @@ class CVEForecastEngine:
         
         # Store output path for summary
         self.output_path = output_path
+
+    def _calculate_forecast_vs_published(self, model_name):
+        if not self.all_models_validation or model_name not in self.all_models_validation:
+            return [], {}
+
+        validation_data = self.all_models_validation.get(model_name, [])
+        
+        # Convert to DataFrame for easier manipulation
+        # The validation_data is a list of dicts, not a dict containing 'data'
+        df = pd.DataFrame(validation_data)
+        if df.empty:
+            return [], {}
+
+        # Rename columns for consistency if needed
+        if 'predicted' in df.columns:
+            df.rename(columns={'predicted': 'forecast'}, inplace=True)
+        if 'date' in df.columns:
+            df.rename(columns={'date': 'month'}, inplace=True)
+
+        # Ensure correct data types
+        df['actual'] = pd.to_numeric(df['actual'], errors='coerce')
+        df['forecast'] = pd.to_numeric(df['forecast'], errors='coerce')
+
+        # Drop rows where actual or forecast is NaN
+        df.dropna(subset=['actual', 'forecast'], inplace=True)
+
+        # Manually calculate error and percent_error
+        df['error'] = df['forecast'] - df['actual'] # Keep the sign for color coding
+        # Avoid division by zero for percent_error
+        df['percent_error'] = (df['error'] / df['actual'].abs()).replace(np.inf, 0) * 100
+
+        # Prepare the flat data structure for JSON output
+        table_data = []
+        for _, row in df.iterrows():
+            table_data.append({
+                "MONTH": row['month'],
+                "PUBLISHED": int(row['actual']),
+                "FORECAST": int(row['forecast']),
+                "ERROR": int(row['error']),
+                "PERCENT_ERROR": row['percent_error']
+            })
+
+        # Calculate summary statistics
+        summary_stats = {
+            'mean_absolute_error': df['error'].mean(),
+            'mean_absolute_percentage_error': df['percent_error'].mean()
+        }
+
+        return table_data, summary_stats
 
     def run(self):
         """Execute the full CVE forecasting workflow."""

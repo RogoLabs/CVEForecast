@@ -71,6 +71,23 @@
             color: #2563eb !important;
             text-decoration-style: solid;
         }
+        .year-header {
+            background-color: #f0f2f5;
+            font-size: 1.1em;
+            cursor: pointer;
+            user-select: none;
+        }
+        .year-header:hover {
+            background-color: #e9ecef;
+        }
+        .year-header .toggle-icon {
+            margin-right: 10px;
+            display: inline-block;
+            width: 15px;
+        }
+        .hidden-row {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -183,50 +200,41 @@
                         </div>
                     </div>
                 </div>
-                <p class="text-gray-600 mb-4">Comparison of forecasted vs actual CVE counts for all months in the current year using the selected model.</p>
+                <p class="text-gray-600 mb-4">Comparison of forecasted vs. actual CVE counts for all completed months, grouped by year. Click on a year to expand or collapse its rows.</p>
                 
                 <!-- Validation Summary Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div class="metric-highlight p-4 rounded-lg text-center">
-                        <div class="text-sm font-medium text-gray-600">Mean Absolute Error</div>
-                        <div class="text-2xl font-bold text-gray-900" id="avgErrorCard">-</div>
-                        <div class="text-xs text-gray-500">MAE - Lower is better</div>
+                    <div class="bg-white rounded-lg card-shadow p-4 text-center metric-highlight">
+                        <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Validation MAE</p>
+                        <p class="text-2xl font-bold text-gray-900" id="validationMae">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Mean Absolute Error</p>
                     </div>
-                    <div class="metric-highlight p-4 rounded-lg text-center">
-                        <div class="text-sm font-medium text-gray-600">Mean Absolute Percentage Error</div>
-                        <div class="text-2xl font-bold text-gray-900" id="avgPercentErrorCard">-</div>
-                        <div class="text-xs text-gray-500">MAPE - Lower is better</div>
+                    <div class="bg-white rounded-lg card-shadow p-4 text-center metric-highlight">
+                        <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Validation MAPE</p>
+                        <p class="text-2xl font-bold text-gray-900" id="validationMape">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Mean Absolute Percentage Error</p>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+
+                <div id="forecastVsPublishedContainer" class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actual CVEs</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Forecasted CVEs</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percent Error</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
+                                <th class="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Published</th>
+                                <th class="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Forecast</th>
+                                <th class="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
+                                <th class="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">% Error</th>
+                                <th class="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Accuracy</th>
                             </tr>
                         </thead>
-                        <tbody id="validationTable" class="bg-white divide-y divide-gray-200">
-                            <!-- Validation data will be populated here -->
+                        <tbody id="forecastVsPublishedTableBody">
+                            <!-- Rows will be populated by script.js -->
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-4 text-center">
-                    <div class="inline-flex items-center space-x-8 text-sm text-gray-600">
-                        <div>
-                            <span class="font-medium">Average Error:</span>
-                            <span id="avgError" class="ml-1">-</span>
-                        </div>
-                        <div>
-                            <span class="font-medium">Average Percent Error:</span>
-                            <span id="avgPercentError" class="ml-1">-</span>
-                        </div>
-                    </div>
-                </div>
+
+
             </div>
 
             <!-- Model Rankings -->
@@ -236,21 +244,13 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <a href="https://en.wikipedia.org/wiki/Mean_absolute_percentage_error" target="_blank" rel="noopener noreferrer" class="metric-link text-gray-500">MAPE</a>
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <a href="https://en.wikipedia.org/wiki/Mean_absolute_scaled_error" target="_blank" rel="noopener noreferrer" class="metric-link text-gray-500">MASE</a>
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <a href="https://en.wikipedia.org/wiki/Root-mean-square_deviation" target="_blank" rel="noopener noreferrer" class="metric-link text-gray-500">RMSSE</a>
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <a href="https://en.wikipedia.org/wiki/Mean_absolute_error" target="_blank" rel="noopener noreferrer" class="metric-link text-gray-500">MAE</a>
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                                <th class="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
+                                <th class="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider tooltip" data-tooltip="Mean Absolute Percentage Error">MAPE</th>
+                                <th class="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider tooltip" data-tooltip="Mean Absolute Scaled Error">MASE</th>
+                                <th class="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider tooltip" data-tooltip="Root Mean Squared Scaled Error">RMSSE</th>
+                                <th class="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider tooltip" data-tooltip="Mean Absolute Error">MAE</th>
+                                <th class="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
                             </tr>
                         </thead>
                         <tbody id="modelRankingsTable" class="bg-white divide-y divide-gray-200">
@@ -317,7 +317,7 @@
             <div class="mt-4 pt-4 border-t border-gray-600">
                 <p class="text-gray-300 text-sm" id="lastUpdated">Loading...</p>
                 <p class="text-gray-300 text-sm">Updated Daily at Midnight UTC</p>
-                <p class="text-gray-400 text-xs mt-2">Version 0.02 - Dynamic Forecasting System</p>
+                <p class="text-gray-400 text-xs mt-2">Version 0.03 - Unified Analytics Interface</p>
             </div>
         </div>
     </footer>

@@ -1,8 +1,6 @@
 /**
  * CVE Forecast Dashboard JavaScript
  * Handles data loading, visualization, and user interactions.
- * This version is designed as a "dumb client" that only renders
- * pre-calculated data from data.json.
  */
 
 // Global state variables
@@ -25,11 +23,9 @@ async function loadForecastData() {
         forecastData = await response.json();
         console.log('✅ Forecast data loaded successfully.');
 
-        // Hide loading state and show dashboard
         document.getElementById('loadingState').classList.add('hidden');
         document.getElementById('dashboard').classList.remove('hidden');
 
-        // Initialize all dashboard components
         initializeDashboard();
         console.log('✅ Dashboard initialized successfully!');
 
@@ -45,17 +41,15 @@ async function loadForecastData() {
  */
 function initializeDashboard() {
     updateSummaryCards();
-    populateModelSelector(); // Note: This dropdown is for the validation table now
-    populateValidationModelSelector();
+    populateModelSelector();
     populateModelRankings();
-    populateValidationTable(); // Initially populate with the best model's data
+    populateForecastVsPublishedTable(); // Initially populate with the best model
     updateDataPeriodInfo();
-    createOrUpdateChart(); // Create the chart for the first time
+    createOrUpdateChart();
 
-    // Attach event listener for the validation model selector
     const validationModelSelector = document.getElementById('validationModelSelector');
     if (validationModelSelector) {
-        validationModelSelector.addEventListener('change', populateValidationTable);
+        validationModelSelector.addEventListener('change', populateForecastVsPublishedTable);
     }
 }
 
@@ -65,11 +59,8 @@ function initializeDashboard() {
 function updateSummaryCards() {
     if (!forecastData) return;
 
-    // Last Updated Timestamp
-    document.getElementById('lastUpdated').textContent =
-        `Last Updated: ${new Date(forecastData.generated_at).toLocaleString()}`;
+    document.getElementById('lastUpdated').textContent = `Last Updated: ${new Date(forecastData.generated_at).toLocaleString()}`;
 
-    // Use backend-calculated yearly forecast total for the best model
     const bestModelName = forecastData.model_rankings?.[0]?.model_name || 'N/A';
     const yearlyTotals = forecastData.yearly_forecast_totals || {};
     const bestModelTotal = yearlyTotals[bestModelName] || 0;
@@ -77,20 +68,17 @@ function updateSummaryCards() {
     document.getElementById('currentYearForecast').textContent = bestModelTotal.toLocaleString();
     document.getElementById('forecastDescription').textContent = `Total CVEs: Published + Forecasted (${bestModelName} - Best Model)`;
 
-    // Best Model Name and Accuracy (MAPE)
     if (forecastData.model_rankings?.length > 0) {
         const bestModel = forecastData.model_rankings[0];
         document.getElementById('bestModel').textContent = bestModel.model_name;
         document.getElementById('bestAccuracy').textContent = `${(bestModel.mape || 0).toFixed(2)}%`;
     }
 
-    // Total Historical CVEs
-    document.getElementById('totalCVEs').textContent =
-        (forecastData.summary?.total_historical_cves || 0).toLocaleString();
+    document.getElementById('totalCVEs').textContent = (forecastData.summary?.total_historical_cves || 0).toLocaleString();
 }
 
 /**
- * Populates the model selector dropdowns.
+ * Populates the model selector dropdown.
  */
 function populateModelSelector() {
     const selector = document.getElementById('validationModelSelector');
@@ -103,19 +91,17 @@ function populateModelSelector() {
     });
 }
 
-function populateValidationModelSelector() {
-    populateModelSelector(); // Re-use the same logic
-}
-
 /**
  * Populates the model performance rankings table.
  */
 function populateModelRankings() {
     const tableBody = document.getElementById('modelRankingsTable');
+    if (!tableBody) return;
     tableBody.innerHTML = '';
 
     forecastData.model_rankings?.forEach((model, index) => {
         const row = document.createElement('tr');
+        row.className = `border-b border-gray-200 text-sm ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50`;
         const mape = model.mape || 0;
         let badgeClass = 'bg-red-100 text-red-800';
         let performanceBadge = 'Poor';
@@ -132,51 +118,122 @@ function populateModelRankings() {
         }
 
         row.innerHTML = `
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">${index + 1}</td>
-            <td class="px-6 py-4 text-sm text-gray-900">${model.model_name}</td>
-            <td class="px-6 py-4 text-sm text-gray-900">${mape.toFixed(2)}%</td>
-            <td class="px-6 py-4 text-sm text-gray-900">${(model.mase || 0).toFixed(2)}</td>
-            <td class="px-6 py-4 text-sm text-gray-900">${(model.rmsse || 0).toFixed(2)}</td>
-            <td class="px-6 py-4 text-sm text-gray-900">${Math.round(model.mae || 0).toLocaleString()}</td>
-            <td class="px-6 py-4"><span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${badgeClass}">${performanceBadge}</span></td>
+            <td class="py-2 px-4 text-center font-mono">${index + 1}</td>
+            <td class="py-2 px-4 font-medium text-gray-800">${model.model_name}</td>
+            <td class="py-2 px-4 text-right font-mono">${(model.mape || 0).toFixed(2)}%</td>
+            <td class="py-2 px-4 text-right font-mono">${(model.mase || 0).toFixed(2)}</td>
+            <td class="py-2 px-4 text-right font-mono">${(model.rmsse || 0).toFixed(2)}</td>
+            <td class="py-2 px-4 text-right font-mono">${(model.mae || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="py-2 px-4 text-center">
+                <span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${badgeClass}">${performanceBadge}</span>
+            </td>
         `;
         tableBody.appendChild(row);
     });
 }
 
 /**
- * Populates the validation table with data for the selected model.
+ * Populates the 'Forecast vs Published' table with collapsible year sections.
  */
-function populateValidationTable() {
-    const tableBody = document.getElementById('validationTable');
-    tableBody.innerHTML = '';
-    const selectedModel = document.getElementById('validationModelSelector').value;
-    const validationData = forecastData.all_models_validation?.[selectedModel] || [];
+function populateForecastVsPublishedTable() {
+    const selector = document.getElementById('validationModelSelector');
+    const selectedModel = selector.value;
+    const tableBody = document.getElementById('forecastVsPublishedTableBody');
+    const maeCard = document.getElementById('validationMae');
+    const mapeCard = document.getElementById('validationMape');
 
-    if (validationData.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">No validation data available.</td></tr>`;
+    if (!forecastData.forecast_vs_published || !forecastData.forecast_vs_published[selectedModel]) {
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No data available for this model.</td></tr>';
+        maeCard.textContent = '-';
+        mapeCard.textContent = '-';
         return;
     }
-    
-    // Sort data by date descending to show most recent first
-    validationData.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    validationData.forEach(item => {
-        const row = document.createElement('tr');
-        row.className = 'validation-row';
-        const isCurrent = item.is_current_month;
-        const error = isCurrent ? 'N/A' : (item.error > 0 ? `+${Math.round(item.error).toLocaleString()}` : Math.round(item.error).toLocaleString());
-        const percentError = isCurrent ? 'N/A' : `${item.percent_error.toFixed(2)}%`;
+    const modelData = forecastData.forecast_vs_published[selectedModel];
+    const tableData = modelData.table_data;
 
-        row.innerHTML = `
-            <td class="px-6 py-3 text-sm text-gray-900">${item.date} ${isCurrent ? '(Current)' : ''}</td>
-            <td class="px-6 py-3 text-sm text-gray-900">${Math.round(item.actual).toLocaleString()}</td>
-            <td class="px-6 py-3 text-sm text-gray-900">${Math.round(item.predicted).toLocaleString()}</td>
-            <td class="px-6 py-3 text-sm text-gray-900">${error}</td>
-            <td class="px-6 py-3 text-sm text-gray-900">${percentError}</td>
-            <td class="px-6 py-3 text-sm text-gray-900">-</td>
+    const summaryStats = modelData.summary_stats;
+
+    maeCard.textContent = (summaryStats.mean_absolute_error || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const bestModel = forecastData.model_rankings[0];
+    mapeCard.textContent = `${(bestModel.mape || 0).toFixed(2)}%`;
+
+    const groupedData = tableData.reduce((acc, row) => {
+        const year = row.MONTH.split('-')[0];
+        if (!acc[year]) {
+            acc[year] = [];
+        }
+        acc[year].push(row);
+        return acc;
+    }, {});
+
+    tableBody.innerHTML = '';
+    const currentDisplayYear = new Date().getFullYear().toString();
+    const sortedYears = Object.keys(groupedData).sort((a, b) => b - a);
+
+    sortedYears.forEach(year => {
+        const months = groupedData[year].sort((a, b) => new Date(b.MONTH) - new Date(a.MONTH));
+        const isCollapsed = year !== currentDisplayYear;
+
+        const headerRow = document.createElement('tr');
+        headerRow.className = 'year-header';
+        if (isCollapsed) headerRow.classList.add('collapsed');
+
+        headerRow.innerHTML = `
+            <td colspan="6" class="py-2 px-4 font-bold text-gray-700">
+                <span class="toggle-icon">${isCollapsed ? '▶' : '▼'}</span>${year}
+            </td>
         `;
-        tableBody.appendChild(row);
+        tableBody.appendChild(headerRow);
+
+        months.forEach(row => {
+            const dataRow = document.createElement('tr');
+            dataRow.className = `month-row year-${year}`;
+            if (isCollapsed) {
+                dataRow.classList.add('hidden-row');
+            }
+            const error = row.ERROR;
+            const percentError = row.PERCENT_ERROR;
+
+            let errorColorClass = 'text-gray-800';
+            if (error > 0) errorColorClass = 'text-red-600'; // Over-forecast
+            if (error < 0) errorColorClass = 'text-green-600'; // Under-forecast
+
+            let badgeClass = 'bg-red-100 text-red-800';
+            let performanceBadge = 'Poor';
+            const absPercentError = Math.abs(percentError);
+
+            if (absPercentError < 10) {
+                badgeClass = 'bg-green-100 text-green-800';
+                performanceBadge = 'Excellent';
+            } else if (absPercentError < 15) {
+                badgeClass = 'bg-blue-100 text-blue-800';
+                performanceBadge = 'Good';
+            } else if (absPercentError < 25) {
+                badgeClass = 'bg-yellow-100 text-yellow-800';
+                performanceBadge = 'Fair';
+            }
+
+            dataRow.innerHTML = `
+                <td class="py-2 px-4 font-mono">${row.MONTH}</td>
+                <td class="text-right py-2 px-4 font-mono">${row.PUBLISHED.toLocaleString()}</td>
+                <td class="text-right py-2 px-4 font-mono">${row.FORECAST.toLocaleString()}</td>
+                <td class="text-right py-2 px-4 font-mono ${errorColorClass}">${error.toLocaleString()}</td>
+                <td class="text-right py-2 px-4 font-mono ${errorColorClass}">${percentError.toFixed(2)}%</td>
+                <td class="py-2 px-4 text-center font-mono"><span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${badgeClass}">${performanceBadge}</span></td>
+            `;
+            tableBody.appendChild(dataRow);
+        });
+
+        headerRow.addEventListener('click', () => {
+            const icon = headerRow.querySelector('.toggle-icon');
+            const isNowCollapsed = headerRow.classList.toggle('collapsed');
+            icon.textContent = isNowCollapsed ? '▶' : '▼';
+
+            document.querySelectorAll(`.month-row.year-${year}`).forEach(row => {
+                row.classList.toggle('hidden-row', isNowCollapsed);
+            });
+        });
     });
 }
 
@@ -187,33 +244,29 @@ function updateDataPeriodInfo() {
     const summary = forecastData.summary;
     if (!summary) return;
 
-    const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('en-US', { timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric' });
+    const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', timeZone: 'UTC' });
 
-    document.getElementById('historicalPeriod').textContent =
-        `${formatDate(summary.data_period.start)} to ${formatDate(summary.data_period.end)}`;
-    document.getElementById('forecastPeriod').textContent =
-        `${formatDate(summary.forecast_period.start)} to ${formatDate(summary.forecast_period.end)}`;
+    document.getElementById('historicalPeriod').textContent = `${formatDate(summary.data_period.start)} - ${formatDate(summary.data_period.end)}`;
+    document.getElementById('forecastPeriod').textContent = `${formatDate(summary.forecast_period.start)} - ${formatDate(summary.forecast_period.end)}`;
 }
 
 /**
  * Creates or updates the main forecast chart.
  */
 function createOrUpdateChart() {
+    const ctx = document.getElementById('forecastChart').getContext('2d');
     const chartData = prepareChartData();
     const chartOptions = getChartOptions();
 
     if (chartInstance) {
-        chartInstance.data = chartData;
-        chartInstance.options = chartOptions;
-        chartInstance.update();
-    } else {
-        const ctx = document.getElementById('forecastChart').getContext('2d');
-        chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: chartData,
-            options: chartOptions,
-        });
+        chartInstance.destroy();
     }
+
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: chartOptions,
+    });
 }
 
 /**
@@ -223,19 +276,10 @@ function prepareChartData() {
     const { actuals_cumulative, cumulative_timelines } = forecastData;
     const datasets = [];
 
-    if (!actuals_cumulative) {
-        console.error("The required 'actuals_cumulative' data is missing from data.json.");
-        return { datasets: [] };
-    }
-
-    // --- 1. Prepare the "Published CVEs (Actual)" dataset ---
-    const actualsData = actuals_cumulative.map(d => ({
-        x: new Date(d.date), // Dates are now full ISO strings
-        y: d.cumulative_total
-    }));
+    const actualsData = actuals_cumulative.map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
 
     datasets.push({
-        label: 'Published CVEs (Actual)',
+        label: 'Actual CVEs',
         data: actualsData,
         borderColor: 'rgb(59, 130, 246)',
         borderWidth: 3,
@@ -244,12 +288,9 @@ function prepareChartData() {
         fill: false,
     });
 
-    // --- 2. Prepare datasets for top 5 models + average, with default visibility ---
     const { model_rankings } = forecastData;
-
-    // Define the color gradient for forecast models
-    const bestColor = [22, 163, 74]; // Green for best
-    const worstColor = [200, 200, 200]; // Light grey
+    const bestColor = [22, 163, 74];
+    const worstColor = [200, 200, 200];
 
     const interpolateColor = (color1, color2, factor) => {
         const result = color1.slice();
@@ -259,18 +300,11 @@ function prepareChartData() {
         return `rgb(${result.join(', ')})`;
     };
 
-    // Get the top 5 forecast models that have data
-    const topFiveModels = model_rankings
-        .filter(m => cumulative_timelines[m.model_name + '_cumulative'])
-        .slice(0, 5);
+    const topFiveModels = model_rankings.filter(m => cumulative_timelines[m.model_name + '_cumulative']).slice(0, 5);
 
     topFiveModels.forEach((model, index) => {
         const modelKey = `${model.model_name}_cumulative`;
-        const modelData = cumulative_timelines[modelKey].map(d => ({
-            x: new Date(d.date),
-            y: d.cumulative_total
-        }));
-
+        const modelData = cumulative_timelines[modelKey].map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
         const factor = topFiveModels.length > 1 ? index / (topFiveModels.length - 1) : 0;
         const color = interpolateColor(bestColor, worstColor, factor);
 
@@ -283,26 +317,22 @@ function prepareChartData() {
             borderDash: [5, 5],
             tension: 0.1,
             fill: false,
-            hidden: index !== 0, // Hide all but the best model by default
+            hidden: index !== 0,
         });
     });
 
-    // Handle 'all_models_cumulative' separately and make it visible by default
     if (cumulative_timelines.all_models_cumulative) {
-        const avgData = cumulative_timelines.all_models_cumulative.map(d => ({
-            x: new Date(d.date),
-            y: d.cumulative_total
-        }));
+        const avgData = cumulative_timelines.all_models_cumulative.map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
         datasets.push({
             label: 'Model Average (Forecast)',
             data: avgData,
-            borderColor: 'rgb(239, 68, 68)', // Red for average
+            borderColor: 'rgb(239, 68, 68)',
             borderWidth: 2,
             pointBackgroundColor: 'rgb(239, 68, 68)',
             borderDash: [5, 5],
             tension: 0.1,
             fill: false,
-            hidden: false, // Ensure the average is visible
+            hidden: false,
         });
     }
 
@@ -310,9 +340,6 @@ function prepareChartData() {
     return { datasets };
 }
 
-/**
- * Returns the configuration options for the chart.
- */
 /**
  * Returns the configuration options for the chart.
  */
@@ -334,7 +361,6 @@ function getChartOptions() {
                     label: (context) => {
                         const label = context.dataset.label || '';
                         const cumulativeTotal = context.parsed.y;
-
                         return `${label}: ${cumulativeTotal.toLocaleString()}`;
                     },
                 },
