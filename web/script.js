@@ -5,6 +5,7 @@
 
 // Global state variables
 let forecastData = null;
+let modelInfoData = null;
 let chartInstance = null;
 
 // Initialize the dashboard when the DOM is loaded
@@ -14,14 +15,25 @@ document.addEventListener('DOMContentLoaded', loadForecastData);
  * Loads forecast data from the data.json file and initializes the dashboard.
  */
 async function loadForecastData() {
-    console.log('🔄 Loading forecast data...');
+    console.log('🔄 Loading application data...');
     try {
-        const response = await fetch('data.json?v=' + new Date().getTime()); // Cache-busting
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+        const [forecastResponse, modelInfoResponse] = await Promise.all([
+            fetch('data.json?v=' + new Date().getTime()), // Cache-busting for forecast data
+            fetch('model_info.json?v=' + new Date().getTime()) // Cache-busting for model info
+        ]);
+
+        if (!forecastResponse.ok) {
+            throw new Error(`HTTP error! Status: ${forecastResponse.status} on data.json`);
         }
-        forecastData = await response.json();
-        console.log('✅ Forecast data loaded successfully.');
+        if (!modelInfoResponse.ok) {
+            console.warn(`Could not load model_info.json. Status: ${modelInfoResponse.status}. Links will not be available.`);
+            modelInfoData = {}; // Set to empty object to prevent errors
+        } else {
+            modelInfoData = await modelInfoResponse.json();
+        }
+
+        forecastData = await forecastResponse.json();
+        console.log('✅ Application data loaded successfully.');
 
         document.getElementById('loadingState').classList.add('hidden');
         document.getElementById('dashboard').classList.remove('hidden');
@@ -30,7 +42,7 @@ async function loadForecastData() {
         console.log('✅ Dashboard initialized successfully!');
 
     } catch (error) {
-        console.error('❌ Error loading or parsing forecast data:', error);
+        console.error('❌ Error loading or parsing application data:', error);
         document.getElementById('loadingState').classList.add('hidden');
         document.getElementById('errorState').classList.remove('hidden');
     }
@@ -117,9 +129,14 @@ function populateModelRankings() {
             performanceBadge = 'Fair';
         }
 
+        const modelUrl = modelInfoData ? modelInfoData[model.model_name] : null;
+        const modelNameHtml = modelUrl 
+            ? `<a href="${modelUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${model.model_name}</a>` 
+            : model.model_name;
+
         row.innerHTML = `
             <td class="py-2 px-4 text-center font-mono">${index + 1}</td>
-            <td class="py-2 px-4 font-medium text-gray-800">${model.model_name}</td>
+            <td class="py-2 px-4 font-medium text-gray-800">${modelNameHtml}</td>
             <td class="py-2 px-4 text-right font-mono">${(model.mape || 0).toFixed(2)}%</td>
             <td class="py-2 px-4 text-right font-mono">${(model.mase || 0).toFixed(2)}</td>
             <td class="py-2 px-4 text-right font-mono">${(model.rmsse || 0).toFixed(2)}</td>
@@ -192,36 +209,61 @@ function populateForecastVsPublishedTable() {
             if (isCollapsed) {
                 dataRow.classList.add('hidden-row');
             }
-            const error = row.ERROR;
-            const percentError = row.PERCENT_ERROR;
+            const now = new Date();
+            const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
 
-            let errorColorClass = 'text-gray-800';
-            if (error > 0) errorColorClass = 'text-red-600'; // Over-forecast
-            if (error < 0) errorColorClass = 'text-green-600'; // Under-forecast
+            const formatMonth = (monthStr) => {
+                const [year, month] = monthStr.split('-');
+                const date = new Date(year, parseInt(month, 10) - 1);
+                return date.toLocaleString('en-US', { month: 'long' });
+            };
 
-            let badgeClass = 'bg-red-100 text-red-800';
-            let performanceBadge = 'Poor';
-            const absPercentError = Math.abs(percentError);
+            if (row.MONTH === currentMonthStr) {
+                dataRow.innerHTML = `
+                    <td class="py-2 px-4 font-mono">${formatMonth(row.MONTH)}</td>
+                    <td class="text-right py-2 px-4 font-mono">${row.PUBLISHED.toLocaleString()}</td>
+                    <td class="text-right py-2 px-4 font-mono">${row.FORECAST.toLocaleString()}</td>
+                    <td class="text-right py-2 px-4 font-mono text-gray-400" colspan="2"></td>
+                    <td class="py-2 px-4 text-center font-mono"><span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full bg-gray-100 text-gray-800">In Progress</span></td>
+                `;
+            } else {
+                const error = row.ERROR;
+                const percentError = row.PERCENT_ERROR;
 
-            if (absPercentError < 10) {
-                badgeClass = 'bg-green-100 text-green-800';
-                performanceBadge = 'Excellent';
-            } else if (absPercentError < 15) {
-                badgeClass = 'bg-blue-100 text-blue-800';
-                performanceBadge = 'Good';
-            } else if (absPercentError < 25) {
-                badgeClass = 'bg-yellow-100 text-yellow-800';
-                performanceBadge = 'Fair';
+                const formatNumberWithSign = (num) => {
+                    const sign = num > 0 ? '+' : '';
+                    return `${sign}${num.toLocaleString()}`;
+                };
+
+                const formatPercentWithSign = (num) => {
+                    const sign = num > 0 ? '+' : '';
+                    return `${sign}${num.toFixed(2)}%`;
+                };
+
+                let badgeClass = 'bg-red-100 text-red-800';
+                let performanceBadge = 'Poor';
+                const absPercentError = Math.abs(percentError);
+
+                if (absPercentError < 10) {
+                    badgeClass = 'bg-green-100 text-green-800';
+                    performanceBadge = 'Excellent';
+                } else if (absPercentError < 15) {
+                    badgeClass = 'bg-blue-100 text-blue-800';
+                    performanceBadge = 'Good';
+                } else if (absPercentError < 25) {
+                    badgeClass = 'bg-yellow-100 text-yellow-800';
+                    performanceBadge = 'Fair';
+                }
+
+                dataRow.innerHTML = `
+                    <td class="py-2 px-4 font-mono">${formatMonth(row.MONTH)}</td>
+                    <td class="text-right py-2 px-4 font-mono">${row.PUBLISHED.toLocaleString()}</td>
+                    <td class="text-right py-2 px-4 font-mono">${row.FORECAST.toLocaleString()}</td>
+                    <td class="text-right py-2 px-4 font-mono">${formatNumberWithSign(error)}</td>
+                    <td class="text-right py-2 px-4 font-mono">${formatPercentWithSign(percentError)}</td>
+                    <td class="py-2 px-4 text-center font-mono"><span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${badgeClass}">${performanceBadge}</span></td>
+                `;
             }
-
-            dataRow.innerHTML = `
-                <td class="py-2 px-4 font-mono">${row.MONTH}</td>
-                <td class="text-right py-2 px-4 font-mono">${row.PUBLISHED.toLocaleString()}</td>
-                <td class="text-right py-2 px-4 font-mono">${row.FORECAST.toLocaleString()}</td>
-                <td class="text-right py-2 px-4 font-mono ${errorColorClass}">${error.toLocaleString()}</td>
-                <td class="text-right py-2 px-4 font-mono ${errorColorClass}">${percentError.toFixed(2)}%</td>
-                <td class="py-2 px-4 text-center font-mono"><span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${badgeClass}">${performanceBadge}</span></td>
-            `;
             tableBody.appendChild(dataRow);
         });
 
