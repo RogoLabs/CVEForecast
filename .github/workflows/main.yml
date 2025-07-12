@@ -43,7 +43,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r code/requirements.txt
     
     - name: Configure Git
       run: |
@@ -58,7 +58,8 @@ jobs:
     
     - name: Run CVE forecast
       run: |
-        python cve_forecast.py
+        cd code
+        python main.py --output ../web/data.json
       env:
         PYTHONUNBUFFERED: 1
     
@@ -76,7 +77,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        git add web/data.json
+        git add web/data.json web/performance_history.json
         git commit -m "Update CVE forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
         git push
     
