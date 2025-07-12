@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVE Forecast - Technical Details</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f3f4f6;
+        }
+        .content-section {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #111827 100%);
+        }
+        .rogo-blue {
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800">
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h1 class="text-3xl font-bold">
+                        <span class="text-white">CVE</span><span class="rogo-blue">Forecast</span>
+                    </h1>
+                    <p class="text-gray-300 mt-1">Technical Details</p>
+                </div>
+                <nav>
+                    <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+        <div class="content-section">
+            <h2 class="text-2xl font-bold mb-4">Project Overview</h2>
+            <p>The CVE Forecast project is an automated system designed to predict the number of Common Vulnerabilities and Exposures (CVEs) for the upcoming months. By leveraging a suite of time series forecasting models, the project provides insights into future trends in vulnerability disclosures. This document provides a detailed look into the technical architecture, data processing pipeline, forecasting models, and deployment process.</p>
+        </div>
+
+        <div class="content-section">
+            <h2 class="text-2xl font-bold mb-4">System Architecture</h2>
+            <p>The project is built with a modular architecture, separating concerns into distinct Python modules. This design enhances maintainability, scalability, and testability.</p>
+            <h3 class="text-xl font-semibold mt-4 mb-2">Core Modules</h3>
+            <ul class="list-disc list-inside">
+                <li><strong>main.py:</strong> The main entry point that orchestrates the entire forecasting workflow.</li>
+                <li><strong>config.py:</strong> Centralized configuration for models, parameters, and constants.</li>
+                <li><strong>data_processor.py:</strong> Handles the parsing and processing of raw CVE data.</li>
+                <li><strong>analysis.py:</strong> Contains the core logic for model training, evaluation, and forecasting.</li>
+                <li><strong>file_io.py:</strong> Manages all file input/output operations, including the generation of the final `data.json`.</li>
+                <li><strong>utils.py:</strong> Provides utility functions, such as logging setup.</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h2 class="text-2xl font-bold mb-4">Data Processing Pipeline</h2>
+            <p>The data processing pipeline is designed to be efficient and robust, handling large volumes of CVE data.</p>
+            <ol class="list-decimal list-inside">
+                <li class="mt-2"><strong>Data Ingestion:</strong> The system clones the official cvelistV5 repository from GitHub, which contains all CVE data in JSON format.</li>
+                <li class="mt-2"><strong>Data Parsing:</strong> Each JSON file is parsed to extract the `publishedDate`. The system is designed to handle malformed JSON files gracefully.</li>
+                <li class="mt-2"><strong>Time Series Aggregation:</strong> The extracted publication dates are aggregated into a monthly time series, counting the number of CVEs published each month.</li>
+                <li class="mt-2"><strong>Data Validation:</strong> The time series data is validated to ensure completeness and correctness before being passed to the forecasting models.</li>
+            </ol>
+        </div>
+
+        <div class="content-section">
+            <h2 class="text-2xl font-bold mb-4">Forecasting Models</h2>
+            <p>The project employs a diverse set of over 25 time series forecasting models from the Darts library. This allows for a comprehensive analysis and the selection of the best-performing model for the given data.</p>
+            <h3 class="text-xl font-semibold mt-4 mb-2">Model Categories</h3>
+            <ul class="list-disc list-inside">
+                <li><strong>Statistical Models:</strong> ARIMA, ExponentialSmoothing, Prophet, Theta, etc.</li>
+                <li><strong>Machine Learning Models:</strong> LinearRegression, RandomForest, LightGBM, XGBoost.</li>
+                <li><strong>Deep Learning Models:</strong> NBEATS, NHiTS, TCN, Transformer, TiDE.</li>
+                <li><strong>Baseline Models:</strong> NaiveMean, NaiveSeasonal, NaiveDrift.</li>
+            </ul>
+            <h3 class="text-xl font-semibold mt-4 mb-2">Model Evaluation</h3>
+            <p>All models are evaluated using a rigorous and automated process defined within the system's configuration:</p>
+            <ol class="list-decimal list-inside">
+                <li class="mt-2"><strong>Centralized Configuration:</strong> Key parameters for the evaluation, such as the train/test split ratio and forecast horizon, are managed in <code>config.json</code>.</li>
+                <li class="mt-2"><strong>Optimized Hyperparameters:</strong> Model hyperparameters are systematically managed within the forecasting engine, leveraging best-known configurations for each model type.</li>
+                <li class="mt-2"><strong>Performance Metrics:</strong> Models are ranked based on Mean Absolute Percentage Error (MAPE), with other metrics like MAE, RMSE, and MASE also calculated for a comprehensive assessment.</li>
+                <li class="mt-2"><strong>Performance History:</strong> The performance of each model run, including metrics and hyperparameters, is logged in <code>performance_history.json</code> (path defined in <code>config.json</code>) to track performance and improvements over time.</li>
+            </ol>
+        </div>
+
+        <div class="content-section">
+            <h2 class="text-2xl font-bold mb-4">Deployment and Automation</h2>
+            <p>The CVE Forecast dashboard is deployed as a static website, with the data being updated daily through a fully automated CI/CD pipeline using GitHub Actions.</p>
+            <h3 class="text-xl font-semibold mt-4 mb-2">GitHub Actions Workflow</h3>
+            <ol class="list-decimal list-inside">
+                <li class="mt-2"><strong>Scheduled Trigger:</strong> The workflow is triggered daily at midnight UTC.</li>
+                <li class="mt-2"><strong>Data Fetching:</strong> The latest CVE data is downloaded.</li>
+                <li class="mt-2"><strong>Forecasting:</strong> The entire forecasting pipeline is executed, generating new predictions.</li>
+                <li class="mt-2"><strong>Data Commit:</strong> The updated `data.json` is committed back to the repository.</li>
+                <li class="mt-2"><strong>Deployment:</strong> The static site is automatically deployed, making the new forecasts available to users.</li>
+            </ol>
+        </div>
+    </main>
+
+    <footer class="bg-white mt-8 py-4">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-gray-600">&copy; 2025 CVE Forecast. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -7,7 +7,14 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .hidden-row { display: none !important; }
         .gradient-bg {
             background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #111827 100%);
         }
@@ -71,19 +78,89 @@
             color: #2563eb !important;
             text-decoration-style: solid;
         }
+
+        /* Table styles */
+        .custom-table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.9rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .custom-table th,
+        .custom-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+
+        .custom-table thead {
+            background-color: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .custom-table th {
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.75rem;
+        }
+
+        .custom-table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .custom-table tbody tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        .custom-table td {
+            color: #334155;
+        }
+
+        .collapsible-row {
+            cursor: pointer;
+        }
+
+        .collapsible-row:hover {
+            background-color: #eff6ff;
+        }
+
+        .year-header {
+            background-color: #f8fafc;
+        }
+
+        .nested-table-container {
+            padding: 0;
+            background-color: #f8fafc;
+        }
+
+        .nested-table {
+            width: 100%;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .nested-table td {
+            padding-left: 2.5rem;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- Header -->
     <header class="gradient-bg text-white shadow-lg">
         <div class="container mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
+            <div class="flex justify-between items-end">
                 <div>
                     <h1 class="text-3xl font-bold">
                         <span class="text-white">CVE</span><span class="rogo-blue">Forecast</span>
                     </h1>
                     <p class="text-gray-300 mt-1">Predictive Analytics for CVE Publications</p>
                 </div>
+                <nav>
+                    <a href="technical_details.html" class="text-gray-300 hover:text-white transition-colors">Technical Details</a>
+                </nav>
             </div>
         </div>
     </header>
@@ -109,7 +186,7 @@
         <!-- Main Dashboard -->
         <div id="dashboard" class="hidden">
             <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="bg-white rounded-lg card-shadow p-6">
                     <div class="flex items-center">
                         <div class="p-3 bg-blue-100 rounded-full">
@@ -121,6 +198,21 @@
                             <p class="text-sm font-medium text-gray-600">Forecasted CVEs This Year</p>
                             <p class="text-2xl font-bold text-gray-900" id="currentYearForecast">-</p>
                             <p class="text-xs text-gray-500" id="forecastDescription">Total CVEs: Published + Forecasted (XGBoost - best model)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Forecasted YoY Growth</p>
+                            <p class="text-2xl font-bold text-gray-900" id="yoyGrowth">-</p>
+                            <p class="text-xs text-gray-500">vs. 2024 Total</p>
                         </div>
                     </div>
                 </div>
@@ -153,8 +245,6 @@
                         </div>
                     </div>
                 </div>
-
-
             </div>
 
             <!-- Chart Section -->
@@ -199,7 +289,7 @@
                     </div>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table class="custom-table">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
@@ -215,25 +305,14 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-4 text-center">
-                    <div class="inline-flex items-center space-x-8 text-sm text-gray-600">
-                        <div>
-                            <span class="font-medium">Average Error:</span>
-                            <span id="avgError" class="ml-1">-</span>
-                        </div>
-                        <div>
-                            <span class="font-medium">Average Percent Error:</span>
-                            <span id="avgPercentError" class="ml-1">-</span>
-                        </div>
-                    </div>
-                </div>
+
             </div>
 
             <!-- Model Rankings -->
             <div class="bg-white rounded-lg card-shadow p-6 mb-8">
                 <h2 class="text-xl font-bold text-gray-800 mb-6">Model Performance Rankings</h2>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table class="custom-table">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
@@ -311,7 +390,6 @@
     <footer class="bg-gray-900 text-white py-8 mt-12">
         <div class="container mx-auto px-6 text-center">
             <p class="mb-2">CVEForecast - Part of <a href="https://rogolabs.net" class="text-blue-400 hover:text-blue-300 transition-colors">RogoLabs</a> Open-Source Security Tools</p>
-            <p class="mb-2">View on <a href="https://github.com/rogolabs/cveforecast" class="text-blue-400 hover:text-blue-300 transition-colors">GitHub</a></p>
             <p class="text-gray-300 text-sm">Data source: <a href="https://github.com/CVEProject/cvelistV5" class="text-blue-400 hover:text-blue-300 transition-colors">CVE Project Official Repository</a></p>
             <p class="text-gray-300 text-sm mt-2">Powered by time series forecasting models using the <a href="https://unit8co.github.io/darts/" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">Darts library</a></p>
             <div class="mt-4 pt-4 border-t border-gray-600">

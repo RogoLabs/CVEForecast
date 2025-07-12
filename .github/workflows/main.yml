@@ -58,7 +58,8 @@ jobs:
     
     - name: Run CVE forecast
       run: |
-        python cve_forecast.py
+        cd code
+        python main.py --output ../web/data.json
       env:
         PYTHONUNBUFFERED: 1
     
