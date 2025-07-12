@@ -1,6 +1,5 @@
 name: CVE Forecast Daily Update
 
-if: false
 
 on:
   push:
@@ -54,7 +53,7 @@ jobs:
     
     - name: Clone CVE data repository
       run: |
-        git clone --depth 1 https://github.com/CVEProject/cvelistV5.git cvelistV5
+        git clone https://github.com/CVEProject/cvelistV5.git cvelistV5
         echo "CVE data cloned successfully"
         ls -la cvelistV5/
     
