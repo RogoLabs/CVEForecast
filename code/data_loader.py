@@ -77,12 +77,12 @@ def load_cve_data(config: dict) -> pd.DataFrame:
     df = pd.DataFrame({'date': cve_dates})
     df['date'] = pd.to_datetime(df['date'])
     df = df.set_index('date')
-    monthly_counts = df.resample('M').size().to_frame('cve_count')
+    monthly_counts = df.resample('ME').size().to_frame('cve_count')
 
     # Ensure all months are present in the range, filling missing ones with 0
     if not monthly_counts.empty:
         start_date, end_date = monthly_counts.index.min(), monthly_counts.index.max()
-        full_date_range = pd.date_range(start=start_date, end=end_date, freq='M')
+        full_date_range = pd.date_range(start=start_date, end=end_date, freq='ME')
         monthly_counts = monthly_counts.reindex(full_date_range, fill_value=0)
 
     # Conditionally filter by start date

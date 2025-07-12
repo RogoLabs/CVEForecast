@@ -44,7 +44,29 @@
     <main class="container mx-auto px-6 py-8">
         <div class="content-section">
             <h2 class="text-2xl font-bold mb-4">Project Overview</h2>
-            <p>The CVE Forecast project is an automated system designed to predict the number of Common Vulnerabilities and Exposures (CVEs) for the upcoming months. By leveraging a suite of time series forecasting models, the project provides insights into future trends in vulnerability disclosures. This document provides a detailed look into the technical architecture, data processing pipeline, forecasting models, and deployment process.</p>
+            <p>The CVE Forecast project is an automated system designed to predict the number of Common Vulnerabilities and Exposures (CVEs) for the upcoming months. By leveraging a suite of time series forecasting models, the project provides insights into future trends in vulnerability disclosures.</p>
+            
+            <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 class="font-semibold text-blue-800">v.04 - Recent Improvements</h3>
+                <ul class="list-disc list-inside mt-2 space-y-1 text-blue-700">
+                    <li>Enhanced model stability with improved error handling</li>
+                    <li>Added input validation and scaling for better numerical stability</li>
+                    <li>Optimized for CPU-only environments</li>
+                    <li>Dynamic forecast period calculation</li>
+                    <li>Improved model selection based on MAPE scores</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2 class="text-2xl font-bold mb-4">Model Evaluation</h2>
+            <p>Models are evaluated using multiple metrics to ensure reliable forecasts:</p>
+            <ul class="list-disc list-inside mt-2 space-y-1">
+                <li><strong>MAPE (Mean Absolute Percentage Error)</strong>: Primary metric for model selection</li>
+                <li><strong>MASE (Mean Absolute Scaled Error)</strong>: Scale-independent measure of forecast accuracy</li>
+                <li><strong>RMSSE (Root Mean Squared Scaled Error)</strong>: Good for comparing across different time series</li>
+                <li><strong>MAE (Mean Absolute Error)</strong>: Easy to interpret in the original units</li>
+            </ul>
         </div>
 
         <div class="content-section">
@@ -76,6 +98,7 @@
             <h2 class="text-2xl font-bold mb-4">Forecasting Models</h2>
             <p>The project employs a diverse set of over 25 time series forecasting models from the Darts library. This allows for a comprehensive analysis and the selection of the best-performing model for the given data.</p>
             <h3 class="text-xl font-semibold mt-4 mb-2">Model Categories</h3>
+            <p class="text-sm text-gray-600 mb-3">Note: Models are automatically selected based on performance and stability. Deep learning models are available but disabled by default for CPU environments.</p>
             <ul class="list-disc list-inside">
                 <li><strong>Statistical Models:</strong> ARIMA, ExponentialSmoothing, Prophet, Theta, etc.</li>
                 <li><strong>Machine Learning Models:</strong> LinearRegression, RandomForest, LightGBM, XGBoost.</li>
