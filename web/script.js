@@ -436,7 +436,17 @@ function getChartOptions() {
                     title: (tooltipItems) => {
                         if (!tooltipItems.length) return '';
                         const pointDate = new Date(tooltipItems[0].parsed.x);
-                        return pointDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+                        // Check if it's the last point of the 'Actual CVEs' dataset
+                        const isLastActualPoint = 
+                            tooltipItems[0].datasetIndex === 0 && 
+                            tooltipItems[0].dataIndex === forecastData.actuals_cumulative.length - 1;
+
+                        if (isLastActualPoint) {
+                            return pointDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+                        } else {
+                            return pointDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+                        }
                     },
                     label: (context) => {
                         const label = context.dataset.label || '';
