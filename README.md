@@ -1,391 +1,64 @@
-# CVE Forecast Dashboard
+# CVE Forecast v.03
 
-🌐 **Live at [cveforecast.org](https://cveforecast.org)** 🌐
+<p align="center">
+  <a href="https://cveforecast.org">
+    <img src="https://img.shields.io/badge/Live-Dashboard-blue.svg" alt="Live Dashboard">
+  </a>
+  <a href="https://github.com/gamblin/CVEForecast/actions">
+    <img src="https://github.com/gamblin/CVEForecast/actions/workflows/main.yml/badge.svg" alt="CI/CD Status">
+  </a>
+  <a href="https://github.com/gamblin/CVEForecast/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
+  </a>
+</p>
 
-An automated web-based tool that analyzes historical CVE data and uses time series forecasting models to predict the number of new CVEs for the remainder of the current calendar year.
+**CVE Forecast** is a sophisticated, automated platform that leverages over 25 time series forecasting models to predict the number of Common Vulnerabilities and Exposures (CVEs). It provides a comprehensive, data-driven view of future trends in vulnerability disclosures, all accessible through a sleek, interactive web dashboard.
 
-## 🔥 Features
+## 🚀 Key Features
 
-- **🌐 Live Production Deployment**: Available 24/7 at [cveforecast.org](https://cveforecast.org)
-- **Automated Data Collection**: Daily fetching of CVE data from the official CVE Project repository
-- **Multiple Forecasting Models**: Implements 25+ time series models including ARIMA, Prophet, ExponentialSmoothing, Kalman Filter, and advanced deep learning models
-- **Comprehensive Model Evaluation**: Ranks models by multiple metrics (MAPE, RMSE, MAE, sMAPE)
-- **Validation Against Actuals**: Real-time comparison of predictions vs actual CVE counts with detailed accuracy metrics
-- **Interactive Dashboard**: Beautiful web interface with charts and real-time data visualization
-- **Model Performance Transparency**: Detailed validation table showing monthly prediction accuracy
-- **Enhanced Accuracy Metrics**: Multi-dimensional model performance assessment
-- **GitHub Actions Automation**: Fully automated daily updates
-- **GitHub Pages Ready**: Static site deployment compatible
+- **Advanced Forecasting Engine**: Utilizes a diverse suite of models, from statistical classics like ARIMA and Prophet to cutting-edge deep learning architectures like N-BEATS, N-HiTS, and Transformers.
+- **Automated CI/CD Pipeline**: Employs GitHub Actions for a fully automated daily workflow, including data ingestion, model training, evaluation, and deployment.
+- **Interactive Web Dashboard**: A user-friendly interface for visualizing historical data, comparing model forecasts, and analyzing performance metrics.
+- **Rigorous Model Evaluation**: Systematically ranks models based on a variety of performance metrics, ensuring the most accurate forecasts are always highlighted.
+- **In-Depth Technical Documentation**: A comprehensive guide to the system's architecture, data pipeline, and forecasting models.
 
-## 🏗️ Architecture
+## 🌐 Live Dashboard
 
-The application has been refactored into a clean, modular architecture:
+Experience the full power of CVE Forecast on the live dashboard:
 
-### 📁 File Structure
+**[cveforecast.org](https://cveforecast.org)**
 
-```
-CVEForecast/
-├── code/                # Python source code and dependencies
-│   ├── main.py          # Main entry point and workflow orchestration
-│   ├── config.py        # Configuration, constants, and model imports
-│   ├── data_processor.py # CVE data parsing and processing
-│   ├── analysis.py      # Model preparation, evaluation, and forecasting
-│   ├── file_io.py       # File operations and data.json generation
-│   ├── utils.py         # Utility functions and logging setup
-│   ├── data_fetcher.py  # External data fetching (future extensibility)
-│   └── requirements.txt # Python dependencies
-├── cvelistV5/          # CVE data repository (downloaded)
-└── web/                # Web interface files
-    ├── index.html      # Main dashboard page
-    ├── script.js       # Frontend JavaScript
-    ├── style.css       # Styling
-    ├── data.json       # Generated forecast data
-    └── performance_history.json # Model performance tracking
-```
+## 🛠️ Technical Deep Dive
 
-### 🔧 Module Responsibilities
+For a comprehensive understanding of the project's architecture, data processing pipeline, forecasting models, and deployment strategy, please refer to our detailed technical documentation:
 
-All Python source code is organized in the `code/` directory:
+**[Technical Details Page](web/technical_details.html)**
 
-- **`code/main.py`**: Entry point that orchestrates the complete workflow
-- **`code/config.py`**: Centralizes all configuration, constants, and model imports
-- **`code/data_processor.py`**: Handles CVE JSON file parsing and data cleaning
-- **`code/analysis.py`**: Contains all forecasting models and evaluation logic
-- **`code/file_io.py`**: Manages file operations and data.json generation
-- **`code/utils.py`**: Provides logging setup and common utility functions
-- **`code/data_fetcher.py`**: Placeholder for future external data fetching
+## 📦 Quick Start
 
-## 🚀 Quick Start
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/gamblin/CVEForecast.git
+    cd CVEForecast
+    ```
 
-### 🌐 Live Demo
+2.  **Install dependencies:**
+    ```bash
+    pip install -r code/requirements.txt
+    ```
 
-**Visit [cveforecast.org](https://cveforecast.org) to see the dashboard in action!**
+3.  **Run the forecast:**
+    ```bash
+    python code/main.py
+    ```
 
-The live site is automatically updated daily with the latest CVE data and forecasts.
-
-### 1. Setup Repository
-
-```bash
-git clone https://github.com/yourusername/CVEForecast.git
-cd CVEForecast
-```
-
-### 2. Install Dependencies
-
-```bash
-pip install -r code/requirements.txt
-```
-
-### 3. Download CVE Data
-
-```bash
-python download_data.py
-```
-
-### 4. Run the Forecast Engine
-
-**Basic usage:**
-```bash
-cd code
-python main.py --output ../web/data.json
-```
-
-**Advanced usage:**
-```bash
-cd code
-python main.py --data-path ../cvelistV5 --output ../web/data.json --log-level INFO
-```
-
-**Get help:**
-```bash
-cd code
-python main.py --help
-```
-
-### 5. Local Development and Testing
-
-Use the test scripts in the `tests/` folder for local development with real CVE data:
-
-**Quick validation:**
-```bash
-cd tests
-python validate_forecast.py
-```
-
-**Development with data subset (faster):**
-```bash
-cd tests
-python generate_sample_data.py
-```
-
-**Full integration test:**
-```bash
-cd tests
-python test_forecast.py
-```
-
-All test scripts use real CVE data from the official CVElistV5 repository. See `tests/README.md` for detailed information about each test script and performance characteristics.
-
-### 4. Manual Forecast Generation
-
-For direct control over the forecast process:
-
-```bash
-# First, clone the CVE data repository
-git clone --depth 1 https://github.com/CVEProject/cvelistV5.git cve_data
-
-# Run the forecast analysis
-python cve_forecast.py --data-path cve_data --output web/data.json
-
-# Start the local server
-python serve.py
-```
-
-### 5. View Dashboard
-
-**Production Site**: [cveforecast.org](https://cveforecast.org) - Live 24/7 with daily updates
-
-**Local Development**: The dashboard will be available at `http://localhost:8000` when using the local server.
-
-## 📊 Dashboard Components
-
-### Summary Cards
-- **Total Historical CVEs**: Complete count of analyzed CVE records
-- **Best Model**: Top-performing forecasting model
-- **Forecast Accuracy**: MAPE score of the best model
-
-### Interactive Chart
-- Historical CVE publication data
-- Forecasts from multiple models
-- Adjustable time ranges (6 months, 1 year, all data)
-- Model selection filter
-
-### Model Rankings Table
-- Performance comparison of all models with comprehensive metrics (MAPE, RMSE, MAE, sMAPE)
-- Color-coded performance indicators
-- Detailed accuracy assessment
-
-### Validation Against Actuals Table ⭐ **NEW**
-- **Monthly comparison** of predicted vs actual CVE counts for the last 6 months
-- **Absolute and percentage error** calculations
-- **Color-coded accuracy ratings** (Excellent/Good/Fair/Poor)
-- **Summary statistics** including average error and accuracy rate
-- **Transparency** in model performance and reliability
-
-## 🤖 Forecasting Models
-
-The system evaluates the following time series models:
-
-### Statistical Models
-- **ARIMA**: AutoRegressive Integrated Moving Average
-- **VARIMA**: Vector AutoRegressive Integrated Moving Average
-- **ExponentialSmoothing**: Exponential smoothing with trend and seasonality
-- **Prophet**: Facebook's forecasting procedure
-- **Theta & FourTheta**: Theta method for forecasting
-- **FFT**: Fast Fourier Transform for frequency domain analysis
-- **TBATS**: Trigonometric seasonality, Box-Cox transformation, ARMA errors
-- **Croston**: Intermittent demand forecasting
-- **KalmanForecaster**: Kalman filter with N4SID system identification
-- **AutoCES**: Complex Exponential Smoothing (automatic parameters)
-- **AutoMFLES**: Multiple Frequency Linear Exponential Smoothing
-- **AutoTBATS**: TBATS with automatic parameter selection
-
-### Baseline Models
-- **NaiveMean**: Simple mean forecast
-- **NaiveSeasonal**: Seasonal naive forecasting
-- **NaiveDrift**: Naive drift method
-- **NaiveMovingAverage**: Moving average forecast
-
-### Machine Learning Models
-- **LinearRegression**: Linear regression with time-based features
-- **RandomForest**: Random forest with lagged features
-- **LightGBM**: Gradient boosting with time series features
-- **XGBoost**: Extreme gradient boosting
-- **CatBoost**: Categorical boosting
-
-### Deep Learning Models
-- **NBEATS**: Neural Basis Expansion Analysis
-- **NHiTS**: Neural Hierarchical Interpolation for Time Series
-- **TFT**: Temporal Fusion Transformer
-- **RNN**: Recurrent Neural Networks
-- **TCN**: Temporal Convolutional Networks
-- **Transformer**: Transformer architecture for time series
-- **TSMixer**: Time Series Mixer (optimized configuration)
-- **DLinear**: Simple but effective linear neural model
-- **NLinear**: Normalized linear neural model
-- **TiDE**: Time-series Dense Encoder
-
-### Ensemble Models
-- **NaiveEnsemble**: Simple average of multiple models
-
-## 🔄 Automation
-
-### GitHub Actions Workflow
-
-The system runs automatically via GitHub Actions:
-
-- **Schedule**: Daily at midnight UTC
-- **Process**: 
-  1. Clone CVE data repository
-  2. Parse and aggregate CVE publication dates
-  3. Train and evaluate all forecasting models
-  4. Generate forecasts for remainder of current year
-  5. Update web dashboard data
-  6. Commit and push changes
-
-### Manual Trigger
-
-You can manually trigger the workflow:
-1. Go to the "Actions" tab in your GitHub repository
-2. Select "CVE Forecast Daily Update"
-3. Click "Run workflow"
-
-## 🔄 Automated Deployment
-
-The project includes GitHub Actions automation for daily updates:
-
-### Workflow Process
-1. **Scheduled Execution**: Runs daily at midnight UTC
-2. **Data Download**: Downloads the latest CVE data from the official repository
-3. **Forecast Generation**: Processes data and generates new forecasts
-4. **Dashboard Update**: Updates the web dashboard with new data
-5. **Automatic Commit**: Commits updated data back to the repository
-
-### Setting Up Automation
-1. Fork this repository to your GitHub account
-2. Enable GitHub Actions in your repository settings
-3. Optionally, configure GitHub Pages to serve the `web/` directory
-4. The workflow will run automatically on schedule
-
-### Manual Trigger
-You can also trigger the workflow manually:
-- Go to the "Actions" tab in your GitHub repository
-- Select "CVE Forecast Daily Update"
-- Click "Run workflow"
-
-## 📁 Project Structure
-
-```
-CVEForecast/
-├── .github/
-│   └── workflows/
-│       └── main.yml              # GitHub Actions workflow
-├── web/
-│   ├── index.html               # Dashboard HTML
-│   ├── script.js                # Dashboard JavaScript
-│   └── data.json                # Generated forecast data
-├── cve_forecast.py              # Main forecasting script
-├── requirements.txt             # Python dependencies
-├── README.md                    # Project documentation
-└── .gitignore                   # Git ignore rules
-```
-
-## 📈 Data Flow
-
-1. **Data Collection**: Clone CVE repository and parse JSON files
-2. **Time Series Creation**: Aggregate CVE counts by publication date
-3. **Model Training**: Train multiple forecasting models on historical data
-4. **Model Evaluation**: Calculate MAPE scores and rank models
-5. **Forecast Generation**: Generate predictions using top-performing models
-6. **Data Export**: Save structured data for web dashboard
-7. **Visualization**: Interactive charts and statistics in web interface
-
-## 🌐 Production Deployment
-
-### Live Site: [cveforecast.org](https://cveforecast.org)
-
-The CVE Forecast Dashboard is deployed and running live at **cveforecast.org** with:
-
-- **Daily Automatic Updates**: Fresh data and forecasts every day
-- **High Availability**: 99.9% uptime with reliable hosting
-- **Real-time Validation**: Live comparison against actual CVE publication data
-- **Mobile Responsive**: Optimized for desktop, tablet, and mobile viewing
-- **Performance Optimized**: Fast loading with CDN delivery
-
-### GitHub Pages Setup (Alternative)
-
-To deploy your own copy using GitHub Pages:
-
-1. Go to your repository settings
-2. Navigate to "Pages" section
-3. Select "Deploy from a branch"
-4. Choose "main" branch
-5. Select "/ (root)" folder
-6. Your dashboard will be available at: `https://yourusername.github.io/CVEForecast/web/`
-
-## 🛠️ Configuration
-
-### Environment Variables
-
-No special environment variables are required. The system uses public APIs and repositories.
-
-### Model Parameters
-
-Model parameters can be adjusted in `cve_forecast.py`:
-
-```python
-# Example: Adjust NBEATS parameters
-NBEATSModel(
-    input_chunk_length=30,    # Input sequence length
-    output_chunk_length=7,    # Forecast horizon
-    n_epochs=50,              # Training epochs
-    random_state=42
-)
-```
-
-## 📊 Data Sources
-
-- **CVE Data**: [CVE Project Official Repository](https://github.com/CVEProject/cvelistV5)
-- **Update Frequency**: Daily at midnight UTC
-- **Data Format**: JSON files containing CVE metadata and publication dates
-
-## 🔍 Technical Details
-
-### Performance Optimization
-
-- **Shallow Git Clone**: Only fetches latest CVE data to reduce bandwidth
-- **Efficient Parsing**: Streams JSON files without loading entire repository in memory
-- **Model Caching**: Trains models efficiently with optimized parameters
-- **Data Aggregation**: Pre-processes time series for faster model training
-
-### Error Handling
-
-- **Robust Data Parsing**: Skips malformed CVE entries
-- **Model Fallbacks**: Continues if individual models fail to train
-- **Network Resilience**: Handles repository cloning failures gracefully
-- **Data Validation**: Ensures forecast data integrity
+4.  **View the dashboard locally:**
+    Open `web/index.html` in your browser.
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Contributions are welcome! Please feel free to submit a pull request or open an issue to discuss your ideas.
 
-## 📝 License
+## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [CVE Project](https://cve.mitre.org/) for providing public CVE data
-- [Darts](https://github.com/unit8co/darts) for the excellent time series forecasting library
-- [Chart.js](https://www.chartjs.org/) for interactive data visualization
-- [Tailwind CSS](https://tailwindcss.com/) for beautiful styling
-
-## 📞 Support
-
-**🌐 Live Dashboard**: [cveforecast.org](https://cveforecast.org)
-
-If you encounter any issues or have questions:
-
-1. Check the [Issues](https://github.com/yourusername/CVEForecast/issues) page
-2. Create a new issue with detailed information
-3. Include logs and error messages when applicable
-
----
-
-**🌐 Visit [cveforecast.org](https://cveforecast.org) for live CVE forecasting**
-
-**Made with ❤️ for the cybersecurity community**
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
