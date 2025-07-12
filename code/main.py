@@ -3,8 +3,15 @@ import logging
 from datetime import datetime
 import sys
 from pathlib import Path
+import warnings
 import pandas as pd
+import numpy as np
 from darts import TimeSeries
+
+# Suppress specific warnings
+warnings.filterwarnings('ignore', category=UserWarning, module='sklearn.utils.validation')
+warnings.filterwarnings('ignore', category=RuntimeWarning, module='nfoursid')
+warnings.filterwarnings('ignore', category=UserWarning, module='lightgbm')
 
 from utils import setup_logging
 from data_loader import load_cve_data
@@ -47,7 +54,7 @@ class CVEForecastEngine:
         """Set up dynamic time variables based on current UTC time."""
         # Use a fixed time for consistent, reproducible runs, as per user request context.
         # In a live production environment, this would be datetime.datetime.utcnow().
-        self.current_datetime = datetime.datetime(2025, 7, 11, 14, 45, 10, tzinfo=datetime.timezone.utc)
+        self.current_datetime = datetime.datetime.now(datetime.timezone.utc)
         
         self.start_of_current_month = self.current_datetime.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         self.start_of_next_month = self.start_of_current_month + relativedelta(months=1)
@@ -467,7 +474,11 @@ class CVEForecastEngine:
         self.logger.info('CVE Forecast Engine finished successfully.')
 
         # Final Summary
-        best_model = next(iter(self.model_results.values())) if self.model_results else None
+        best_model = min(
+            (m for m in self.model_results.values() if 'metrics' in m and 'mape' in m['metrics']),
+            key=lambda x: x['metrics']['mape'],
+            default=None
+        )
         print("\n--- CVE Forecast Complete ---")
         if best_model:
             print(f"  Best Model: {best_model['model_name']} (MAPE: {best_model['metrics']['mape']:.4f}%)")
