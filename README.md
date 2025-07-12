@@ -1,16 +1,4 @@
-# CVE Forecast v.03
-
-<p align="center">
-  <a href="https://cveforecast.org">
-    <img src="https://img.shields.io/badge/Live-Dashboard-blue.svg" alt="Live Dashboard">
-  </a>
-  <a href="https://github.com/gamblin/CVEForecast/actions">
-    <img src="https://github.com/gamblin/CVEForecast/actions/workflows/main.yml/badge.svg" alt="CI/CD Status">
-  </a>
-  <a href="https://github.com/gamblin/CVEForecast/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
-  </a>
-</p>
+# CVE Forecast
 
 **CVE Forecast** is a sophisticated, automated platform that leverages over 25 time series forecasting models to predict the number of Common Vulnerabilities and Exposures (CVEs). It provides a comprehensive, data-driven view of future trends in vulnerability disclosures, all accessible through a sleek, interactive web dashboard.
 
