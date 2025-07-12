@@ -251,15 +251,18 @@ class CVEForecastEngine:
     def _get_summary(self):
         """Build the summary object matching the v.02 file_io.py logic exactly."""
         full_df = self.full_series.to_dataframe()
+        cves_2024 = full_df[full_df.index.year == 2024]['cve_count'].sum()
+
         return {
             'total_historical_cves': int(full_df['cve_count'].sum()),
+            'cumulative_cves_2024': int(cves_2024),
             'data_period': {
                 'start': full_df.index.min().strftime('%Y-%m-%d'),
                 'end': full_df.index.max().strftime('%Y-%m-%d')
             },
             'forecast_period': {
-                'start': datetime.date(datetime.date.today().year, datetime.date.today().month, 1).strftime('%Y-%m-%d'),
-                'end': datetime.date(datetime.date.today().year + 1, 1, 31).strftime('%Y-%m-%d')
+                'start': self.start_of_current_month.strftime('%Y-%m-%d'),
+                'end': (self.start_of_current_month.replace(year=self.start_of_current_month.year + 1, month=1) + relativedelta(months=1, days=-1)).strftime('%Y-%m-%d')
             }
         }
 
@@ -344,30 +347,25 @@ class CVEForecastEngine:
                 date_str = ts.strftime('%Y-%m')
                 cve_count = int(round(val[0]))
                 
-                # Adjust the forecast for the current month if it's lower than the actual partial count
                 if date_str == current_month_date and cve_count < current_month_count:
                     cve_count = current_month_count
                     
                 forecast_list.append({"date": date_str, "cve_count": cve_count})
             forecasts_out[name] = forecast_list
 
-        self.logger.info(f"Validation data to be saved: {json.dumps(self.all_models_validation, indent=2)}")
-
-        # This summary is now created here to be used in the final printout
         self.summary = self._get_summary()
 
-        # Generate the new, dynamic actuals and forecast timelines
         actuals_cumulative = self._get_actuals_cumulative(historical_data, current_month_actual)
         cumulative_timelines = self._get_cumulative_timelines(forecasts_out, actuals_cumulative)
 
+        # Correctly derive yearly totals from the final cumulative timeline entry.
         yearly_forecast_totals = {}
-        for model_name, timeline in cumulative_timelines.items():
+        for model_name_cumulative, timeline in cumulative_timelines.items():
             if timeline:
-                # Strip suffix to get the base model name for the key
-                base_model_name = model_name.replace('_cumulative', '')
-                yearly_forecast_totals[base_model_name] = timeline[-1]['cumulative_total']
+                model_name = model_name_cumulative.replace('_cumulative', '')
+                final_total = timeline[-1]['cumulative_total']
+                yearly_forecast_totals[model_name] = int(final_total)
 
-        # Calculate forecast vs published for each model
         forecast_vs_published_data = {}
         for model_name in self.final_forecasts.keys():
             table_data, summary_stats = self._calculate_forecast_vs_published(model_name)
@@ -379,12 +377,11 @@ class CVEForecastEngine:
         final_json = {
             "generated_at": self.current_datetime.isoformat(),
             "model_rankings": model_rankings,
-            "current_month_actual": current_month_actual,
-            "actuals_cumulative": actuals_cumulative, # New dynamic field
-            "forecasts": forecasts_out,
-            "all_models_validation": self.all_models_validation,
             "yearly_forecast_totals": yearly_forecast_totals,
+            "current_month_actual": current_month_actual,
+            "actuals_cumulative": actuals_cumulative,
             "cumulative_timelines": cumulative_timelines,
+            "forecasts": forecasts_out,
             "summary": self.summary,
             "forecast_vs_published": forecast_vs_published_data
         }
@@ -404,7 +401,6 @@ class CVEForecastEngine:
                     return super(NumpyEncoder, self).default(obj)
             json.dump(final_json, f, indent=2, cls=NumpyEncoder)
         
-        # Store output path for summary
         self.output_path = output_path
 
     def _calculate_forecast_vs_published(self, model_name):

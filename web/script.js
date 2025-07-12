@@ -29,10 +29,20 @@ async function loadForecastData() {
             console.warn(`Could not load model_info.json. Status: ${modelInfoResponse.status}. Links will not be available.`);
             modelInfoData = {}; // Set to empty object to prevent errors
         } else {
-            modelInfoData = await modelInfoResponse.json();
+            try {
+                modelInfoData = await modelInfoResponse.json();
+            } catch (e) {
+                console.error('Error parsing model_info.json:', e);
+                modelInfoData = {};
+            }
         }
 
-        forecastData = await forecastResponse.json();
+        try {
+            forecastData = await forecastResponse.json();
+        } catch (e) {
+            console.error('Error parsing data.json:', e);
+            throw new Error('Failed to parse data.json');
+        }
         console.log('✅ Application data loaded successfully.');
 
         document.getElementById('loadingState').classList.add('hidden');
@@ -42,7 +52,11 @@ async function loadForecastData() {
         console.log('✅ Dashboard initialized successfully!');
 
     } catch (error) {
-        console.error('❌ Error loading or parsing application data:', error);
+        console.error('❌ Error in loadForecastData:', error);
+        if (error instanceof Error) {
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+        }
         document.getElementById('loadingState').classList.add('hidden');
         document.getElementById('errorState').classList.remove('hidden');
     }
@@ -87,6 +101,14 @@ function updateSummaryCards() {
     }
 
     document.getElementById('totalCVEs').textContent = (forecastData.summary?.total_historical_cves || 0).toLocaleString();
+
+    const lastYearTotal = forecastData.summary?.cumulative_cves_2024;
+    if (bestModelTotal && lastYearTotal) {
+        const yoyGrowth = ((bestModelTotal - lastYearTotal) / lastYearTotal) * 100;
+        document.getElementById('yoyGrowth').textContent = `${yoyGrowth.toFixed(2)}%`;
+    } else {
+        document.getElementById('yoyGrowth').textContent = '-';
+    }
 }
 
 /**
@@ -94,8 +116,13 @@ function updateSummaryCards() {
  */
 function populateModelSelector() {
     const selector = document.getElementById('validationModelSelector');
+    if (!selector) return;
     selector.innerHTML = '';
-    forecastData.model_rankings?.forEach(model => {
+    
+    // Get the top 5 models from the rankings
+    const topModels = forecastData.model_rankings?.slice(0, 5) || [];
+
+    topModels.forEach(model => {
         const option = document.createElement('option');
         option.value = model.model_name;
         option.textContent = model.model_name;
@@ -113,7 +140,6 @@ function populateModelRankings() {
 
     forecastData.model_rankings?.forEach((model, index) => {
         const row = document.createElement('tr');
-        row.className = `border-b border-gray-200 text-sm ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50`;
         const mape = model.mape || 0;
         let badgeClass = 'bg-red-100 text-red-800';
         let performanceBadge = 'Poor';
@@ -135,13 +161,13 @@ function populateModelRankings() {
             : model.model_name;
 
         row.innerHTML = `
-            <td class="py-2 px-4 text-center font-mono">${index + 1}</td>
-            <td class="py-2 px-4 font-medium text-gray-800">${modelNameHtml}</td>
-            <td class="py-2 px-4 text-right font-mono">${(model.mape || 0).toFixed(2)}%</td>
-            <td class="py-2 px-4 text-right font-mono">${(model.mase || 0).toFixed(2)}</td>
-            <td class="py-2 px-4 text-right font-mono">${(model.rmsse || 0).toFixed(2)}</td>
-            <td class="py-2 px-4 text-right font-mono">${(model.mae || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td class="py-2 px-4 text-center">
+            <td class="text-center font-mono">${index + 1}</td>
+            <td class="font-medium text-gray-800">${modelNameHtml}</td>
+            <td class="text-right font-mono">${(model.mape || 0).toFixed(2)}%</td>
+            <td class="text-right font-mono">${(model.mase || 0).toFixed(2)}</td>
+            <td class="text-right font-mono">${(model.rmsse || 0).toFixed(2)}</td>
+            <td class="text-right font-mono">${(model.mae || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="text-center">
                 <span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${badgeClass}">${performanceBadge}</span>
             </td>
         `;
@@ -155,9 +181,16 @@ function populateModelRankings() {
 function populateForecastVsPublishedTable() {
     const selector = document.getElementById('validationModelSelector');
     const selectedModel = selector.value;
-    const tableBody = document.getElementById('forecastVsPublishedTableBody');
-    const maeCard = document.getElementById('validationMae');
-    const mapeCard = document.getElementById('validationMape');
+    // Use correct IDs for summary cards and table body
+    const tableBody = document.getElementById('validationTable');
+    const maeCard = document.getElementById('avgErrorCard');
+    const mapeCard = document.getElementById('avgPercentErrorCard');
+
+    // Add null checks to avoid JS errors if elements are missing
+    if (!tableBody || !maeCard || !mapeCard) {
+        console.error('❌ Missing validation table or summary card elements in HTML.');
+        return;
+    }
 
     if (!forecastData.forecast_vs_published || !forecastData.forecast_vs_published[selectedModel]) {
         tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No data available for this model.</td></tr>';
@@ -194,13 +227,13 @@ function populateForecastVsPublishedTable() {
 
         const headerRow = document.createElement('tr');
         headerRow.className = 'year-header';
-        if (isCollapsed) headerRow.classList.add('collapsed');
-
+        // Add Tailwind bg-gray-100 for year header shading
         headerRow.innerHTML = `
-            <td colspan="6" class="py-2 px-4 font-bold text-gray-700">
-                <span class="toggle-icon">${isCollapsed ? '▶' : '▼'}</span>${year}
+            <td colspan="6" class="font-bold text-gray-700 cursor-pointer">
+                <span class="toggle-icon">${isCollapsed ? '▶' : '▼'}</span> ${year}
             </td>
         `;
+        if (isCollapsed) headerRow.classList.add('collapsed');
         tableBody.appendChild(headerRow);
 
         months.forEach(row => {
@@ -220,11 +253,11 @@ function populateForecastVsPublishedTable() {
 
             if (row.MONTH === currentMonthStr) {
                 dataRow.innerHTML = `
-                    <td class="py-2 px-4 font-mono">${formatMonth(row.MONTH)}</td>
-                    <td class="text-right py-2 px-4 font-mono">${row.PUBLISHED.toLocaleString()}</td>
-                    <td class="text-right py-2 px-4 font-mono">${row.FORECAST.toLocaleString()}</td>
-                    <td class="text-right py-2 px-4 font-mono text-gray-400" colspan="2"></td>
-                    <td class="py-2 px-4 text-center font-mono"><span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full bg-gray-100 text-gray-800">In Progress</span></td>
+                    <td class="font-mono">${formatMonth(row.MONTH)}</td>
+                    <td class="text-right font-mono">${row.PUBLISHED.toLocaleString()}</td>
+                    <td class="text-right font-mono">${row.FORECAST.toLocaleString()}</td>
+                    <td class="text-right font-mono text-gray-400" colspan="2"></td>
+                    <td class="text-center font-mono"><span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full bg-gray-100 text-gray-800">In Progress</span></td>
                 `;
             } else {
                 const error = row.ERROR;
@@ -256,12 +289,12 @@ function populateForecastVsPublishedTable() {
                 }
 
                 dataRow.innerHTML = `
-                    <td class="py-2 px-4 font-mono">${formatMonth(row.MONTH)}</td>
-                    <td class="text-right py-2 px-4 font-mono">${row.PUBLISHED.toLocaleString()}</td>
-                    <td class="text-right py-2 px-4 font-mono">${row.FORECAST.toLocaleString()}</td>
-                    <td class="text-right py-2 px-4 font-mono">${formatNumberWithSign(error)}</td>
-                    <td class="text-right py-2 px-4 font-mono">${formatPercentWithSign(percentError)}</td>
-                    <td class="py-2 px-4 text-center font-mono"><span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${badgeClass}">${performanceBadge}</span></td>
+                    <td class="font-mono">${formatMonth(row.MONTH)}</td>
+                    <td class="text-right font-mono">${row.PUBLISHED.toLocaleString()}</td>
+                    <td class="text-right font-mono">${row.FORECAST.toLocaleString()}</td>
+                    <td class="text-right font-mono">${formatNumberWithSign(error)}</td>
+                    <td class="text-right font-mono">${formatPercentWithSign(percentError)}</td>
+                    <td class="text-center font-mono"><span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${badgeClass}">${performanceBadge}</span></td>
                 `;
             }
             tableBody.appendChild(dataRow);
@@ -271,9 +304,14 @@ function populateForecastVsPublishedTable() {
             const icon = headerRow.querySelector('.toggle-icon');
             const isNowCollapsed = headerRow.classList.toggle('collapsed');
             icon.textContent = isNowCollapsed ? '▶' : '▼';
-
-            document.querySelectorAll(`.month-row.year-${year}`).forEach(row => {
-                row.classList.toggle('hidden-row', isNowCollapsed);
+            // Toggle visibility of all month rows for this year
+            const yearRows = tableBody.querySelectorAll(`.year-${year}`);
+            yearRows.forEach(row => {
+                if (isNowCollapsed) {
+                    row.classList.add('hidden-row');
+                } else {
+                    row.classList.remove('hidden-row');
+                }
             });
         });
     });
