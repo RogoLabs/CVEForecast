@@ -46,16 +46,7 @@
             <h2 class="text-2xl font-bold mb-4">Project Overview</h2>
             <p>The CVE Forecast project is an automated system designed to predict the number of Common Vulnerabilities and Exposures (CVEs) for the upcoming months. By leveraging a suite of time series forecasting models, the project provides insights into future trends in vulnerability disclosures.</p>
             
-            <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h3 class="font-semibold text-blue-800">v.04 - Recent Improvements</h3>
-                <ul class="list-disc list-inside mt-2 space-y-1 text-blue-700">
-                    <li>Enhanced model stability with improved error handling</li>
-                    <li>Added input validation and scaling for better numerical stability</li>
-                    <li>Optimized for CPU-only environments</li>
-                    <li>Dynamic forecast period calculation</li>
-                    <li>Improved model selection based on MAPE scores</li>
-                </ul>
-            </div>
+
         </div>
 
         <div class="content-section">
@@ -113,6 +104,27 @@
                 <li class="mt-2"><strong>Performance Metrics:</strong> Models are ranked based on Mean Absolute Percentage Error (MAPE), with other metrics like MAE, RMSE, and MASE also calculated for a comprehensive assessment.</li>
                 <li class="mt-2"><strong>Performance History:</strong> The performance of each model run, including metrics and hyperparameters, is logged in <code>performance_history.json</code> (path defined in <code>config.json</code>) to track performance and improvements over time.</li>
             </ol>
+        </div>
+
+        <div class="content-section">
+            <h2 class="text-2xl font-bold mb-4">Change Log</h2>
+            <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 class="font-semibold text-blue-800">v.05 - Adolfo Suárez Madrid-Baraja 🇪🇸</h3>
+                <ul class="list-disc list-inside mt-2 space-y-1 text-blue-700">
+                    <li>Fixed a critical bug that prevented the cumulative graph from rendering due to an incorrect data structure in <code>data.json</code>.</li>
+                    <li>Restored frontend compatibility by correcting the data generation logic, ensuring all charts now load correctly.</li>
+                </ul>
+            </div>
+            <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="font-semibold text-gray-800">v.04 ORD ✈️ MAD</h3>
+                <ul class="list-disc list-inside mt-2 space-y-1 text-gray-700">
+                    <li>Enhanced model stability with improved error handling.</li>
+                    <li>Added input validation and scaling for better numerical stability.</li>
+                    <li>Optimized for CPU-only environments.</li>
+                    <li>Implemented dynamic forecast period calculation.</li>
+                    <li>Improved model selection based on MAPE scores.</li>
+                </ul>
+            </div>
         </div>
 
         <div class="content-section">
