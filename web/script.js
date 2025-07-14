@@ -462,7 +462,7 @@ function getChartOptions() {
                 time: { unit: 'month', tooltipFormat: 'MMM yyyy' },
                 title: { display: true, text: 'Month' },
                 min: '2025-01-01',
-                max: '2026-01-01',
+                max: '2026-01-05',
             },
             y: {
                 beginAtZero: true,
