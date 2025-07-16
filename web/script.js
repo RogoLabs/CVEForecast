@@ -442,32 +442,10 @@ function getChartOptions() {
                             tooltipItems[0].datasetIndex === 0 && 
                             tooltipItems[0].dataIndex === forecastData.actuals_cumulative.length - 1;
 
-                        // For the current/last actual point, show full date with day
-                        // For forecast points and historical month-end points, show month-year
                         if (isLastActualPoint) {
-                            return pointDate.toLocaleDateString('en-US', { 
-                                month: 'long', 
-                                day: 'numeric', 
-                                year: 'numeric', 
-                                timeZone: 'UTC' 
-                            });
+                            return pointDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
                         } else {
-                            // Check if it's a first-of-month date (forecast/historical monthly data)
-                            if (pointDate.getUTCDate() === 1) {
-                                return pointDate.toLocaleDateString('en-US', { 
-                                    month: 'long', 
-                                    year: 'numeric', 
-                                    timeZone: 'UTC' 
-                                });
-                            } else {
-                                // For any other dates, show full date
-                                return pointDate.toLocaleDateString('en-US', { 
-                                    month: 'long', 
-                                    day: 'numeric', 
-                                    year: 'numeric', 
-                                    timeZone: 'UTC' 
-                                });
-                            }
+                            return pointDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
                         }
                     },
                     label: (context) => {
@@ -481,15 +459,10 @@ function getChartOptions() {
         scales: {
             x: {
                 type: 'time',
-                time: { 
-                    displayFormats: {
-                        day: 'MMM dd',
-                        month: 'MMM yyyy'
-                    },
-                    tooltipFormat: 'MMM dd, yyyy'
-                },
-                title: { display: true, text: 'Time' },
-                // Remove hardcoded min/max to let Chart.js auto-determine based on data
+                time: { unit: 'month', tooltipFormat: 'MMM yyyy' },
+                title: { display: true, text: 'Month' },
+                min: '2025-01-01',
+                max: '2026-01-05',
             },
             y: {
                 beginAtZero: true,
