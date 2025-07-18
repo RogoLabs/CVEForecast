@@ -150,10 +150,12 @@ def train_and_evaluate_model(model_name: str, model_config: dict, series: TimeSe
         params = model_config['hyperparameters'].copy()
         
         # Pre-process time series data for better numerical stability
+        train_mean = None
+        train_std = None
         if model_name in ['KalmanFilter']:
             # Scale the time series to a more stable range
-            train_mean = train.pd_dataframe().mean().values[0]
-            train_std = train.pd_dataframe().std().values[0]
+            train_mean = train.to_dataframe().mean().values[0]
+            train_std = train.to_dataframe().std().values[0]
             train_std = max(train_std, 1e-6)  # Avoid division by zero
             train_scaled = (train - train_mean) / train_std
             val_scaled = (val - train_mean) / train_std
@@ -161,29 +163,28 @@ def train_and_evaluate_model(model_name: str, model_config: dict, series: TimeSe
             train_scaled, val_scaled = train, val
             
         if model_name == 'ExponentialSmoothing':
+            # Use minimal parameters to avoid compatibility issues
+            # Remove all potentially problematic parameters
+            filtered_params = {}
+            
+            # Only keep basic parameters that are known to work
             if 'trend' in params:
-                # Convert string to proper trend component
-                trend = params.pop('trend')
+                trend = params['trend']
                 if trend == 'add':
-                    params['trend'] = True
-                    params['damped_trend'] = params.get('damped_trend', False)
+                    filtered_params['trend'] = 'add'
                 elif trend == 'mul':
-                    params['trend'] = True
-                    params['damped_trend'] = params.get('damped_trend', False)
-                    params['trend_mode'] = 'multiplicative'
-                else:  # None or False
-                    params['trend'] = False
+                    filtered_params['trend'] = 'mul'
+                # For null/None, don't set anything (will use default)
             
             if 'seasonal' in params:
-                seasonal = params.pop('seasonal')
-                if seasonal.lower() == 'add':
-                    params['seasonal'] = 12  # 12 months for monthly data
-                    params['seasonal_mode'] = 'additive'
-                elif seasonal.lower() == 'mul':
-                    params['seasonal'] = 12  # 12 months for monthly data
-                    params['seasonal_mode'] = 'multiplicative'
-                else:  # None or False
-                    params['seasonal'] = None
+                seasonal = params['seasonal']
+                if seasonal == 'add':
+                    filtered_params['seasonal'] = 'add'
+                elif seasonal == 'mul':
+                    filtered_params['seasonal'] = 'mul'
+                # For null/None, don't set anything (will use default)
+            
+            params = filtered_params
         
         elif model_name in ["Theta", "FourTheta"] and 'season_mode' in params:
             season_mode = params['season_mode'].lower()
@@ -193,6 +194,16 @@ def train_and_evaluate_model(model_name: str, model_config: dict, series: TimeSe
                 params['season_mode'] = SeasonalityMode.MULTIPLICATIVE
             else:
                 params['season_mode'] = SeasonalityMode.NONE
+        
+        elif model_name == 'NaiveEnsemble' and 'models' in params:
+            # Convert string model names to actual model classes
+            model_classes = []
+            for model_str in params['models']:
+                if model_str in MODEL_MAPPING:
+                    model_classes.append(MODEL_MAPPING[model_str])
+                else:
+                    logger.warning(f"Model {model_str} not found in MODEL_MAPPING for NaiveEnsemble")
+            params['models'] = model_classes
         
         # Instantiate model
         model = model_class(**params)
@@ -205,7 +216,7 @@ def train_and_evaluate_model(model_name: str, model_config: dict, series: TimeSe
             # Add additional validation for KalmanFilter
             if model_name == 'KalmanFilter':
                 # Ensure data doesn't contain NaNs or Infs
-                train_df = train_to_use.pd_dataframe()
+                train_df = train_to_use.to_dataframe()
                 if train_df.isnull().any().any() or np.isinf(train_df).any().any():
                     logger.warning(f"{model_name} received data with NaNs or Infs. Filling with zeros.")
                     train_df = train_df.fillna(0).replace([np.inf, -np.inf], 0)
@@ -218,7 +229,7 @@ def train_and_evaluate_model(model_name: str, model_config: dict, series: TimeSe
             predictions = model.predict(len(val_to_use))
             
             # Rescale predictions back to original scale if needed
-            if model_name in ['KalmanFilter']:
+            if model_name in ['KalmanFilter'] and train_mean is not None and train_std is not None:
                 predictions = (predictions * train_std) + train_mean
                 predictions = TimeSeries.from_times_and_values(
                     predictions.time_index,

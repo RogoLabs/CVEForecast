@@ -164,14 +164,45 @@ function populateModelRankings() {
             <td class="text-center font-mono">${index + 1}</td>
             <td class="font-medium text-gray-800">${modelNameHtml}</td>
             <td class="text-right font-mono">${(model.mape || 0).toFixed(2)}%</td>
-            <td class="text-right font-mono">${(model.mase || 0).toFixed(2)}</td>
-            <td class="text-right font-mono">${(model.rmsse || 0).toFixed(2)}</td>
             <td class="text-right font-mono">${(model.mae || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td class="text-center">
                 <span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${badgeClass}">${performanceBadge}</span>
             </td>
+            <td class="text-center">
+                <button class="expand-btn" onclick="toggleConfig(${index})" id="expandBtn${index}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+            </td>
         `;
+        
         tableBody.appendChild(row);
+
+        // Create config row (initially hidden)
+        const configRow = document.createElement('tr');
+        configRow.id = `configRow${index}`;
+        configRow.className = 'config-row hidden-row';
+        configRow.innerHTML = `
+            <td colspan="8" class="px-6 py-4">
+                <div class="mb-2 flex justify-between items-center">
+                    <h4 class="font-medium text-gray-800">Configuration for ${model.model_name}</h4>
+                    <button class="copy-btn" onclick="copyConfig(${index})" id="copyBtn${index}">
+                        Copy JSON
+                    </button>
+                </div>
+                <div class="config-display" id="configDisplay${index}">
+                    <!-- Content will be set via JavaScript -->
+                </div>
+            </td>
+        `;
+        tableBody.appendChild(configRow);
+        
+        // Set the configuration content after the element is in the DOM
+        const configDisplay = document.getElementById(`configDisplay${index}`);
+        if (configDisplay) {
+            configDisplay.innerHTML = formatModelConfig(model);
+        }
     });
 }
 
@@ -471,4 +502,199 @@ function getChartOptions() {
             },
         },
     };
+}
+
+/**
+ * Toggles the visibility of a model configuration row.
+ * @param {number} index - The index of the model in the rankings array
+ */
+function toggleConfig(index) {
+    const configRow = document.getElementById(`configRow${index}`);
+    const expandBtn = document.getElementById(`expandBtn${index}`);
+    
+    if (configRow.classList.contains('hidden-row')) {
+        configRow.classList.remove('hidden-row');
+        expandBtn.classList.add('expanded');
+    } else {
+        configRow.classList.add('hidden-row');
+        expandBtn.classList.remove('expanded');
+    }
+}
+
+/**
+ * Copies the configuration JSON to clipboard.
+ * @param {number} index - The index of the model in the rankings array
+ */
+async function copyConfig(index) {
+    const model = forecastData.model_rankings[index];
+    const config = formatModelConfigForDarts(model);
+    const copyBtn = document.getElementById(`copyBtn${index}`);
+    
+    try {
+        await navigator.clipboard.writeText(config);
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copied');
+        
+        setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.classList.remove('copied');
+        }, 2000);
+    } catch (err) {
+        console.error('Failed to copy config:', err);
+        // Fallback for browsers that don't support clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = config;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+            copyBtn.textContent = 'Copy JSON';
+            copyBtn.classList.remove('copied');
+        }, 2000);
+    }
+}
+
+/**
+ * Formats model configuration for display.
+ * @param {Object} model - The model object from rankings
+ * @returns {string} Formatted configuration string
+ */
+function formatModelConfig(model) {
+    // Priority: Show hyperparameters first if available, then performance metrics
+    if (model.hyperparameters && Object.keys(model.hyperparameters).length > 0) {
+        // Clean up hyperparameters by removing null values and formatting
+        const cleanedHyperparameters = {};
+        for (const [key, value] of Object.entries(model.hyperparameters)) {
+            if (value !== null && value !== undefined) {
+                cleanedHyperparameters[key] = value;
+            }
+        }
+        
+        const config = {
+            model_name: model.model_name,
+            hyperparameters: cleanedHyperparameters,
+            split_ratio: parseFloat((model.split_ratio || 0.8).toFixed(3))
+        };
+        
+        // Add tuning metadata if available
+        if (model.tuned_at) {
+            config.tuned_at = model.tuned_at;
+        }
+        
+        // Add performance metrics as secondary info
+        config.performance_metrics = {
+            mape: parseFloat((model.mape || 0).toFixed(4)),
+            mae: parseFloat((model.mae || 0).toFixed(4))
+        };
+        
+        // Add training_time if available
+        if (model.training_time !== undefined && model.training_time !== null) {
+            config.performance_metrics.training_time = parseFloat(model.training_time.toFixed(6));
+        }
+        
+        return syntaxHighlightJSON(JSON.stringify(config, null, 2).trim());
+    } else {
+        // Fallback for legacy data without hyperparameters
+        const config = {
+            model_name: model.model_name,
+            split_ratio: parseFloat((model.split_ratio || 0.8).toFixed(3)),
+            performance_metrics: {
+                mape: parseFloat((model.mape || 0).toFixed(4)),
+                mae: parseFloat((model.mae || 0).toFixed(4))
+            },
+            note: "Run comprehensive tuner to generate optimal hyperparameters"
+        };
+        
+        // Add training_time if available
+        if (model.training_time !== undefined && model.training_time !== null) {
+            config.performance_metrics.training_time = parseFloat(model.training_time.toFixed(6));
+        }
+        
+        return syntaxHighlightJSON(JSON.stringify(config, null, 2).trim());
+    }
+}
+
+/**
+ * Adds syntax highlighting to JSON string.
+ * @param {string} json - The JSON string to highlight
+ * @returns {string} HTML with syntax highlighting
+ */
+function syntaxHighlightJSON(json) {
+    // Escape HTML first
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        let cls = 'json-number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'json-key';
+            } else {
+                cls = 'json-string';
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'json-boolean';
+        } else if (/null/.test(match)) {
+            cls = 'json-null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    })
+    .replace(/([{}[\],])/g, '<span class="json-bracket">$1</span>');
+}
+
+/**
+ * Formats model configuration for Darts usage.
+ * @param {Object} model - The model object from rankings
+ * @returns {string} Darts-compatible configuration string
+ */
+function formatModelConfigForDarts(model) {
+    if (model.hyperparameters && Object.keys(model.hyperparameters).length > 0) {
+        // Clean up hyperparameters by removing null values
+        const cleanedHyperparameters = {};
+        for (const [key, value] of Object.entries(model.hyperparameters)) {
+            if (value !== null && value !== undefined) {
+                cleanedHyperparameters[key] = value;
+            }
+        }
+        
+        // Full configuration with hyperparameters
+        const dartsConfig = {
+            model: model.model_name,
+            hyperparameters: cleanedHyperparameters,
+            split_ratio: parseFloat((model.split_ratio || 0.8).toFixed(3)),
+            expected_performance: {
+                mape: parseFloat((model.mape || 0).toFixed(4)),
+                mae: parseFloat((model.mae || 0).toFixed(4))
+            }
+        };
+        
+        // Add training_time if available
+        if (model.training_time !== undefined && model.training_time !== null) {
+            dartsConfig.expected_performance.training_time = parseFloat(model.training_time.toFixed(6));
+        }
+        
+        return JSON.stringify(dartsConfig, null, 2);
+    } else {
+        // Fallback for legacy data without hyperparameters
+        const dartsConfig = {
+            model: model.model_name,
+            split_ratio: parseFloat((model.split_ratio || 0.8).toFixed(3)),
+            expected_performance: {
+                mape: parseFloat((model.mape || 0).toFixed(4)),
+                mae: parseFloat((model.mae || 0).toFixed(4))
+            },
+            note: "No hyperparameters available - run comprehensive tuner for optimal parameters"
+        };
+        
+        // Add training_time if available
+        if (model.training_time !== undefined && model.training_time !== null) {
+            dartsConfig.expected_performance.training_time = parseFloat(model.training_time.toFixed(6));
+        }
+        
+        return JSON.stringify(dartsConfig, null, 2);
+    }
 }

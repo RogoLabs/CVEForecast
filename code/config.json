@@ -14,7 +14,7 @@
     "start_date_filter": "2017-01-01"
   },
   "model_evaluation": {
-    "split_ratio": 0.8,
+    "split_ratio": 0.7,
     "forecast_horizon_months": 12,
     "forecast_end_year": 2026,
     "forecast_end_month": 1,
@@ -33,11 +33,22 @@
         "daily_seasonality": false,
         "seasonality_mode": "additive",
         "growth": "linear",
-        "changepoint_prior_scale": 0.2,
-        "seasonality_prior_scale": 1.0,
-        "n_changepoints": 15,
+        "changepoint_prior_scale": 0.5,
+        "seasonality_prior_scale": 10.0,
+        "n_changepoints": 25,
         "mcmc_samples": 0,
         "interval_width": 0.8
+      },
+      "optimal_split_ratio": 0.74,
+      "tuning_results": {
+        "mape": 13.930231835518056,
+        "mae": 465.5087821126782,
+        "training_time": 0.4247570037841797,
+        "trial_number": 275,
+        "tuned_at": "2025-07-18T08:18:59.708771",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
       }
     },
     "ExponentialSmoothing": {
@@ -46,267 +57,491 @@
         "trend": null,
         "damped": false,
         "seasonal": null,
-        "seasonal_periods": 12,
-        "use_boxcox": true,
+        "seasonal_periods": null,
+        "use_boxcox": null,
         "remove_bias": true,
-        "use_brute": true
+        "use_brute": true,
+        "damped_trend": false,
+        "initialization_method": "heuristic",
+        "missing": "none"
+      },
+      "optimal_split_ratio": 0.94,
+      "tuning_results": {
+        "mape": 15.165652916075075,
+        "mae": 398.370948095796,
+        "training_time": 0.02332615852355957,
+        "trial_number": 77,
+        "tuned_at": "2025-07-18T08:18:59.708768",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
       }
     },
     "TBATS": {
-        "enabled": true,
-        "hyperparameters": {
-            "season_length": 12
-        }
+      "enabled": true,
+      "hyperparameters": {
+        "season_length": 12
+      }
     },
     "XGBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 24,
-        "n_estimators": 200,
+        "lags": 48,
+        "n_estimators": 100,
         "max_depth": 6,
         "learning_rate": 0.1,
-        "subsample": 0.8,
-        "colsample_bytree": 0.8,
-        "reg_alpha": 0.1,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 1.0,
         "reg_lambda": 0.1,
         "random_state": 42,
         "n_jobs": -1,
         "tree_method": "hist",
         "early_stopping_rounds": null,
         "eval_metric": "mae"
+      },
+      "optimal_split_ratio": 0.94,
+      "tuning_results": {
+        "mape": 14.520208092579574,
+        "mae": 363.9581298828125,
+        "training_time": 0.07646584510803223,
+        "trial_number": 128,
+        "tuned_at": "2025-07-18T08:18:59.708784",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
       }
     },
     "LightGBM": {
-        "enabled": true,
-        "hyperparameters": {
-            "lags": 12,
-            "n_estimators": 200,
-            "max_depth": 4,
-            "num_leaves": 16,
-            "min_child_samples": 20,
-            "learning_rate": 0.02,
-            "subsample": 0.8,
-            "colsample_bytree": 0.8,
-            "reg_alpha": 1.0,
-            "reg_lambda": 1.0,
-            "min_split_gain": 0.1,
-            "random_state": 42,
-            "force_row_wise": true,
-            "verbose": -1,
-            "objective": "regression",
-            "n_jobs": -1,
-            "device_type": "cpu",
-            "feature_fraction": 0.9,
-            "bagging_fraction": 0.8,
-            "bagging_freq": 5,
-            "feature_pre_filter": false
-        }
+      "enabled": true,
+      "hyperparameters": {
+        "lags": 36,
+        "n_estimators": 300,
+        "max_depth": 10,
+        "num_leaves": 31,
+        "min_child_samples": 5,
+        "learning_rate": 0.2,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 1.0,
+        "reg_lambda": 0,
+        "min_split_gain": 0.1,
+        "random_state": 42,
+        "force_row_wise": true,
+        "verbose": -1,
+        "objective": "regression",
+        "n_jobs": -1,
+        "device_type": "cpu",
+        "feature_fraction": 0.9,
+        "bagging_fraction": 0.8,
+        "bagging_freq": 5,
+        "feature_pre_filter": false
+      },
+      "optimal_split_ratio": 0.95,
+      "tuning_results": {
+        "mape": 13.165396007098503,
+        "mae": 342.8689990515622,
+        "training_time": 0.2896111011505127,
+        "trial_number": 173,
+        "tuned_at": "2025-07-18T09:12:24.425728",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": 13.468028807228857,
+        "improvement": 0.302632800130354
+      }
     },
     "CatBoost": {
-        "enabled": true,
-        "hyperparameters": {
-            "lags": 24,
-            "iterations": 200,
-            "depth": 6,
-            "learning_rate": 0.1,
-            "l2_leaf_reg": 3,
-            "subsample": 0.8,
-            "random_state": 42,
-            "verbose": false
-        }
+      "enabled": true,
+      "hyperparameters": {
+        "lags": 18,
+        "iterations": 100,
+        "depth": 6,
+        "learning_rate": 0.1,
+        "l2_leaf_reg": 1,
+        "subsample": 0.8,
+        "random_state": 42,
+        "verbose": false,
+        "border_count": 64
+      },
+      "optimal_split_ratio": 0.92,
+      "tuning_results": {
+        "mape": 14.830471462584752,
+        "mae": 397.7623947517444,
+        "training_time": 0.025519847869873047,
+        "trial_number": 35,
+        "tuned_at": "2025-07-18T08:18:59.708787",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
+      }
     },
     "TCN": {
-        "enabled": false,
-        "hyperparameters": {
-            "input_chunk_length": 12,
-            "output_chunk_length": 1,
-            "n_epochs": 20,
-            "batch_size": 32,
-            "random_state": 42,
-            "pl_trainer_kwargs": {
-                "accelerator": "cpu",
-                "enable_progress_bar": false
-            },
-            "kernel_size": 3,
-            "num_filters": 16,
-            "dropout": 0.1,
-            "weight_norm": true,
-            "optimizer_kwargs": {
-                "lr": 1e-3
-            },
-            "model_name": "tcn_forecaster"
-        }
+      "enabled": false,
+      "hyperparameters": {
+        "input_chunk_length": 18,
+        "output_chunk_length": 1,
+        "n_epochs": 50,
+        "batch_size": 32,
+        "random_state": 42,
+        "pl_trainer_kwargs": {
+          "accelerator": "cpu",
+          "enable_progress_bar": false
+        },
+        "kernel_size": 5,
+        "num_filters": 32,
+        "dropout": 0.1,
+        "weight_norm": true,
+        "optimizer_kwargs": {
+          "lr": 0.01
+        },
+        "model_name": "tcn_forecaster",
+        "dilation_base": 2
+      },
+      "optimal_split_ratio": 0.7,
+      "tuning_results": {
+        "mape": 11.15983772277832,
+        "mae": 321.3254089355469,
+        "training_time": 0.7634081840515137,
+        "trial_number": 31,
+        "tuned_at": "2025-07-18T08:18:59.708774",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
+      }
     },
     "NBEATS": {
-        "enabled": false,
-        "hyperparameters": {
-            "input_chunk_length": 12,
-            "output_chunk_length": 1,
-            "n_epochs": 20,
-            "batch_size": 32,
-            "random_state": 42,
-            "pl_trainer_kwargs": {
-                "accelerator": "cpu",
-                "enable_progress_bar": false
-            },
-            "num_blocks": 2,
-            "num_layers": 2,
-            "layer_widths": 256,
-            "optimizer_kwargs": {
-                "lr": 1e-3
-            },
-            "model_name": "nbeats_forecaster"
-        }
+      "enabled": false,
+      "hyperparameters": {
+        "input_chunk_length": 18,
+        "output_chunk_length": 6,
+        "n_epochs": 50,
+        "batch_size": 32,
+        "random_state": 42,
+        "pl_trainer_kwargs": {
+          "accelerator": "cpu",
+          "enable_progress_bar": false
+        },
+        "num_blocks": 3,
+        "num_layers": 4,
+        "layer_widths": 256,
+        "optimizer_kwargs": {
+          "lr": 0.001
+        },
+        "model_name": "nbeats_forecaster",
+        "activation": "ReLU",
+        "dropout": 0.1,
+        "expansion_coefficient_dim": 5,
+        "trend_polynomial_degree": 2
+      },
+      "optimal_split_ratio": 0.74,
+      "tuning_results": {
+        "mape": 12.206588745117188,
+        "mae": 381.3224182128906,
+        "training_time": 14.222003936767578,
+        "trial_number": 3,
+        "tuned_at": "2025-07-18T08:53:22.407731",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": 13.414278984069824,
+        "improvement": 1.2076902389526367
+      }
     },
     "NHiTS": {
-        "enabled": false,
-        "hyperparameters": {
-            "input_chunk_length": 6,
-            "output_chunk_length": 1,
-            "n_epochs": 20,
-            "batch_size": 32,
-            "random_state": 42,
-            "pl_trainer_kwargs": {
-                "accelerator": "cpu",
-                "enable_progress_bar": false
-            },
-            "num_blocks": 2,
-            "num_layers": 2,
-            "layer_widths": 256,
-            "optimizer_kwargs": {
-                "lr": 1e-3
-            },
-            "model_name": "nhits_forecaster"
-        }
+      "enabled": false,
+      "hyperparameters": {
+        "input_chunk_length": 6,
+        "output_chunk_length": 1,
+        "n_epochs": 20,
+        "batch_size": 32,
+        "random_state": 42,
+        "pl_trainer_kwargs": {
+          "accelerator": "cpu",
+          "enable_progress_bar": false
+        },
+        "num_blocks": 2,
+        "num_layers": 2,
+        "layer_widths": 256,
+        "optimizer_kwargs": {
+          "lr": 0.001
+        },
+        "model_name": "nhits_forecaster"
+      }
     },
     "TiDE": {
-        "enabled": false,
-        "hyperparameters": {
-            "input_chunk_length": 12,
-            "output_chunk_length": 1,
-            "n_epochs": 20,
-            "batch_size": 32,
-            "random_state": 42,
-            "pl_trainer_kwargs": {
-                "accelerator": "cpu",
-                "enable_progress_bar": false
-            },
-            "num_encoder_layers": 1,
-            "num_decoder_layers": 1,
-            "decoder_output_dim": 8,
-            "hidden_size": 64,
-            "temporal_width_past": 4,
-            "temporal_width_future": 4,
-            "dropout": 0.1,
-            "optimizer_kwargs": {
-                "lr": 1e-3
-            },
-            "model_name": "tide_forecaster"
-        }
+      "enabled": false,
+      "hyperparameters": {
+        "input_chunk_length": 12,
+        "output_chunk_length": 1,
+        "n_epochs": 50,
+        "batch_size": 32,
+        "random_state": 42,
+        "pl_trainer_kwargs": {
+          "accelerator": "cpu",
+          "enable_progress_bar": false
+        },
+        "num_encoder_layers": 1,
+        "num_decoder_layers": 2,
+        "decoder_output_dim": 16,
+        "hidden_size": 64,
+        "temporal_width_past": 8,
+        "temporal_width_future": 8,
+        "dropout": 0.1,
+        "optimizer_kwargs": {
+          "lr": 0.001
+        },
+        "model_name": "tide_forecaster",
+        "temporal_decoder_hidden": 32
+      },
+      "optimal_split_ratio": 0.7,
+      "tuning_results": {
+        "mape": 11.250737190246582,
+        "mae": 341.5763854980469,
+        "training_time": 0.21484684944152832,
+        "trial_number": 163,
+        "tuned_at": "2025-07-18T08:18:59.708779",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
+      }
     },
     "DLinear": {
-        "enabled": false,
-        "hyperparameters": {
-            "input_chunk_length": 12,
-            "output_chunk_length": 1,
-            "n_epochs": 20,
-            "batch_size": 32,
-            "random_state": 42,
-            "pl_trainer_kwargs": {
-                "accelerator": "cpu",
-                "enable_progress_bar": false
-            },
-            "kernel_size": 25,
-            "const_init": true,
-            "use_static_covariates": true,
-            "optimizer_kwargs": {
-                "lr": 1e-3
-            },
-            "model_name": "dlinear_forecaster"
-        }
+      "enabled": false,
+      "hyperparameters": {
+        "input_chunk_length": 24,
+        "output_chunk_length": 1,
+        "n_epochs": 50,
+        "batch_size": 32,
+        "random_state": 42,
+        "pl_trainer_kwargs": {
+          "accelerator": "cpu",
+          "enable_progress_bar": false
+        },
+        "kernel_size": 25,
+        "const_init": true,
+        "use_static_covariates": true,
+        "optimizer_kwargs": {
+          "lr": 0.001
+        },
+        "model_name": "dlinear_forecaster"
+      },
+      "optimal_split_ratio": 0.72,
+      "tuning_results": {
+        "mape": 11.501877784729004,
+        "mae": 339.7177429199219,
+        "training_time": 0.11437201499938965,
+        "trial_number": 23,
+        "tuned_at": "2025-07-18T08:18:59.708761",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
+      }
     },
-
     "RandomForest": {
-        "enabled": true,
-        "hyperparameters": {
-            "lags": 12,
-            "n_estimators": 200,
-            "max_depth": 10,
-            "min_samples_split": 2,
-            "min_samples_leaf": 1,
-            "n_jobs": -1,
-            "random_state": 42
-        }
+      "enabled": true,
+      "hyperparameters": {
+        "lags": 12,
+        "n_estimators": 100,
+        "max_depth": 5,
+        "min_samples_split": 5,
+        "min_samples_leaf": 2,
+        "n_jobs": -1,
+        "random_state": 42,
+        "bootstrap": true,
+        "max_features": "sqrt"
+      },
+      "optimal_split_ratio": 0.7,
+      "tuning_results": {
+        "mape": 29.31819521343903,
+        "mae": 961.6747762407357,
+        "training_time": 0.5507588386535645,
+        "trial_number": 17,
+        "tuned_at": "2025-07-18T08:18:59.708782",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
+      }
     },
     "LinearRegression": {
-        "enabled": true,
-        "hyperparameters": {
-            "lags": 12,
-            "lags_past_covariates": null,
-            "output_chunk_length": 1
-        }
+      "enabled": true,
+      "hyperparameters": {
+        "lags": 6,
+        "lags_past_covariates": null,
+        "output_chunk_length": 6,
+        "fit_intercept": true,
+        "multi_models": false,
+        "n_jobs": 1,
+        "output_chunk_shift": 0,
+        "positive": true,
+        "likelihood": null,
+        "quantiles": null
+      },
+      "optimal_split_ratio": 0.9,
+      "tuning_results": {
+        "mape": 12.73720392500858,
+        "mae": 352.76002817946676,
+        "training_time": 0.0025768280029296875,
+        "trial_number": 6,
+        "tuned_at": "2025-07-18T08:53:22.407739",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": 13.532853974353346,
+        "improvement": 0.7956500493447667
+      }
     },
     "AutoARIMA": {
-        "enabled": true,
-        "hyperparameters": {
-            "start_p": 0,
-            "start_q": 0,
-            "max_p": 3,
-            "max_q": 3,
-            "seasonal": true,
-            "stepwise": true,
-            "random_state": 42
-        }
+      "enabled": true,
+      "hyperparameters": {
+        "start_p": 0,
+        "start_q": 0,
+        "max_p": 3,
+        "max_q": 3,
+        "seasonal": true,
+        "stepwise": true,
+        "random_state": null,
+        "quantiles": null,
+        "season_length": 12
+      },
+      "optimal_split_ratio": 0.74,
+      "tuning_results": {
+        "mape": 20.329843286176537,
+        "mae": 709.3698759899193,
+        "training_time": 2.7308809757232666,
+        "trial_number": 17,
+        "tuned_at": "2025-07-18T08:18:59.708752",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
+      }
     },
     "AutoETS": {
-        "enabled": false,
-        "hyperparameters": {}
+      "enabled": false,
+      "hyperparameters": {}
     },
     "AutoTheta": {
-        "enabled": false,
-        "hyperparameters": {}
+      "enabled": false,
+      "hyperparameters": {}
     },
     "Theta": {
-        "enabled": true,
-        "hyperparameters": {
-            "season_mode": "ADDITIVE"
-        }
+      "enabled": true,
+      "hyperparameters": {
+        "season_mode": "ADDITIVE",
+        "theta": 8
+      },
+      "optimal_split_ratio": 0.94,
+      "tuning_results": {
+        "mape": 15.839943163674644,
+        "mae": 451.802744407011,
+        "training_time": 0.0010378360748291016,
+        "trial_number": 559,
+        "tuned_at": "2025-07-18T08:18:59.708764",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
+      }
     },
     "FourTheta": {
-        "enabled": true,
-        "hyperparameters": {
-            "season_mode": "ADDITIVE"
-        }
+      "enabled": true,
+      "hyperparameters": {
+        "season_mode": "ADDITIVE",
+        "theta": 8
+      },
+      "optimal_split_ratio": 0.94,
+      "tuning_results": {
+        "mape": 16.36803278344571,
+        "mae": 479.7684918980563,
+        "training_time": 0.0014278888702392578,
+        "trial_number": 559,
+        "tuned_at": "2025-07-18T08:18:59.708766",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
+      }
     },
     "KalmanFilter": {
-        "enabled": true,
-        "hyperparameters": {}
+      "enabled": true,
+      "hyperparameters": {
+        "dim_x": 3
+      },
+      "optimal_split_ratio": 0.96,
+      "tuning_results": {
+        "mape": 16.66059982946399,
+        "mae": 409.29940841756024,
+        "training_time": 0.006839752197265625,
+        "trial_number": 114,
+        "tuned_at": "2025-07-18T07:30:06.242152",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
+      }
     },
     "Croston": {
-        "enabled": true,
-        "hyperparameters": {}
+      "enabled": true,
+      "hyperparameters": {
+        "alpha_d": null,
+        "alpha_p": 0.1,
+        "quantiles": [
+          0.1,
+          0.5,
+          0.9
+        ],
+        "random_state": null,
+        "version": "optimized"
+      },
+      "optimal_split_ratio": 0.96,
+      "tuning_results": {
+        "mape": 16.837725247193312,
+        "mae": 429.6666666666667,
+        "training_time": 0.0008871555328369141,
+        "trial_number": 81,
+        "tuned_at": "2025-07-18T08:18:59.708769",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
+      }
     },
     "AutoCES": {
-        "enabled": false,
-        "hyperparameters": {}
+      "enabled": false,
+      "hyperparameters": {}
     },
     "AutoMFLES": {
-        "enabled": false,
-        "hyperparameters": {}
+      "enabled": false,
+      "hyperparameters": {}
     },
     "AutoTBATS": {
-        "enabled": false,
-        "hyperparameters": {}
+      "enabled": false,
+      "hyperparameters": {}
     },
     "NaiveEnsemble": {
-        "enabled": false,
-        "hyperparameters": {
-            "models": [
-                "NaiveMean",
-                "NaiveDrift",
-                "NaiveSeasonal"
-            ]
-        }
+      "enabled": false,
+      "hyperparameters": {
+        "models": [
+          "NaiveMean",
+          "NaiveDrift",
+          "NaiveSeasonal"
+        ]
+      }
     }
+  },
+  "comprehensive_tuning": {
+    "last_tuned_at": "2025-07-18T08:18:59.708806",
+    "best_model": "TCN",
+    "best_mape": 11.15983772277832,
+    "optimal_split_ratio": 0.7,
+    "models_tuned": [
+      "AutoARIMA",
+      "DLinear",
+      "Theta",
+      "FourTheta",
+      "ExponentialSmoothing",
+      "Croston",
+      "Prophet",
+      "TCN",
+      "NBEATS",
+      "TiDE",
+      "LinearRegression",
+      "RandomForest",
+      "XGBoost",
+      "LightGBM",
+      "CatBoost"
+    ],
+    "previous_best_mape": 16.66059982946399,
+    "global_improvement": 5.50076210668567
   }
 }

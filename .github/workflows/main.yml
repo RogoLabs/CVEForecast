@@ -61,7 +61,15 @@ jobs:
         echo "CVE data cloned successfully"
         ls -la cvelistV5/
     
-    - name: Run CVE forecast
+    - name: Run Comprehensive Hyperparameter Tuning
+      run: |
+        cd code
+        python tuner/comprehensive_tuner.py
+      env:
+        PYTHONUNBUFFERED: 1
+      timeout-minutes: 15  # Allow up to 15 minutes for tuning (plenty of buffer)
+    
+    - name: Run CVE forecast with optimized models
       run: |
         cd code
         python main.py --output ../web/data.json
@@ -83,7 +91,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git add web/data.json
-        git commit -m "Update CVE forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        git add code/config.json
+        git add code/tuner/tuner_config.json
+        git commit -m "Update CVE forecast data and optimized configurations - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
         git push
     
     - name: Upload artifacts
