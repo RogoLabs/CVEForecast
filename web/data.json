@@ -1,91 +1,250 @@
 {
-  "generated_at": "2025-07-18T01:20:34.684544+00:00",
+  "generated_at": "2025-07-18T11:10:49.562271+00:00",
   "model_rankings": [
     {
-      "model_name": "LinearRegression",
-      "mape": 19.46025623132583,
-      "mae": 711.720777510089,
-      "mase": 2.7463857357113626,
-      "rmsse": 2.599888828716527
-    },
-    {
-      "model_name": "Prophet",
-      "mape": 20.052700917952983,
-      "mae": 740.6644726066913,
-      "mase": 2.8580735687266925,
-      "rmsse": 2.8314251870779157
-    },
-    {
-      "model_name": "TBATS",
-      "mape": 21.94340789683953,
-      "mae": 811.447647165981,
-      "mase": 3.1312114439733434,
-      "rmsse": 2.9072882581796855
-    },
-    {
-      "model_name": "AutoARIMA",
-      "mape": 22.323321551887446,
-      "mae": 832.4287385635531,
-      "mase": 3.212173208691716,
-      "rmsse": 2.999121084839857
+      "model_name": "LightGBM",
+      "split_ratio": 0.94,
+      "mape": 10.096250613491675,
+      "mae": 277.4479200563543,
+      "mase": 0,
+      "rmsse": 0,
+      "hyperparameters": {
+        "lags": 36,
+        "n_estimators": 300,
+        "max_depth": 6,
+        "num_leaves": 150,
+        "min_child_samples": 5,
+        "learning_rate": 0.2,
+        "subsample": 1.0,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0,
+        "reg_lambda": 0,
+        "min_split_gain": 0.1,
+        "random_state": 42,
+        "force_row_wise": true,
+        "verbose": -1,
+        "objective": "regression",
+        "n_jobs": -1,
+        "device_type": "cpu",
+        "feature_fraction": 0.9,
+        "bagging_fraction": 0.8,
+        "bagging_freq": 5,
+        "feature_pre_filter": false
+      },
+      "tuned_at": "2025-07-18T11:10:43.802148"
     },
     {
       "model_name": "XGBoost",
-      "mape": 22.474080746558464,
-      "mae": 843.8868117559524,
-      "mase": 3.2563875828799076,
-      "rmsse": 3.0774044927436686
+      "split_ratio": 0.94,
+      "mape": 11.233633372069338,
+      "mae": 288.9320068359375,
+      "mase": 0,
+      "rmsse": 0,
+      "hyperparameters": {
+        "lags": 48,
+        "n_estimators": 300,
+        "max_depth": 8,
+        "learning_rate": 0.1,
+        "subsample": 1.0,
+        "colsample_bytree": 1.0,
+        "reg_alpha": 0.1,
+        "reg_lambda": 1.0,
+        "random_state": 42,
+        "n_jobs": -1,
+        "tree_method": "hist",
+        "early_stopping_rounds": null,
+        "eval_metric": "mae"
+      },
+      "tuned_at": "2025-07-18T11:10:43.802144"
     },
     {
-      "model_name": "Theta",
-      "mape": 23.895194978396518,
-      "mae": 897.314205370903,
-      "mase": 3.4625530291574074,
-      "rmsse": 3.231495267539332
-    },
-    {
-      "model_name": "FourTheta",
-      "mape": 24.44585102764654,
-      "mae": 916.0192733983129,
-      "mase": 3.5347320825717374,
-      "rmsse": 3.2795073420550707
-    },
-    {
-      "model_name": "RandomForest",
-      "mape": 24.790570688061592,
-      "mae": 930.9092857142856,
-      "mase": 3.5921896118744767,
-      "rmsse": 3.3337671738239214
+      "model_name": "LinearRegression",
+      "split_ratio": 0.9,
+      "mape": 11.66625219210293,
+      "mae": 339.14464356408223,
+      "mase": 0,
+      "rmsse": 0,
+      "hyperparameters": {
+        "lags": 6,
+        "lags_past_covariates": null,
+        "output_chunk_length": 6,
+        "fit_intercept": true,
+        "multi_models": false,
+        "n_jobs": -1,
+        "output_chunk_shift": 0,
+        "positive": true,
+        "likelihood": null,
+        "quantiles": null
+      },
+      "tuned_at": "2025-07-18T11:10:43.802135"
     },
     {
       "model_name": "CatBoost",
-      "mape": 26.155479181456,
-      "mae": 981.7124650222104,
-      "mase": 3.788228748835169,
-      "rmsse": 3.4977663156946903
+      "split_ratio": 0.96,
+      "mape": 12.043412046108372,
+      "mae": 300.15624089482543,
+      "mase": 0,
+      "rmsse": 0,
+      "hyperparameters": {
+        "lags": 48,
+        "iterations": 200,
+        "depth": 4,
+        "learning_rate": 0.1,
+        "l2_leaf_reg": 1,
+        "subsample": 0.8,
+        "random_state": 42,
+        "verbose": false,
+        "border_count": 128
+      },
+      "tuned_at": "2025-07-18T11:10:43.802153"
+    },
+    {
+      "model_name": "ExponentialSmoothing",
+      "split_ratio": 0.94,
+      "mape": 13.439514049434278,
+      "mae": 390.85391713923485,
+      "mase": 0,
+      "rmsse": 0,
+      "hyperparameters": {
+        "trend": null,
+        "damped": false,
+        "seasonal": null,
+        "seasonal_periods": 12,
+        "use_boxcox": false,
+        "remove_bias": true,
+        "use_brute": true,
+        "damped_trend": true,
+        "initialization_method": "estimated",
+        "missing": "none"
+      },
+      "tuned_at": "2025-07-18T11:10:43.802106"
+    },
+    {
+      "model_name": "Prophet",
+      "split_ratio": 0.94,
+      "mape": 13.519011157797623,
+      "mae": 380.12171353485934,
+      "mase": 0,
+      "rmsse": 0,
+      "hyperparameters": {
+        "yearly_seasonality": true,
+        "weekly_seasonality": false,
+        "daily_seasonality": false,
+        "seasonality_mode": "additive",
+        "growth": "linear",
+        "changepoint_prior_scale": 0.5,
+        "seasonality_prior_scale": 10.0,
+        "n_changepoints": 25,
+        "mcmc_samples": 0,
+        "interval_width": 0.8
+      },
+      "tuned_at": "2025-07-18T11:10:43.802116"
+    },
+    {
+      "model_name": "Theta",
+      "split_ratio": 0.94,
+      "mape": 14.067947851961618,
+      "mae": 427.50712743746044,
+      "mase": 0,
+      "rmsse": 0,
+      "hyperparameters": {
+        "season_mode": "ADDITIVE",
+        "theta": 8
+      },
+      "tuned_at": "2025-07-18T11:10:43.802098"
+    },
+    {
+      "model_name": "KalmanFilter",
+      "split_ratio": 0.96,
+      "mape": 14.321705596084284,
+      "mae": 379.799408417561,
+      "mase": 0,
+      "rmsse": 0,
+      "hyperparameters": {
+        "dim_x": 3
+      },
+      "tuned_at": "2025-07-18T11:10:43.802063"
     },
     {
       "model_name": "Croston",
-      "mape": 30.69354129799027,
-      "mae": 1135.4994494718358,
-      "mase": 4.381661445725248,
-      "rmsse": 3.912986284924517
+      "split_ratio": 0.96,
+      "mape": 14.538321042920765,
+      "mae": 400.1666666666667,
+      "mase": 0,
+      "rmsse": 0,
+      "hyperparameters": {
+        "alpha_d": null,
+        "alpha_p": null,
+        "quantiles": [
+          0.1,
+          0.5,
+          0.9
+        ],
+        "random_state": 42,
+        "version": "optimized"
+      },
+      "tuned_at": "2025-07-18T11:10:43.802111"
     },
     {
-      "model_name": "LightGBM",
-      "mape": 31.280519876276728,
-      "mae": 1154.819427689313,
-      "mase": 4.456213312506997,
-      "rmsse": 3.963365574744803
+      "model_name": "FourTheta",
+      "split_ratio": 0.96,
+      "mape": 14.565231489064429,
+      "mae": 388.96354717066356,
+      "mase": 0,
+      "rmsse": 0,
+      "hyperparameters": {
+        "season_mode": "ADDITIVE",
+        "theta": 0.5
+      },
+      "tuned_at": "2025-07-18T11:10:43.802102"
+    },
+    {
+      "model_name": "AutoARIMA",
+      "split_ratio": 0.9,
+      "mape": 16.371651710955515,
+      "mae": 464.2037847971321,
+      "mase": 0,
+      "rmsse": 0,
+      "hyperparameters": {
+        "start_p": 0,
+        "start_q": 0,
+        "max_p": 3,
+        "max_q": 3,
+        "seasonal": true,
+        "stepwise": true,
+        "random_state": null,
+        "quantiles": null,
+        "season_length": 24
+      },
+      "tuned_at": "2025-07-18T11:10:43.802084"
+    },
+    {
+      "model_name": "RandomForest",
+      "split_ratio": 0.7,
+      "mape": 27.84527974304879,
+      "mae": 920.0110256410256,
+      "mase": 0,
+      "rmsse": 0,
+      "hyperparameters": {
+        "lags": 12,
+        "n_estimators": 100,
+        "max_depth": 10,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "n_jobs": -1,
+        "random_state": 42,
+        "bootstrap": true,
+        "max_features": 0.5
+      },
+      "tuned_at": "2025-07-18T11:10:43.802140"
     }
   ],
   "yearly_forecast_totals": {
-    "LinearRegression": 49374,
-    "Prophet": 49678,
-    "TBATS": 47934,
-    "AutoARIMA": 47079,
-    "XGBoost": 46563,
-    "all_models": 48126
+    "LightGBM": 46532,
+    "XGBoost": 46149,
+    "LinearRegression": 49526,
+    "CatBoost": 43275,
+    "all_models": 46370
   },
   "current_month_actual": {
     "date": "2025-07",
@@ -98,1113 +257,528 @@
   "actuals_cumulative": [
     {
       "date": "2025-01-01T00:00:00Z",
-      "cumulative_total": 4275
+      "cumulative_total": 0
     },
     {
       "date": "2025-02-01T00:00:00Z",
-      "cumulative_total": 7951
+      "cumulative_total": 4275
     },
     {
       "date": "2025-03-01T00:00:00Z",
-      "cumulative_total": 11967
+      "cumulative_total": 7951
     },
     {
       "date": "2025-04-01T00:00:00Z",
-      "cumulative_total": 15999
+      "cumulative_total": 11967
     },
     {
       "date": "2025-05-01T00:00:00Z",
-      "cumulative_total": 19981
+      "cumulative_total": 15999
     },
     {
       "date": "2025-06-01T00:00:00Z",
-      "cumulative_total": 23668
+      "cumulative_total": 19981
     },
     {
       "date": "2025-07-01T00:00:00Z",
-      "cumulative_total": 25905
+      "cumulative_total": 23668
     },
     {
-      "date": "2025-07-18T01:20:34Z",
-      "cumulative_total": 26758
+      "date": "2025-07-18T11:10:49Z",
+      "cumulative_total": 24521
     }
   ],
   "cumulative_timelines": {
-    "LinearRegression_cumulative": [
+    "LightGBM_cumulative": [
       {
         "date": "2025-08-01T00:00:00Z",
-        "cumulative_total": 29164
+        "cumulative_total": 27265
       },
       {
         "date": "2025-09-01T00:00:00Z",
-        "cumulative_total": 32734
+        "cumulative_total": 31130
       },
       {
         "date": "2025-10-01T00:00:00Z",
-        "cumulative_total": 36417
+        "cumulative_total": 34803
       },
       {
         "date": "2025-11-01T00:00:00Z",
-        "cumulative_total": 40940
+        "cumulative_total": 39084
       },
       {
         "date": "2025-12-01T00:00:00Z",
-        "cumulative_total": 45145
+        "cumulative_total": 42876
       },
       {
         "date": "2026-01-01T00:00:00Z",
-        "cumulative_total": 49374
-      }
-    ],
-    "Prophet_cumulative": [
-      {
-        "date": "2025-08-01T00:00:00Z",
-        "cumulative_total": 29755
-      },
-      {
-        "date": "2025-09-01T00:00:00Z",
-        "cumulative_total": 33528
-      },
-      {
-        "date": "2025-10-01T00:00:00Z",
-        "cumulative_total": 37550
-      },
-      {
-        "date": "2025-11-01T00:00:00Z",
-        "cumulative_total": 41487
-      },
-      {
-        "date": "2025-12-01T00:00:00Z",
-        "cumulative_total": 45503
-      },
-      {
-        "date": "2026-01-01T00:00:00Z",
-        "cumulative_total": 49678
-      }
-    ],
-    "TBATS_cumulative": [
-      {
-        "date": "2025-08-01T00:00:00Z",
-        "cumulative_total": 29493
-      },
-      {
-        "date": "2025-09-01T00:00:00Z",
-        "cumulative_total": 33104
-      },
-      {
-        "date": "2025-10-01T00:00:00Z",
-        "cumulative_total": 36744
-      },
-      {
-        "date": "2025-11-01T00:00:00Z",
-        "cumulative_total": 40423
-      },
-      {
-        "date": "2025-12-01T00:00:00Z",
-        "cumulative_total": 44150
-      },
-      {
-        "date": "2026-01-01T00:00:00Z",
-        "cumulative_total": 47934
-      }
-    ],
-    "AutoARIMA_cumulative": [
-      {
-        "date": "2025-08-01T00:00:00Z",
-        "cumulative_total": 29137
-      },
-      {
-        "date": "2025-09-01T00:00:00Z",
-        "cumulative_total": 32624
-      },
-      {
-        "date": "2025-10-01T00:00:00Z",
-        "cumulative_total": 36190
-      },
-      {
-        "date": "2025-11-01T00:00:00Z",
-        "cumulative_total": 39793
-      },
-      {
-        "date": "2025-12-01T00:00:00Z",
-        "cumulative_total": 43424
-      },
-      {
-        "date": "2026-01-01T00:00:00Z",
-        "cumulative_total": 47079
+        "cumulative_total": 46532
       }
     ],
     "XGBoost_cumulative": [
       {
         "date": "2025-08-01T00:00:00Z",
-        "cumulative_total": 29386
+        "cumulative_total": 27629
       },
       {
         "date": "2025-09-01T00:00:00Z",
-        "cumulative_total": 32633
+        "cumulative_total": 30204
       },
       {
         "date": "2025-10-01T00:00:00Z",
-        "cumulative_total": 36248
+        "cumulative_total": 34171
       },
       {
         "date": "2025-11-01T00:00:00Z",
-        "cumulative_total": 39612
+        "cumulative_total": 38180
       },
       {
         "date": "2025-12-01T00:00:00Z",
-        "cumulative_total": 43067
+        "cumulative_total": 42161
       },
       {
         "date": "2026-01-01T00:00:00Z",
-        "cumulative_total": 46563
+        "cumulative_total": 46149
+      }
+    ],
+    "LinearRegression_cumulative": [
+      {
+        "date": "2025-08-01T00:00:00Z",
+        "cumulative_total": 27631
+      },
+      {
+        "date": "2025-09-01T00:00:00Z",
+        "cumulative_total": 32062
+      },
+      {
+        "date": "2025-10-01T00:00:00Z",
+        "cumulative_total": 36491
+      },
+      {
+        "date": "2025-11-01T00:00:00Z",
+        "cumulative_total": 41003
+      },
+      {
+        "date": "2025-12-01T00:00:00Z",
+        "cumulative_total": 45488
+      },
+      {
+        "date": "2026-01-01T00:00:00Z",
+        "cumulative_total": 49526
+      }
+    ],
+    "CatBoost_cumulative": [
+      {
+        "date": "2025-08-01T00:00:00Z",
+        "cumulative_total": 26883
+      },
+      {
+        "date": "2025-09-01T00:00:00Z",
+        "cumulative_total": 30234
+      },
+      {
+        "date": "2025-10-01T00:00:00Z",
+        "cumulative_total": 33430
+      },
+      {
+        "date": "2025-11-01T00:00:00Z",
+        "cumulative_total": 36916
+      },
+      {
+        "date": "2025-12-01T00:00:00Z",
+        "cumulative_total": 40114
+      },
+      {
+        "date": "2026-01-01T00:00:00Z",
+        "cumulative_total": 43275
       }
     ],
     "all_models_cumulative": [
       {
         "date": "2025-08-01T00:00:00Z",
-        "cumulative_total": 29387
+        "cumulative_total": 27352
       },
       {
         "date": "2025-09-01T00:00:00Z",
-        "cumulative_total": 32925
+        "cumulative_total": 30908
       },
       {
         "date": "2025-10-01T00:00:00Z",
-        "cumulative_total": 36630
+        "cumulative_total": 34724
       },
       {
         "date": "2025-11-01T00:00:00Z",
-        "cumulative_total": 40451
+        "cumulative_total": 38796
       },
       {
         "date": "2025-12-01T00:00:00Z",
-        "cumulative_total": 44258
+        "cumulative_total": 42660
       },
       {
         "date": "2026-01-01T00:00:00Z",
-        "cumulative_total": 48126
+        "cumulative_total": 46370
       }
     ]
   },
   "forecasts": {
-    "LinearRegression": [
+    "LightGBM": [
       {
         "date": "2025-08",
-        "cve_count": 3259
+        "cve_count": 3597
       },
       {
         "date": "2025-09",
-        "cve_count": 3570
+        "cve_count": 3865
       },
       {
         "date": "2025-10",
-        "cve_count": 3683
+        "cve_count": 3673
       },
       {
         "date": "2025-11",
-        "cve_count": 4523
+        "cve_count": 4281
       },
       {
         "date": "2025-12",
-        "cve_count": 4205
+        "cve_count": 3792
       },
       {
         "date": "2026-01",
-        "cve_count": 4229
-      }
-    ],
-    "Prophet": [
-      {
-        "date": "2025-08",
-        "cve_count": 3850
-      },
-      {
-        "date": "2025-09",
-        "cve_count": 3773
-      },
-      {
-        "date": "2025-10",
-        "cve_count": 4022
-      },
-      {
-        "date": "2025-11",
-        "cve_count": 3937
-      },
-      {
-        "date": "2025-12",
-        "cve_count": 4016
-      },
-      {
-        "date": "2026-01",
-        "cve_count": 4175
-      }
-    ],
-    "TBATS": [
-      {
-        "date": "2025-08",
-        "cve_count": 3588
-      },
-      {
-        "date": "2025-09",
-        "cve_count": 3611
-      },
-      {
-        "date": "2025-10",
-        "cve_count": 3640
-      },
-      {
-        "date": "2025-11",
-        "cve_count": 3679
-      },
-      {
-        "date": "2025-12",
-        "cve_count": 3727
-      },
-      {
-        "date": "2026-01",
-        "cve_count": 3784
-      }
-    ],
-    "AutoARIMA": [
-      {
-        "date": "2025-08",
-        "cve_count": 3232
-      },
-      {
-        "date": "2025-09",
-        "cve_count": 3487
-      },
-      {
-        "date": "2025-10",
-        "cve_count": 3566
-      },
-      {
-        "date": "2025-11",
-        "cve_count": 3603
-      },
-      {
-        "date": "2025-12",
-        "cve_count": 3631
-      },
-      {
-        "date": "2026-01",
-        "cve_count": 3655
+        "cve_count": 3656
       }
     ],
     "XGBoost": [
       {
         "date": "2025-08",
-        "cve_count": 3481
+        "cve_count": 3961
       },
       {
         "date": "2025-09",
-        "cve_count": 3247
+        "cve_count": 2575
       },
       {
         "date": "2025-10",
-        "cve_count": 3615
+        "cve_count": 3967
       },
       {
         "date": "2025-11",
-        "cve_count": 3364
+        "cve_count": 4009
       },
       {
         "date": "2025-12",
-        "cve_count": 3455
+        "cve_count": 3981
       },
       {
         "date": "2026-01",
-        "cve_count": 3496
+        "cve_count": 3988
+      }
+    ],
+    "LinearRegression": [
+      {
+        "date": "2025-08",
+        "cve_count": 3963
+      },
+      {
+        "date": "2025-09",
+        "cve_count": 4431
+      },
+      {
+        "date": "2025-10",
+        "cve_count": 4429
+      },
+      {
+        "date": "2025-11",
+        "cve_count": 4512
+      },
+      {
+        "date": "2025-12",
+        "cve_count": 4485
+      },
+      {
+        "date": "2026-01",
+        "cve_count": 4038
+      }
+    ],
+    "CatBoost": [
+      {
+        "date": "2025-08",
+        "cve_count": 3215
+      },
+      {
+        "date": "2025-09",
+        "cve_count": 3351
+      },
+      {
+        "date": "2025-10",
+        "cve_count": 3196
+      },
+      {
+        "date": "2025-11",
+        "cve_count": 3486
+      },
+      {
+        "date": "2025-12",
+        "cve_count": 3198
+      },
+      {
+        "date": "2026-01",
+        "cve_count": 3161
       }
     ]
   },
   "summary": {
-    "total_historical_cves": 206698,
+    "total_historical_cves": 206727,
     "cumulative_cves_2024": 39943,
     "data_period": {
       "start": "2017-01-31",
       "end": "2025-07-31"
     },
     "forecast_period": {
-      "start": "2025-07-01",
+      "start": "2025-08-01",
       "end": "2026-01-31"
     }
   },
   "forecast_vs_published": {
-    "LinearRegression": {
+    "LightGBM": {
       "table_data": [
-        {
-          "MONTH": "2023-11",
-          "PUBLISHED": 2443,
-          "FORECAST": 2559,
-          "ERROR": 116,
-          "PERCENT_ERROR": 4.786268434087608
-        },
-        {
-          "MONTH": "2023-12",
-          "PUBLISHED": 2674,
-          "FORECAST": 2367,
-          "ERROR": -306,
-          "PERCENT_ERROR": -11.47129141886509
-        },
-        {
-          "MONTH": "2024-01",
-          "PUBLISHED": 2591,
-          "FORECAST": 2671,
-          "ERROR": 80,
-          "PERCENT_ERROR": 3.1254970909519972
-        },
-        {
-          "MONTH": "2024-02",
-          "PUBLISHED": 2784,
-          "FORECAST": 2636,
-          "ERROR": -147,
-          "PERCENT_ERROR": -5.3125842066816045
-        },
-        {
-          "MONTH": "2024-03",
-          "PUBLISHED": 3299,
-          "FORECAST": 2578,
-          "ERROR": -720,
-          "PERCENT_ERROR": -21.85198886816733
-        },
-        {
-          "MONTH": "2024-04",
-          "PUBLISHED": 3605,
-          "FORECAST": 2740,
-          "ERROR": -864,
-          "PERCENT_ERROR": -23.991539024696237
-        },
-        {
-          "MONTH": "2024-05",
-          "PUBLISHED": 4994,
-          "FORECAST": 2629,
-          "ERROR": -2364,
-          "PERCENT_ERROR": -47.35499914244727
-        },
-        {
-          "MONTH": "2024-06",
-          "PUBLISHED": 3082,
-          "FORECAST": 2717,
-          "ERROR": -364,
-          "PERCENT_ERROR": -11.828238660503242
-        },
-        {
-          "MONTH": "2024-07",
-          "PUBLISHED": 3117,
-          "FORECAST": 2725,
-          "ERROR": -391,
-          "PERCENT_ERROR": -12.561704312037037
-        },
-        {
-          "MONTH": "2024-08",
-          "PUBLISHED": 2898,
-          "FORECAST": 2742,
-          "ERROR": -155,
-          "PERCENT_ERROR": -5.368420242707132
-        },
-        {
-          "MONTH": "2024-09",
-          "PUBLISHED": 2516,
-          "FORECAST": 2766,
-          "ERROR": 250,
-          "PERCENT_ERROR": 9.937697383655351
-        },
-        {
-          "MONTH": "2024-10",
-          "PUBLISHED": 3570,
-          "FORECAST": 2808,
-          "ERROR": -761,
-          "PERCENT_ERROR": -21.335727281061466
-        },
-        {
-          "MONTH": "2024-11",
-          "PUBLISHED": 4054,
-          "FORECAST": 2837,
-          "ERROR": -1216,
-          "PERCENT_ERROR": -30.01749005346623
-        },
-        {
-          "MONTH": "2024-12",
-          "PUBLISHED": 3433,
-          "FORECAST": 2864,
-          "ERROR": -568,
-          "PERCENT_ERROR": -16.563821207695366
-        },
         {
           "MONTH": "2025-01",
           "PUBLISHED": 4275,
-          "FORECAST": 2892,
-          "ERROR": -1382,
-          "PERCENT_ERROR": -32.336352974823754
+          "FORECAST": 4123,
+          "ERROR": -151,
+          "PERCENT_ERROR": -3.5419735340387706
         },
         {
           "MONTH": "2025-02",
           "PUBLISHED": 3676,
-          "FORECAST": 2954,
-          "ERROR": -721,
-          "PERCENT_ERROR": -19.625337221039715
+          "FORECAST": 4065,
+          "ERROR": 389,
+          "PERCENT_ERROR": 10.594471201802582
         },
         {
           "MONTH": "2025-03",
           "PUBLISHED": 4016,
-          "FORECAST": 2950,
-          "ERROR": -1065,
-          "PERCENT_ERROR": -26.52047067903624
+          "FORECAST": 3990,
+          "ERROR": -25,
+          "PERCENT_ERROR": -0.6301185961913021
         },
         {
           "MONTH": "2025-04",
           "PUBLISHED": 4032,
-          "FORECAST": 3005,
-          "ERROR": -1026,
-          "PERCENT_ERROR": -25.470563069781043
+          "FORECAST": 3786,
+          "ERROR": -245,
+          "PERCENT_ERROR": -6.085581049976009
         },
         {
           "MONTH": "2025-05",
           "PUBLISHED": 3982,
-          "FORECAST": 3029,
-          "ERROR": -952,
-          "PERCENT_ERROR": -23.910365360119254
+          "FORECAST": 4047,
+          "ERROR": 65,
+          "PERCENT_ERROR": 1.6385703766202526
         },
         {
           "MONTH": "2025-06",
           "PUBLISHED": 3687,
-          "FORECAST": 3053,
-          "ERROR": -633,
-          "PERCENT_ERROR": -17.175460909061265
+          "FORECAST": 3818,
+          "ERROR": 131,
+          "PERCENT_ERROR": 3.5707533565987077
         },
         {
           "MONTH": "2025-07",
-          "PUBLISHED": 2237,
-          "FORECAST": 3089,
-          "ERROR": 852,
-          "PERCENT_ERROR": 38.11956331695819
+          "PUBLISHED": 2266,
+          "FORECAST": 3839,
+          "ERROR": 1573,
+          "PERCENT_ERROR": 69.42089833818706
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": -587.8467522677605,
-        "mean_absolute_percentage_error": -14.129872781263627
-      }
-    },
-    "Prophet": {
-      "table_data": [
-        {
-          "MONTH": "2023-11",
-          "PUBLISHED": 2443,
-          "FORECAST": 2380,
-          "ERROR": -62,
-          "PERCENT_ERROR": -2.538643059543886
-        },
-        {
-          "MONTH": "2023-12",
-          "PUBLISHED": 2674,
-          "FORECAST": 2501,
-          "ERROR": -172,
-          "PERCENT_ERROR": -6.457632568225119
-        },
-        {
-          "MONTH": "2024-01",
-          "PUBLISHED": 2591,
-          "FORECAST": 2642,
-          "ERROR": 51,
-          "PERCENT_ERROR": 1.9804986774694722
-        },
-        {
-          "MONTH": "2024-02",
-          "PUBLISHED": 2784,
-          "FORECAST": 2473,
-          "ERROR": -310,
-          "PERCENT_ERROR": -11.136225480945544
-        },
-        {
-          "MONTH": "2024-03",
-          "PUBLISHED": 3299,
-          "FORECAST": 2648,
-          "ERROR": -650,
-          "PERCENT_ERROR": -19.72515599924792
-        },
-        {
-          "MONTH": "2024-04",
-          "PUBLISHED": 3605,
-          "FORECAST": 3080,
-          "ERROR": -524,
-          "PERCENT_ERROR": -14.53614758281879
-        },
-        {
-          "MONTH": "2024-05",
-          "PUBLISHED": 4994,
-          "FORECAST": 2252,
-          "ERROR": -2741,
-          "PERCENT_ERROR": -54.888639583603315
-        },
-        {
-          "MONTH": "2024-06",
-          "PUBLISHED": 3082,
-          "FORECAST": 2832,
-          "ERROR": -249,
-          "PERCENT_ERROR": -8.103009878164626
-        },
-        {
-          "MONTH": "2024-07",
-          "PUBLISHED": 3117,
-          "FORECAST": 2708,
-          "ERROR": -408,
-          "PERCENT_ERROR": -13.104615865946476
-        },
-        {
-          "MONTH": "2024-08",
-          "PUBLISHED": 2898,
-          "FORECAST": 2716,
-          "ERROR": -181,
-          "PERCENT_ERROR": -6.263941409816763
-        },
-        {
-          "MONTH": "2024-09",
-          "PUBLISHED": 2516,
-          "FORECAST": 2927,
-          "ERROR": 411,
-          "PERCENT_ERROR": 16.372812004757815
-        },
-        {
-          "MONTH": "2024-10",
-          "PUBLISHED": 3570,
-          "FORECAST": 2860,
-          "ERROR": -709,
-          "PERCENT_ERROR": -19.878696370066436
-        },
-        {
-          "MONTH": "2024-11",
-          "PUBLISHED": 4054,
-          "FORECAST": 2512,
-          "ERROR": -1541,
-          "PERCENT_ERROR": -38.0311815580402
-        },
-        {
-          "MONTH": "2024-12",
-          "PUBLISHED": 3433,
-          "FORECAST": 2820,
-          "ERROR": -612,
-          "PERCENT_ERROR": -17.83674448158084
-        },
-        {
-          "MONTH": "2025-01",
-          "PUBLISHED": 4275,
-          "FORECAST": 2778,
-          "ERROR": -1496,
-          "PERCENT_ERROR": -35.015180744212024
-        },
-        {
-          "MONTH": "2025-02",
-          "PUBLISHED": 3676,
-          "FORECAST": 2758,
-          "ERROR": -917,
-          "PERCENT_ERROR": -24.96319738238515
-        },
-        {
-          "MONTH": "2025-03",
-          "PUBLISHED": 4016,
-          "FORECAST": 2955,
-          "ERROR": -1060,
-          "PERCENT_ERROR": -26.399717500129533
-        },
-        {
-          "MONTH": "2025-04",
-          "PUBLISHED": 4032,
-          "FORECAST": 3266,
-          "ERROR": -765,
-          "PERCENT_ERROR": -18.97780273617947
-        },
-        {
-          "MONTH": "2025-05",
-          "PUBLISHED": 3982,
-          "FORECAST": 2717,
-          "ERROR": -1264,
-          "PERCENT_ERROR": -31.753823692497928
-        },
-        {
-          "MONTH": "2025-06",
-          "PUBLISHED": 3687,
-          "FORECAST": 3093,
-          "ERROR": -593,
-          "PERCENT_ERROR": -16.09352622230105
-        },
-        {
-          "MONTH": "2025-07",
-          "PUBLISHED": 2237,
-          "FORECAST": 3065,
-          "ERROR": 828,
-          "PERCENT_ERROR": 37.04952647908023
-        }
-      ],
-      "summary_stats": {
-        "mean_absolute_error": -617.6118461200278,
-        "mean_absolute_percentage_error": -14.77624023592369
-      }
-    },
-    "TBATS": {
-      "table_data": [
-        {
-          "MONTH": "2023-11",
-          "PUBLISHED": 2443,
-          "FORECAST": 2409,
-          "ERROR": -33,
-          "PERCENT_ERROR": -1.3694522952489805
-        },
-        {
-          "MONTH": "2023-12",
-          "PUBLISHED": 2674,
-          "FORECAST": 2424,
-          "ERROR": -249,
-          "PERCENT_ERROR": -9.314066962335863
-        },
-        {
-          "MONTH": "2024-01",
-          "PUBLISHED": 2591,
-          "FORECAST": 2447,
-          "ERROR": -143,
-          "PERCENT_ERROR": -5.547589478835305
-        },
-        {
-          "MONTH": "2024-02",
-          "PUBLISHED": 2784,
-          "FORECAST": 2476,
-          "ERROR": -307,
-          "PERCENT_ERROR": -11.05950769651817
-        },
-        {
-          "MONTH": "2024-03",
-          "PUBLISHED": 3299,
-          "FORECAST": 2509,
-          "ERROR": -789,
-          "PERCENT_ERROR": -23.9356146888918
-        },
-        {
-          "MONTH": "2024-04",
-          "PUBLISHED": 3605,
-          "FORECAST": 2543,
-          "ERROR": -1061,
-          "PERCENT_ERROR": -29.438368102235096
-        },
-        {
-          "MONTH": "2024-05",
-          "PUBLISHED": 4994,
-          "FORECAST": 2575,
-          "ERROR": -2418,
-          "PERCENT_ERROR": -48.42602155038357
-        },
-        {
-          "MONTH": "2024-06",
-          "PUBLISHED": 3082,
-          "FORECAST": 2601,
-          "ERROR": -480,
-          "PERCENT_ERROR": -15.576514024256479
-        },
-        {
-          "MONTH": "2024-07",
-          "PUBLISHED": 3117,
-          "FORECAST": 2621,
-          "ERROR": -495,
-          "PERCENT_ERROR": -15.905489121737022
-        },
-        {
-          "MONTH": "2024-08",
-          "PUBLISHED": 2898,
-          "FORECAST": 2633,
-          "ERROR": -264,
-          "PERCENT_ERROR": -9.111785561309363
-        },
-        {
-          "MONTH": "2024-09",
-          "PUBLISHED": 2516,
-          "FORECAST": 2642,
-          "ERROR": 126,
-          "PERCENT_ERROR": 5.022956880677825
-        },
-        {
-          "MONTH": "2024-10",
-          "PUBLISHED": 3570,
-          "FORECAST": 2650,
-          "ERROR": -919,
-          "PERCENT_ERROR": -25.76889886467856
-        },
-        {
-          "MONTH": "2024-11",
-          "PUBLISHED": 4054,
-          "FORECAST": 2660,
-          "ERROR": -1393,
-          "PERCENT_ERROR": -34.36797387779031
-        },
-        {
-          "MONTH": "2024-12",
-          "PUBLISHED": 3433,
-          "FORECAST": 2677,
-          "ERROR": -755,
-          "PERCENT_ERROR": -22.00964486062691
-        },
-        {
-          "MONTH": "2025-01",
-          "PUBLISHED": 4275,
-          "FORECAST": 2701,
-          "ERROR": -1573,
-          "PERCENT_ERROR": -36.80480305397727
-        },
-        {
-          "MONTH": "2025-02",
-          "PUBLISHED": 3676,
-          "FORECAST": 2732,
-          "ERROR": -943,
-          "PERCENT_ERROR": -25.65718484778162
-        },
-        {
-          "MONTH": "2025-03",
-          "PUBLISHED": 4016,
-          "FORECAST": 2768,
-          "ERROR": -1247,
-          "PERCENT_ERROR": -31.054023556063363
-        },
-        {
-          "MONTH": "2025-04",
-          "PUBLISHED": 4032,
-          "FORECAST": 2806,
-          "ERROR": -1225,
-          "PERCENT_ERROR": -30.40409702254302
-        },
-        {
-          "MONTH": "2025-05",
-          "PUBLISHED": 3982,
-          "FORECAST": 2840,
-          "ERROR": -1141,
-          "PERCENT_ERROR": -28.663941966185224
-        },
-        {
-          "MONTH": "2025-06",
-          "PUBLISHED": 3687,
-          "FORECAST": 2869,
-          "ERROR": -817,
-          "PERCENT_ERROR": -22.18324019869425
-        },
-        {
-          "MONTH": "2025-07",
-          "PUBLISHED": 2237,
-          "FORECAST": 2889,
-          "ERROR": 652,
-          "PERCENT_ERROR": 29.190391222860107
-        }
-      ],
-      "summary_stats": {
-        "mean_absolute_error": -737.2222522351967,
-        "mean_absolute_percentage_error": -18.684993791740677
-      }
-    },
-    "AutoARIMA": {
-      "table_data": [
-        {
-          "MONTH": "2023-11",
-          "PUBLISHED": 2443,
-          "FORECAST": 2443,
-          "ERROR": 0,
-          "PERCENT_ERROR": 0.039999887831169346
-        },
-        {
-          "MONTH": "2023-12",
-          "PUBLISHED": 2674,
-          "FORECAST": 2460,
-          "ERROR": -213,
-          "PERCENT_ERROR": -7.995782069252819
-        },
-        {
-          "MONTH": "2024-01",
-          "PUBLISHED": 2591,
-          "FORECAST": 2476,
-          "ERROR": -114,
-          "PERCENT_ERROR": -4.4226793640816755
-        },
-        {
-          "MONTH": "2024-02",
-          "PUBLISHED": 2784,
-          "FORECAST": 2492,
-          "ERROR": -291,
-          "PERCENT_ERROR": -10.46609310757513
-        },
-        {
-          "MONTH": "2024-03",
-          "PUBLISHED": 3299,
-          "FORECAST": 2508,
-          "ERROR": -790,
-          "PERCENT_ERROR": -23.951513849846226
-        },
-        {
-          "MONTH": "2024-04",
-          "PUBLISHED": 3605,
-          "FORECAST": 2525,
-          "ERROR": -1079,
-          "PERCENT_ERROR": -29.956861350845017
-        },
-        {
-          "MONTH": "2024-05",
-          "PUBLISHED": 4994,
-          "FORECAST": 2541,
-          "ERROR": -2452,
-          "PERCENT_ERROR": -49.11352145553662
-        },
-        {
-          "MONTH": "2024-06",
-          "PUBLISHED": 3082,
-          "FORECAST": 2557,
-          "ERROR": -524,
-          "PERCENT_ERROR": -17.018613604186697
-        },
-        {
-          "MONTH": "2024-07",
-          "PUBLISHED": 3117,
-          "FORECAST": 2573,
-          "ERROR": -543,
-          "PERCENT_ERROR": -17.430159803418988
-        },
-        {
-          "MONTH": "2024-08",
-          "PUBLISHED": 2898,
-          "FORECAST": 2589,
-          "ERROR": -308,
-          "PERCENT_ERROR": -10.6308657993135
-        },
-        {
-          "MONTH": "2024-09",
-          "PUBLISHED": 2516,
-          "FORECAST": 2606,
-          "ERROR": 90,
-          "PERCENT_ERROR": 3.5823966353083834
-        },
-        {
-          "MONTH": "2024-10",
-          "PUBLISHED": 3570,
-          "FORECAST": 2622,
-          "ERROR": -947,
-          "PERCENT_ERROR": -26.544854634374705
-        },
-        {
-          "MONTH": "2024-11",
-          "PUBLISHED": 4054,
-          "FORECAST": 2638,
-          "ERROR": -1415,
-          "PERCENT_ERROR": -34.914546626509924
-        },
-        {
-          "MONTH": "2024-12",
-          "PUBLISHED": 3433,
-          "FORECAST": 2654,
-          "ERROR": -778,
-          "PERCENT_ERROR": -22.6688065840445
-        },
-        {
-          "MONTH": "2025-01",
-          "PUBLISHED": 4275,
-          "FORECAST": 2670,
-          "ERROR": -1604,
-          "PERCENT_ERROR": -37.520574030918915
-        },
-        {
-          "MONTH": "2025-02",
-          "PUBLISHED": 3676,
-          "FORECAST": 2687,
-          "ERROR": -988,
-          "PERCENT_ERROR": -26.898502437794324
-        },
-        {
-          "MONTH": "2025-03",
-          "PUBLISHED": 4016,
-          "FORECAST": 2703,
-          "ERROR": -1312,
-          "PERCENT_ERROR": -32.68359958677427
-        },
-        {
-          "MONTH": "2025-04",
-          "PUBLISHED": 4032,
-          "FORECAST": 2719,
-          "ERROR": -1312,
-          "PERCENT_ERROR": -32.54855578364062
-        },
-        {
-          "MONTH": "2025-05",
-          "PUBLISHED": 3982,
-          "FORECAST": 2735,
-          "ERROR": -1246,
-          "PERCENT_ERROR": -31.294379181012705
-        },
-        {
-          "MONTH": "2025-06",
-          "PUBLISHED": 3687,
-          "FORECAST": 2752,
-          "ERROR": -934,
-          "PERCENT_ERROR": -25.35737967939956
-        },
-        {
-          "MONTH": "2025-07",
-          "PUBLISHED": 2237,
-          "FORECAST": 2768,
-          "ERROR": 531,
-          "PERCENT_ERROR": 23.7500671179706
-        }
-      ],
-      "summary_stats": {
-        "mean_absolute_error": -773.1526149413554,
-        "mean_absolute_percentage_error": -19.716420252734096
+        "mean_absolute_error": 248.1909010054517,
+        "mean_absolute_percentage_error": 10.70957429900036
       }
     },
     "XGBoost": {
       "table_data": [
         {
-          "MONTH": "2023-11",
-          "PUBLISHED": 2443,
-          "FORECAST": 2496,
-          "ERROR": 53,
-          "PERCENT_ERROR": 2.1734911449805567
-        },
-        {
-          "MONTH": "2023-12",
-          "PUBLISHED": 2674,
-          "FORECAST": 2448,
-          "ERROR": -225,
-          "PERCENT_ERROR": -8.439943232283097
-        },
-        {
-          "MONTH": "2024-01",
-          "PUBLISHED": 2591,
-          "FORECAST": 2614,
-          "ERROR": 23,
-          "PERCENT_ERROR": 0.9168606474334234
-        },
-        {
-          "MONTH": "2024-02",
-          "PUBLISHED": 2784,
-          "FORECAST": 2355,
-          "ERROR": -428,
-          "PERCENT_ERROR": -15.390339116940552
-        },
-        {
-          "MONTH": "2024-03",
-          "PUBLISHED": 3299,
-          "FORECAST": 2633,
-          "ERROR": -665,
-          "PERCENT_ERROR": -20.18478314924977
-        },
-        {
-          "MONTH": "2024-04",
-          "PUBLISHED": 3605,
-          "FORECAST": 2564,
-          "ERROR": -1040,
-          "PERCENT_ERROR": -28.850845992978503
-        },
-        {
-          "MONTH": "2024-05",
-          "PUBLISHED": 4994,
-          "FORECAST": 2435,
-          "ERROR": -2558,
-          "PERCENT_ERROR": -51.235686925873544
-        },
-        {
-          "MONTH": "2024-06",
-          "PUBLISHED": 3082,
-          "FORECAST": 2644,
-          "ERROR": -437,
-          "PERCENT_ERROR": -14.183722712017358
-        },
-        {
-          "MONTH": "2024-07",
-          "PUBLISHED": 3117,
-          "FORECAST": 2569,
-          "ERROR": -547,
-          "PERCENT_ERROR": -17.550115796438885
-        },
-        {
-          "MONTH": "2024-08",
-          "PUBLISHED": 2898,
-          "FORECAST": 2637,
-          "ERROR": -260,
-          "PERCENT_ERROR": -8.987062400254487
-        },
-        {
-          "MONTH": "2024-09",
-          "PUBLISHED": 2516,
-          "FORECAST": 2643,
-          "ERROR": 127,
-          "PERCENT_ERROR": 5.0615999012569555
-        },
-        {
-          "MONTH": "2024-10",
-          "PUBLISHED": 3570,
-          "FORECAST": 2666,
-          "ERROR": -903,
-          "PERCENT_ERROR": -25.314148120185575
-        },
-        {
-          "MONTH": "2024-11",
-          "PUBLISHED": 4054,
-          "FORECAST": 2637,
-          "ERROR": -1416,
-          "PERCENT_ERROR": -34.93398206246916
-        },
-        {
-          "MONTH": "2024-12",
-          "PUBLISHED": 3433,
-          "FORECAST": 2641,
-          "ERROR": -791,
-          "PERCENT_ERROR": -23.05293406823478
-        },
-        {
           "MONTH": "2025-01",
           "PUBLISHED": 4275,
-          "FORECAST": 2640,
-          "ERROR": -1634,
-          "PERCENT_ERROR": -38.22672811586257
+          "FORECAST": 4126,
+          "ERROR": -148,
+          "PERCENT_ERROR": -3.4841808296783627
         },
         {
           "MONTH": "2025-02",
           "PUBLISHED": 3676,
-          "FORECAST": 2626,
-          "ERROR": -1049,
-          "PERCENT_ERROR": -28.547470873146764
+          "FORECAST": 3631,
+          "ERROR": -44,
+          "PERCENT_ERROR": -1.2023660122245647
         },
         {
           "MONTH": "2025-03",
           "PUBLISHED": 4016,
-          "FORECAST": 2640,
-          "ERROR": -1375,
-          "PERCENT_ERROR": -34.25693587952876
+          "FORECAST": 4061,
+          "ERROR": 45,
+          "PERCENT_ERROR": 1.1302142504201942
         },
         {
           "MONTH": "2025-04",
           "PUBLISHED": 4032,
-          "FORECAST": 2640,
-          "ERROR": -1391,
-          "PERCENT_ERROR": -34.50396098787822
+          "FORECAST": 3965,
+          "ERROR": -66,
+          "PERCENT_ERROR": -1.6590421161954365
         },
         {
           "MONTH": "2025-05",
           "PUBLISHED": 3982,
-          "FORECAST": 2640,
-          "ERROR": -1341,
-          "PERCENT_ERROR": -33.683319321713334
+          "FORECAST": 3927,
+          "ERROR": -54,
+          "PERCENT_ERROR": -1.366451767327976
         },
         {
           "MONTH": "2025-06",
           "PUBLISHED": 3687,
-          "FORECAST": 2640,
-          "ERROR": -1046,
-          "PERCENT_ERROR": -28.375364985930297
+          "FORECAST": 3336,
+          "ERROR": -350,
+          "PERCENT_ERROR": -9.492911909665718
         },
         {
           "MONTH": "2025-07",
-          "PUBLISHED": 2237,
-          "FORECAST": 2641,
-          "ERROR": 404,
-          "PERCENT_ERROR": 18.086400243071076
+          "PUBLISHED": 2266,
+          "FORECAST": 3909,
+          "ERROR": 1643,
+          "PERCENT_ERROR": 72.53551567326787
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": -785.9061569940476,
-        "mean_absolute_percentage_error": -19.975190085916363
+        "mean_absolute_error": 146.36973353794642,
+        "mean_absolute_percentage_error": 8.065825326942287
+      }
+    },
+    "LinearRegression": {
+      "table_data": [
+        {
+          "MONTH": "2024-09",
+          "PUBLISHED": 2516,
+          "FORECAST": 3416,
+          "ERROR": 900,
+          "PERCENT_ERROR": 35.7886768405954
+        },
+        {
+          "MONTH": "2024-10",
+          "PUBLISHED": 3570,
+          "FORECAST": 3569,
+          "ERROR": 0,
+          "PERCENT_ERROR": -0.02140656888435083
+        },
+        {
+          "MONTH": "2024-11",
+          "PUBLISHED": 4054,
+          "FORECAST": 4245,
+          "ERROR": 191,
+          "PERCENT_ERROR": 4.714604021695024
+        },
+        {
+          "MONTH": "2024-12",
+          "PUBLISHED": 3433,
+          "FORECAST": 4020,
+          "ERROR": 587,
+          "PERCENT_ERROR": 17.102206258479246
+        },
+        {
+          "MONTH": "2025-01",
+          "PUBLISHED": 4275,
+          "FORECAST": 3969,
+          "ERROR": -305,
+          "PERCENT_ERROR": -7.140548980421135
+        },
+        {
+          "MONTH": "2025-02",
+          "PUBLISHED": 3676,
+          "FORECAST": 4341,
+          "ERROR": 665,
+          "PERCENT_ERROR": 18.106706346110855
+        },
+        {
+          "MONTH": "2025-03",
+          "PUBLISHED": 4016,
+          "FORECAST": 4326,
+          "ERROR": 310,
+          "PERCENT_ERROR": 7.722304197316097
+        },
+        {
+          "MONTH": "2025-04",
+          "PUBLISHED": 4032,
+          "FORECAST": 4623,
+          "ERROR": 591,
+          "PERCENT_ERROR": 14.674468255198134
+        },
+        {
+          "MONTH": "2025-05",
+          "PUBLISHED": 3982,
+          "FORECAST": 4238,
+          "ERROR": 256,
+          "PERCENT_ERROR": 6.448216303348622
+        },
+        {
+          "MONTH": "2025-06",
+          "PUBLISHED": 3687,
+          "FORECAST": 4410,
+          "ERROR": 723,
+          "PERCENT_ERROR": 19.610985954005912
+        },
+        {
+          "MONTH": "2025-07",
+          "PUBLISHED": 2266,
+          "FORECAST": 4442,
+          "ERROR": 2176,
+          "PERCENT_ERROR": 96.03486203066849
+        }
+      ],
+      "summary_stats": {
+        "mean_absolute_error": 554.1862758741491,
+        "mean_absolute_percentage_error": 19.367370423464752
+      }
+    },
+    "CatBoost": {
+      "table_data": [
+        {
+          "MONTH": "2025-03",
+          "PUBLISHED": 4016,
+          "FORECAST": 3993,
+          "ERROR": -22,
+          "PERCENT_ERROR": -0.5493866547367139
+        },
+        {
+          "MONTH": "2025-04",
+          "PUBLISHED": 4032,
+          "FORECAST": 3723,
+          "ERROR": -308,
+          "PERCENT_ERROR": -7.657024159294995
+        },
+        {
+          "MONTH": "2025-05",
+          "PUBLISHED": 3982,
+          "FORECAST": 3966,
+          "ERROR": -15,
+          "PERCENT_ERROR": -0.40016648673561517
+        },
+        {
+          "MONTH": "2025-06",
+          "PUBLISHED": 3687,
+          "FORECAST": 3643,
+          "ERROR": -43,
+          "PERCENT_ERROR": -1.1685680286265159
+        },
+        {
+          "MONTH": "2025-07",
+          "PUBLISHED": 2266,
+          "FORECAST": 3827,
+          "ERROR": 1561,
+          "PERCENT_ERROR": 68.89407222962983
+        }
+      ],
+      "summary_stats": {
+        "mean_absolute_error": 234.2650723698279,
+        "mean_absolute_percentage_error": 11.823785380047198
       }
     }
   }
