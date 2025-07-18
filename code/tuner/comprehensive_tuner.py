@@ -58,7 +58,6 @@ os.environ['PYTHONWARNINGS'] = 'ignore'
 # Suppress LightGBM verbose logging (conditional import to prevent blocking)
 try:
     import lightgbm as lgb
-    lgb.set_log_level(lgb.LOG_FATAL)  # Only show fatal errors
     # Set LightGBM environment variables for quiet operation
     os.environ['LIGHTGBM_EXEC'] = '1'
     os.environ['LIGHTGBM_VERBOSITY'] = '-1'
