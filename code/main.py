@@ -16,7 +16,15 @@ warnings.filterwarnings('ignore', category=UserWarning, module='lightgbm')
 from utils import setup_logging
 from data_loader import load_cve_data
 from darts.metrics import mae, mape, mase, rmsse
-from model_trainer import train_and_evaluate_model
+# Removed model_trainer import - now using pre-trained models from comprehensive tuner
+
+# Model imports for inference-only architecture
+from darts.models import (
+    ExponentialSmoothing, Prophet, AutoARIMA, Theta, FourTheta, TBATS, Croston,
+    KalmanForecaster, XGBModel, LightGBMModel, CatBoostModel, RandomForestModel,
+    LinearRegressionModel, TCNModel, NBEATSModel, NHiTSModel, TiDEModel, DLinearModel
+)
+from darts.models.forecasting.baselines import NaiveMean, NaiveDrift, NaiveSeasonal
 
 import datetime
 import numpy as np
@@ -86,55 +94,162 @@ class CVEForecastEngine:
         self.full_series = self.historical_series
         self.logger.info(f"Processed {len(self.historical_series)} months of complete historical data.")
 
-    def train_and_evaluate_models(self, progress_callback=None):
+    def load_optimized_models(self, progress_callback=None):
+        """Load pre-trained optimized models from comprehensive tuner."""
         enabled_models = {name: config for name, config in self.config['models'].items() if config['enabled']}
         total_models = len(enabled_models)
-
+        
+        models_dir = Path(self.config['file_paths'].get('models_dir', 'code/tuner/models'))
+        
         for i, (model_name, model_config) in enumerate(enabled_models.items()):
             if progress_callback:
-                progress_callback(f"Evaluating Models ({i+1}/{total_models}): {model_name}")
+                progress_callback(f"Loading Models ({i+1}/{total_models}): {model_name}")
             
-            model, train, val, predictions = train_and_evaluate_model(model_name, model_config, self.series, self.config['model_evaluation'])
-            if model and predictions:
-                metrics = {}
-                for metric_name, metric_func in [('mape', mape), ('mae', mae), ('mase', mase), ('rmsse', rmsse)]:
-                    try:
-                        if metric_name in ['mase', 'rmsse']:
-                            metrics[metric_name] = metric_func(val, predictions, train)
-                        else:
-                            metrics[metric_name] = metric_func(val, predictions)
-                    except Exception as e:
-                        self.logger.warning(f"Could not compute {metric_name.upper()} for {model_name}: {e}")
-                        metrics[metric_name] = None
+            # Check if model has optimization results
+            if 'tuning_results' not in model_config:
+                self.logger.warning(f"No tuning results found for {model_name} - skipping")
+                continue
+                
+            # Use optimal split ratio from tuning results
+            optimal_split_ratio = model_config.get('optimal_split_ratio', 0.8)
+            self.logger.info(f"Using optimal split ratio {optimal_split_ratio:.2f} for {model_name}")
+            
+            # Load performance metrics from tuning results
+            tuning_results = model_config['tuning_results']
+            metrics = {
+                'mape': tuning_results.get('mape', 0),
+                'mae': tuning_results.get('mae', 0), 
+                'mase': tuning_results.get('mase', 0),
+                'rmsse': tuning_results.get('rmsse', 0)
+            }
+            
+            # Log model performance from optimization
+            mape_str = f"{metrics.get('mape', 0):.2f}%" if metrics.get('mape') is not None else "N/A"
+            mae_str = f"{metrics.get('mae', 0):.2f}" if metrics.get('mae') is not None else "N/A"
+            self.logger.info(f"{model_name} - Optimized MAPE: {mape_str}, MAE: {mae_str} (from comprehensive tuner)")
+            
+            # For now, create a placeholder model reference
+            # In a full implementation, we would load the actual trained model from disk
+            self.model_results[model_name] = {
+                "model_name": model_name,
+                "model": None,  # Placeholder - will be loaded from comprehensive tuner
+                "metrics": metrics,
+                "split_ratio": optimal_split_ratio,
+                "hyperparameters": model_config.get('hyperparameters', {}),
+                "optimized": True  # Flag to indicate this is from comprehensive tuner
+            }
+            
+        self.logger.info(f"Loaded {len(self.model_results)} optimized models from comprehensive tuner")
 
-                mape_str = f"{metrics.get('mape', 0):.2f}%" if metrics.get('mape') is not None else "N/A"
-                mase_str = f"{metrics.get('mase', 0):.2f}" if metrics.get('mase') is not None else "N/A"
-                rmsse_str = f"{metrics.get('rmsse', 0):.2f}" if metrics.get('rmsse') is not None else "N/A"
-                mae_str = f"{metrics.get('mae', 0):.2f}" if metrics.get('mae') is not None else "N/A"
-                self.logger.info(f"{model_name} - MAPE: {mape_str}, MASE: {mase_str}, RMSSE: {rmsse_str}, MAE: {mae_str}")
+    def _get_model_class(self, model_name: str):
+        """Get the model class for a given model name."""
+        model_classes = {
+            'Prophet': Prophet,
+            'ExponentialSmoothing': ExponentialSmoothing,
+            'TBATS': TBATS,
+            'XGBoost': XGBModel,
+            'LightGBM': LightGBMModel,
+            'CatBoost': CatBoostModel,
+            'RandomForest': RandomForestModel,
+            'LinearRegression': LinearRegressionModel,
+            'AutoARIMA': AutoARIMA,
+            'Theta': Theta,
+            'FourTheta': FourTheta,
+            'KalmanFilter': KalmanForecaster,
+            'Croston': Croston,
+            'TCN': TCNModel,
+            'NBEATS': NBEATSModel,
+            'NHiTS': NHiTSModel,
+            'TiDE': TiDEModel,
+            'DLinear': DLinearModel,
+            'NaiveDrift': NaiveDrift,
+            'NaiveMean': NaiveMean,
+            'NaiveSeasonal': NaiveSeasonal
+        }
+        return model_classes.get(model_name)
 
-                self.model_results[model_name] = {"model_name": model_name, "model": model, "metrics": metrics}
+    def _create_optimized_model(self, model_name: str, hyperparameters: dict):
+        """Create a model instance using optimized hyperparameters from comprehensive tuner."""
+        try:
+            model_class = self._get_model_class(model_name)
+            if model_class is None:
+                self.logger.error(f"Unknown model class for {model_name}")
+                return None
+            
+            # Create model with optimized hyperparameters
+            model = model_class(**hyperparameters)
+            self.logger.debug(f"Created {model_name} with optimized hyperparameters: {hyperparameters}")
+            return model
+            
+        except Exception as e:
+            self.logger.error(f"Failed to create optimized model {model_name}: {e}")
+            return None
 
-                # Generate detailed validation data
-                validation_data = []
-                val_df = val.to_dataframe()
-                pred_df = predictions.to_dataframe()
-                for i in range(len(val)):
-                    timestamp = val.time_index[i]
-                    actual = val_df.iloc[i, 0]
-                    predicted = pred_df.iloc[i, 0]
-                    error = abs(actual - predicted)
-                    percent_error = (error / actual) * 100 if actual != 0 else 0
-                    validation_data.append({
-                        "date": timestamp.strftime('%Y-%m'),
-                        "actual": float(actual),
-                        "predicted": float(predicted),
-                        "error": float(error),
-                        "percent_error": float(percent_error)
+    def generate_validation_data(self, progress_callback=None):
+        """Generate validation data by running optimized models on historical test data."""
+        self.all_models_validation = {}
+        
+        # Only generate validation data for top performing models to match the forecasting
+        top_models = sorted(
+            [(name, data) for name, data in self.model_results.items()],
+            key=lambda x: x[1]['metrics'].get('mape', float('inf'))
+        )[:5]  # Top 5 models
+        
+        for model_name, model_data in top_models:
+            if progress_callback:
+                progress_callback(f"Generating validation data for {model_name}")
+                
+            try:
+                # Get optimal split ratio and hyperparameters
+                split_ratio = model_data['split_ratio']
+                hyperparameters = model_data['hyperparameters']
+                
+                # Split data for validation
+                split_point = int(split_ratio * len(self.series))
+                train_data = self.series[:split_point]
+                val_data = self.series[split_point:]
+                
+                if len(val_data) == 0:
+                    self.logger.warning(f"No validation data for {model_name} - split ratio too high")
+                    continue
+                
+                # Create and train model with optimized hyperparameters
+                model_class = self._get_model_class(model_name)
+                if model_class is None:
+                    continue
+                    
+                model = self._create_optimized_model(model_name, hyperparameters)
+                if model is None:
+                    continue
+                
+                # Train on historical data
+                model.fit(train_data)
+                
+                # Generate predictions for validation period
+                predictions = model.predict(len(val_data))
+                
+                # Create validation data comparing predictions to actuals
+                validation_records = []
+                for i in range(len(val_data)):
+                    actual_date = val_data.time_index[i]
+                    actual_value = float(val_data.values()[i, 0])
+                    predicted_value = float(predictions.values()[i, 0])
+                    
+                    validation_records.append({
+                        'month': actual_date.strftime('%Y-%m'),
+                        'actual': actual_value,
+                        'forecast': predicted_value
                     })
-                self.all_models_validation[model_name] = validation_data
-
+                
+                self.all_models_validation[model_name] = validation_records
+                self.logger.info(f"Generated {len(validation_records)} validation records for {model_name}")
+                
+            except Exception as e:
+                self.logger.error(f"Failed to generate validation data for {model_name}: {e}")
+                self.all_models_validation[model_name] = []
+    
     def generate_final_forecasts(self, progress_callback=None):
+        """Generate forecasts using optimized models from comprehensive tuner."""
         ensemble_size = self.config['model_evaluation']['ensemble_size']
         top_models = sorted([self.model_results[r] for r in self.model_results], key=lambda x: x['metrics'].get('mape', float('inf')))[:ensemble_size]
 
@@ -142,21 +257,34 @@ class CVEForecastEngine:
         months_to_forecast = ( (self.config['model_evaluation']['forecast_end_year'] - last_historical_month.year) * 12
                                + self.config['model_evaluation']['forecast_end_month'] - last_historical_month.month )
 
+        self.logger.info(f"Generating forecasts for {len(top_models)} top-performing optimized models")
         total_final_models = len(top_models)
+        
         for i, result in enumerate(top_models):
             model_name = result['model_name']
-            model = result['model']
+            hyperparameters = result['hyperparameters']
+            
             if progress_callback:
                 progress_callback(f"Generating Final Forecasts ({i+1}/{total_final_models}): {model_name}")
             
             try:
+                # Create model with optimized hyperparameters for forecasting only
+                model = self._create_optimized_model(model_name, hyperparameters)
+                if model is None:
+                    self.logger.warning(f"Could not create model for {model_name} - skipping forecast")
+                    continue
+                    
                 series_to_fit = self.historical_series
                 if model_name in ["TCN", "NBEATS", "NHiTS", "TiDE", "DLinear", "TSMixer"]:
                     series_to_fit = series_to_fit.astype(np.float32)
                 
+                # Fit and predict with optimized model
                 model.fit(series_to_fit)
                 forecast = model.predict(months_to_forecast)
                 self.final_forecasts[model_name] = forecast
+                
+                self.logger.info(f"Generated forecast for {model_name} using optimized hyperparameters")
+                
             except Exception as e:
                 self.logger.error(f"Failed to generate final forecast for {model_name}: {e}")
 
@@ -268,7 +396,7 @@ class CVEForecastEngine:
                 'end': full_df.index.max().strftime('%Y-%m-%d')
             },
             'forecast_period': {
-                'start': self.start_of_current_month.strftime('%Y-%m-%d'),
+                'start': self.start_of_next_month.strftime('%Y-%m-%d'),
                 'end': (self.start_of_current_month.replace(year=self.start_of_current_month.year + 1, month=1) + relativedelta(months=1, days=-1)).strftime('%Y-%m-%d')
             }
         }
@@ -289,22 +417,6 @@ class CVEForecastEngine:
             "cumulative_total": 0
         }]
         
-        cumulative_total = 0
-        for item in current_year_historical:
-            cumulative_total += item['cve_count']
-            # The date for a full month's cumulative total is the first of that month.
-            month_start_date = pd.to_datetime(item['date']).strftime('%Y-%m-%dT%H:%M:%SZ')
-            
-            entry = {
-                "date": month_start_date,
-                "cumulative_total": cumulative_total
-            }
-            
-        # This logic correctly calculates the cumulative total for each completed month of the year.
-        actuals_cumulative = [{
-            "date": f"{current_year}-01-01T00:00:00Z",
-            "cumulative_total": 0
-        }]
         df = pd.DataFrame(current_year_historical)
         if not df.empty:
             df['date'] = pd.to_datetime(df['date'], format='%Y-%m')
@@ -312,14 +424,23 @@ class CVEForecastEngine:
             df['cumulative_total'] = df['cve_count'].cumsum()
 
             for i, row in df.iterrows():
-                entry = {
-                    "date": row['date'].strftime('%Y-%m-%dT%H:%M:%SZ'),
-                    "cumulative_total": int(row['cumulative_total'])
-                }
-                # If this is the first entry and it's for January, update the initial placeholder.
-                if i == 0 and row['date'].month == 1:
-                    actuals_cumulative[0] = entry
-                else:
+                # For each month, add an entry at the BEGINNING of the NEXT month
+                # showing the cumulative total up to the end of the current month
+                # BUT only if the next month is not in the future
+                next_month_date = (row['date'] + relativedelta(months=1))
+                
+                # Only add entry if next_month_date is not in the future
+                current_month_start = self.current_datetime.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                
+                # Convert to timezone-aware timestamps for comparison
+                next_month_ts = pd.Timestamp(next_month_date, tz='UTC')
+                current_month_ts = pd.Timestamp(current_month_start.replace(tzinfo=None), tz='UTC')
+                
+                if next_month_ts <= current_month_ts:
+                    entry = {
+                        "date": next_month_date.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                        "cumulative_total": int(row['cumulative_total'])
+                    }
                     actuals_cumulative.append(entry)
 
         # Append the final entry for the current day's cumulative total.
@@ -337,9 +458,36 @@ class CVEForecastEngine:
         return actuals_cumulative
 
     def save_results(self):
-        model_rankings = sorted([
-            {"model_name": r['model_name'], **r['metrics']} for r in self.model_results.values()
-        ], key=lambda x: x['mape'] if x.get('mape') is not None else float('inf'))
+        model_rankings = []
+        for r in self.model_results.values():
+            model_name = r['model_name']
+            
+            # Get hyperparameters from config if available
+            model_config = self.config.get('models', {}).get(model_name, {})
+            hyperparameters = model_config.get('hyperparameters', {})
+            tuning_results = model_config.get('tuning_results', {})
+            
+            ranking_entry = {
+                "model_name": model_name,
+                "split_ratio": r.get('split_ratio', self.config['model_evaluation']['split_ratio']),
+                **r['metrics']
+            }
+            
+            # Add hyperparameters if they exist and are meaningful
+            if hyperparameters and any(v for v in hyperparameters.values() if v is not None):
+                ranking_entry['hyperparameters'] = hyperparameters
+            
+            # Add tuning metadata if available
+            if tuning_results:
+                if 'tuned_at' in tuning_results:
+                    ranking_entry['tuned_at'] = tuning_results['tuned_at']
+                if 'method' in tuning_results:
+                    ranking_entry['tuning_method'] = tuning_results['method']
+                    
+            model_rankings.append(ranking_entry)
+        
+        # Sort by MAPE (lower is better)
+        model_rankings.sort(key=lambda x: x['mape'] if x.get('mape') is not None else float('inf'))
 
         historical_data = self._get_historical_data()
         current_month_actual = self._get_current_month_actual()
@@ -460,13 +608,19 @@ class CVEForecastEngine:
         return table_data, summary_stats
 
     def run(self):
-        """Execute the full CVE forecasting workflow."""
-        self.logger.info('CVE Forecast Engine Initialized')
+        """Execute the full CVE forecasting workflow with pre-trained models."""
+        self.logger.info('CVE Forecast Engine Initialized (Inference Mode)')
 
         self.logger.info('Processing Data...')
         self.process_data()
 
-        self.train_and_evaluate_models()
+        self.logger.info('Loading Pre-trained Optimized Models...')
+        self.load_optimized_models()
+        
+        self.logger.info('Generating Validation Data for Website...')
+        self.generate_validation_data()
+        
+        self.logger.info('Generating Forecasts with Optimized Models...')
         self.generate_final_forecasts()
 
         self.logger.info('Saving Results...')

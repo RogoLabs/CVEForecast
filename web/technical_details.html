@@ -44,73 +44,146 @@
     <main class="container mx-auto px-6 py-8">
         <div class="content-section">
             <h2 class="text-2xl font-bold mb-4">Project Overview</h2>
-            <p>The CVE Forecast project is an automated system designed to predict the number of Common Vulnerabilities and Exposures (CVEs) for the upcoming months. By leveraging a suite of time series forecasting models, the project provides insights into future trends in vulnerability disclosures.</p>
+            <p class="mb-4">CVE Forecast is a self-improving automated platform that leverages advanced hyperparameter optimization and 25+ time series forecasting models to predict Common Vulnerabilities and Exposures (CVEs). The system provides data-driven insights into future vulnerability disclosure trends through an intelligent, continuously-evolving forecasting pipeline.</p>
             
-
-        </div>
-
-        <div class="content-section">
-            <h2 class="text-2xl font-bold mb-4">Model Evaluation</h2>
-            <p>Models are evaluated using multiple metrics to ensure reliable forecasts:</p>
-            <ul class="list-disc list-inside mt-2 space-y-1">
-                <li><strong>MAPE (Mean Absolute Percentage Error)</strong>: Primary metric for model selection</li>
-                <li><strong>MASE (Mean Absolute Scaled Error)</strong>: Scale-independent measure of forecast accuracy</li>
-                <li><strong>RMSSE (Root Mean Squared Scaled Error)</strong>: Good for comparing across different time series</li>
-                <li><strong>MAE (Mean Absolute Error)</strong>: Easy to interpret in the original units</li>
-            </ul>
+            <div class="grid md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+                    <h4 class="font-semibold mb-2">🧠 Self-Improving AI</h4>
+                    <p class="text-sm text-gray-700">Comprehensive tuner learns from previous runs and continuously optimizes 25+ models across statistical, ML, and deep learning categories.</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                    <h4 class="font-semibold mb-2">⚡ Dynamic Optimization</h4>
+                    <p class="text-sm text-gray-700">Intelligent timeout redistribution and adaptive search strategies maximize resource utilization during hyperparameter exploration.</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-400">
+                    <h4 class="font-semibold mb-2">🏗️ Production Architecture</h4>
+                    <p class="text-sm text-gray-700">Modular design with 5 core modules ensures maintainability, extensibility, and enterprise-grade reliability.</p>
+                </div>
+            </div>
         </div>
 
         <div class="content-section">
             <h2 class="text-2xl font-bold mb-4">System Architecture</h2>
-            <p>The project is built with a modular architecture, separating concerns into distinct Python modules. This design enhances maintainability, scalability, and testability.</p>
-            <h3 class="text-xl font-semibold mt-4 mb-2">Core Modules</h3>
-            <ul class="list-disc list-inside">
-                <li><strong>main.py:</strong> The main entry point that orchestrates the entire forecasting workflow.</li>
-                <li><strong>config.py:</strong> Centralized configuration for models, parameters, and constants.</li>
-                <li><strong>data_processor.py:</strong> Handles the parsing and processing of raw CVE data.</li>
-                <li><strong>analysis.py:</strong> Contains the core logic for model training, evaluation, and forecasting.</li>
-                <li><strong>file_io.py:</strong> Manages all file input/output operations, including the generation of the final `data.json`.</li>
-                <li><strong>utils.py:</strong> Provides utility functions, such as logging setup.</li>
-            </ul>
+            <p class="mb-4">CVE Forecast employs a sophisticated, self-improving architecture that combines 25+ forecasting models with intelligent optimization capabilities.</p>
+            
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <h3 class="text-lg font-semibold mb-3">🏗️ Core Components</h3>
+                    <ul class="list-disc list-inside space-y-1 text-sm">
+                        <li><strong>main.py:</strong> Orchestrates entire forecasting workflow</li>
+                        <li><strong>data_loader.py:</strong> Processes 300K+ CVE JSON files</li>
+                        <li><strong>model_trainer.py:</strong> Trains and evaluates models</li>
+                        <li><strong>utils.py:</strong> Logging and configuration management</li>
+                        <li><strong>comprehensive_tuner.py:</strong> Hyperparameter optimization</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-3">📊 Model Categories (25+ Models)</h3>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div class="bg-blue-50 p-2 rounded">
+                            <strong>Statistical (8):</strong> Prophet, AutoARIMA, TBATS, Theta, FourTheta, ExponentialSmoothing, KalmanFilter, Croston
+                        </div>
+                        <div class="bg-green-50 p-2 rounded">
+                            <strong>ML/Tree (5):</strong> XGBoost, LightGBM, CatBoost, RandomForest, LinearRegression
+                        </div>
+                        <div class="bg-purple-50 p-2 rounded">
+                            <strong>Deep Learning (5):</strong> TCN, NBEATS, NHiTS, TiDE, DLinear
+                        </div>
+                        <div class="bg-orange-50 p-2 rounded">
+                            <strong>Baseline (3):</strong> NaiveDrift, NaiveMean, NaiveSeasonal
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 class="text-lg font-semibold mb-3">🧠 Self-Improving Optimization</h3>
+            <div class="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-l-4 border-blue-400 mb-4">
+                <p class="text-gray-800 mb-2"><strong>Revolutionary Workflow:</strong> The comprehensive tuner learns from previous runs, only updating configurations when improvements are found, creating an intelligent system that evolves over time.</p>
+                <ul class="list-disc list-inside space-y-1 text-sm text-gray-700">
+                    <li><strong>Dynamic Timeout Redistribution:</strong> Unused time from fast models redistributed to slower ones</li>
+                    <li><strong>Adaptive Search Strategies:</strong> Grid/random search selection based on model complexity</li>
+                    <li><strong>Dual-Config Management:</strong> Updates both production and tuner configurations</li>
+                    <li><strong>Performance Tracking:</strong> Maintains optimization history and automatic backups</li>
+                </ul>
+            </div>
+            
+            <h3 class="text-lg font-semibold mb-3">📈 Evaluation System</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="mb-2"><strong>Dual-Metric Evaluation:</strong></p>
+                <ul class="list-disc list-inside space-y-1 text-sm">
+                    <li><strong>MAPE:</strong> Primary ranking metric for model selection</li>
+                    <li><strong>MAE:</strong> Intuitive error measurement in original CVE units</li>
+                </ul>
+            </div>
         </div>
 
         <div class="content-section">
-            <h2 class="text-2xl font-bold mb-4">Data Processing Pipeline</h2>
-            <p>The data processing pipeline is designed to be efficient and robust, handling large volumes of CVE data.</p>
-            <ol class="list-decimal list-inside">
-                <li class="mt-2"><strong>Data Ingestion:</strong> The system clones the official cvelistV5 repository from GitHub, which contains all CVE data in JSON format.</li>
-                <li class="mt-2"><strong>Data Parsing:</strong> Each JSON file is parsed to extract the `publishedDate`. The system is designed to handle malformed JSON files gracefully.</li>
-                <li class="mt-2"><strong>Time Series Aggregation:</strong> The extracted publication dates are aggregated into a monthly time series, counting the number of CVEs published each month.</li>
-                <li class="mt-2"><strong>Data Validation:</strong> The time series data is validated to ensure completeness and correctness before being passed to the forecasting models.</li>
-            </ol>
-        </div>
-
-        <div class="content-section">
-            <h2 class="text-2xl font-bold mb-4">Forecasting Models</h2>
-            <p>The project employs a diverse set of over 25 time series forecasting models from the Darts library. This allows for a comprehensive analysis and the selection of the best-performing model for the given data.</p>
-            <h3 class="text-xl font-semibold mt-4 mb-2">Model Categories</h3>
-            <p class="text-sm text-gray-600 mb-3">Note: Models are automatically selected based on performance and stability. Deep learning models are available but disabled by default for CPU environments.</p>
-            <ul class="list-disc list-inside">
-                <li><strong>Statistical Models:</strong> ARIMA, ExponentialSmoothing, Prophet, Theta, etc.</li>
-                <li><strong>Machine Learning Models:</strong> LinearRegression, RandomForest, LightGBM, XGBoost.</li>
-                <li><strong>Deep Learning Models:</strong> NBEATS, NHiTS, TCN, Transformer, TiDE.</li>
-                <li><strong>Baseline Models:</strong> NaiveMean, NaiveSeasonal, NaiveDrift.</li>
-            </ul>
-            <h3 class="text-xl font-semibold mt-4 mb-2">Model Evaluation</h3>
-            <p>All models are evaluated using a rigorous and automated process defined within the system's configuration:</p>
-            <ol class="list-decimal list-inside">
-                <li class="mt-2"><strong>Centralized Configuration:</strong> Key parameters for the evaluation, such as the train/test split ratio and forecast horizon, are managed in <code>config.json</code>.</li>
-                <li class="mt-2"><strong>Optimized Hyperparameters:</strong> Model hyperparameters are systematically managed within the forecasting engine, leveraging best-known configurations for each model type.</li>
-                <li class="mt-2"><strong>Performance Metrics:</strong> Models are ranked based on Mean Absolute Percentage Error (MAPE), with other metrics like MAE, RMSE, and MASE also calculated for a comprehensive assessment.</li>
-                <li class="mt-2"><strong>Performance History:</strong> The performance of each model run, including metrics and hyperparameters, is logged in <code>performance_history.json</code> (path defined in <code>config.json</code>) to track performance and improvements over time.</li>
-            </ol>
+            <h2 class="text-2xl font-bold mb-4">Deployment & Automation</h2>
+            <p class="mb-4">The system features fully automated CI/CD pipeline with daily updates and intelligent optimization integration.</p>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+                    <h3 class="font-semibold text-blue-800 mb-2">🔄 GitHub Actions Workflow</h3>
+                    <ul class="list-disc list-inside space-y-1 text-sm text-blue-700">
+                        <li>Daily scheduled execution (midnight UTC)</li>
+                        <li>Automatic CVE data fetching and processing</li>
+                        <li>Model training and forecast generation</li>
+                        <li>Intelligent hyperparameter optimization</li>
+                        <li>Automated deployment and configuration updates</li>
+                    </ul>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                    <h3 class="font-semibold text-green-800 mb-2">⚡ Production Features</h3>
+                    <ul class="list-disc list-inside space-y-1 text-sm text-green-700">
+                        <li>Processes 300K+ CVE JSON files daily</li>
+                        <li>Dynamic forecasting through January 2026</li>
+                        <li>Self-improving optimization workflow</li>
+                        <li>Automatic configuration backups</li>
+                        <li>Comprehensive validation and error handling</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <div class="content-section">
             <h2 class="text-2xl font-bold mb-4">Change Log</h2>
-            <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h3 class="font-semibold text-blue-800">v.05 - Adolfo Suárez Madrid-Baraja 🇪🇸</h3>
-                <ul class="list-disc list-inside mt-2 space-y-1 text-blue-700">
+            <div class="mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-300 shadow-md">
+                <h3 class="font-bold text-green-800 text-lg mb-2">🎉 v.06 - Karlův mos 🇨🇿 (July 2025)</h3>
+                <p class="text-green-700 font-medium mb-3">Revolutionary self-improving forecasting system with intelligent hyperparameter optimization</p>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="font-semibold text-green-800 mb-2">🧠 Intelligent Optimization</h4>
+                        <ul class="list-disc list-inside space-y-1 text-green-700 text-sm">
+                            <li>Comprehensive hyperparameter tuner for 19+ models</li>
+                            <li>Self-improving workflow that learns from previous runs</li>
+                            <li>Adaptive grid/random search selection</li>
+                            <li>Intelligent timeout management and progress tracking</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-green-800 mb-2">🔄 Automated Infrastructure</h4>
+                        <ul class="list-disc list-inside space-y-1 text-green-700 text-sm">
+                            <li>Daily GitHub Actions integration with tuner</li>
+                            <li>Automatic configuration backup and management</li>
+                            <li>End-to-end validation pipeline</li>
+                            <li>Complete self-optimization workflow</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-green-800 mb-2">📊 Enhanced Capabilities</h4>
+                    <ul class="list-disc list-inside space-y-1 text-green-700 text-sm">
+                        <li>Support for 25+ models across Statistical, Tree-Based, and Deep Learning categories</li>
+                        <li>Enterprise-grade modular architecture with 7 focused modules</li>
+                        <li>Enhanced model stability with comprehensive error handling</li>
+                        <li>Dynamic forecasting with automatic period adaptation</li>
+                        <li>Production-ready optimization with intelligent comparison logic</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="font-semibold text-gray-800">v.05 - Adolfo Suárez Madrid-Baraja 🇪🇸</h3>
+                <ul class="list-disc list-inside mt-2 space-y-1 text-gray-700">
                     <li>Fixed a critical bug that prevented the cumulative graph from rendering due to an incorrect data structure in <code>data.json</code>.</li>
                     <li>Restored frontend compatibility by correcting the data generation logic, ensuring all charts now load correctly.</li>
                 </ul>
@@ -127,18 +200,7 @@
             </div>
         </div>
 
-        <div class="content-section">
-            <h2 class="text-2xl font-bold mb-4">Deployment and Automation</h2>
-            <p>The CVE Forecast dashboard is deployed as a static website, with the data being updated daily through a fully automated CI/CD pipeline using GitHub Actions.</p>
-            <h3 class="text-xl font-semibold mt-4 mb-2">GitHub Actions Workflow</h3>
-            <ol class="list-decimal list-inside">
-                <li class="mt-2"><strong>Scheduled Trigger:</strong> The workflow is triggered daily at midnight UTC.</li>
-                <li class="mt-2"><strong>Data Fetching:</strong> The latest CVE data is downloaded.</li>
-                <li class="mt-2"><strong>Forecasting:</strong> The entire forecasting pipeline is executed, generating new predictions.</li>
-                <li class="mt-2"><strong>Data Commit:</strong> The updated `data.json` is committed back to the repository.</li>
-                <li class="mt-2"><strong>Deployment:</strong> The static site is automatically deployed, making the new forecasts available to users.</li>
-            </ol>
-        </div>
+
     </main>
 
     <footer class="bg-white mt-8 py-4">

@@ -1,0 +1,360 @@
+{
+  "test_all_models": false,
+  "timeout_minutes": 1.0,
+  "file_paths": {
+    "cve_data": "cvelistV5",
+    "output_data": "web/data.json",
+    "performance_history": "web/performance_history.json",
+    "hyperparameter_results": "hyperparameter_results/"
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(levelname)s - %(message)s"
+  },
+  "data_processing": {
+    "filter_by_date": true,
+    "start_date_filter": "2015-01-01"
+  },
+  "model_evaluation": {
+    "split_ratio": 0.75,
+    "forecast_horizon_months": 12,
+    "forecast_end_year": 2026,
+    "forecast_end_month": 1,
+    "ensemble_size": 5
+  },
+  "models": {
+    "NaiveDrift": {
+      "enabled": true,
+      "hyperparameters": {}
+    },
+    "Prophet": {
+      "enabled": true,
+      "hyperparameters": {
+        "yearly_seasonality": true,
+        "weekly_seasonality": false,
+        "daily_seasonality": false,
+        "seasonality_mode": "additive",
+        "growth": "linear",
+        "changepoint_prior_scale": 0.5,
+        "seasonality_prior_scale": 10.0,
+        "n_changepoints": 25,
+        "mcmc_samples": 0,
+        "interval_width": 0.8
+      },
+      "optimal_split_ratio": 0.75,
+      "tuning_results": {
+        "mape": 15.321612299166777,
+        "mae": 525.6241743371877,
+        "training_time": 0.2988097667694092,
+        "trial_number": 83,
+        "tuned_at": "2025-07-17T16:19:06.764392",
+        "tuning_method": "comprehensive_hyperparameter_tuning",
+        "previous_mape": null,
+        "improvement": null
+      }
+    },
+    "ExponentialSmoothing": {
+      "enabled": true,
+      "hyperparameters": {
+        "trend": null,
+        "damped": false,
+        "seasonal": null,
+        "seasonal_periods": null,
+        "use_boxcox": null,
+        "remove_bias": true,
+        "use_brute": true,
+        "damped_trend": true,
+        "initialization_method": "heuristic",
+        "missing": "none"
+      }
+    },
+    "TBATS": {
+      "enabled": true,
+      "hyperparameters": {
+        "season_length": 24,
+        "use_arma_errors": true,
+        "use_box_cox": true,
+        "use_damped_trend": false,
+        "use_trend": true
+      }
+    },
+    "XGBoost": {
+      "enabled": true,
+      "hyperparameters": {
+        "lags": 24,
+        "n_estimators": 100,
+        "max_depth": 5,
+        "learning_rate": 0.2,
+        "subsample": 1.0,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.1,
+        "reg_lambda": 0.1,
+        "random_state": 42,
+        "n_jobs": -1,
+        "tree_method": "hist",
+        "early_stopping_rounds": null,
+        "eval_metric": "mae"
+      }
+    },
+    "LightGBM": {
+      "enabled": true,
+      "hyperparameters": {
+        "lags": 12,
+        "n_estimators": 200,
+        "max_depth": 4,
+        "num_leaves": 16,
+        "min_child_samples": 20,
+        "learning_rate": 0.02,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 1.0,
+        "reg_lambda": 1.0,
+        "min_split_gain": 0.1,
+        "random_state": 42,
+        "force_row_wise": true,
+        "verbose": -1,
+        "objective": "regression",
+        "n_jobs": -1,
+        "device_type": "cpu",
+        "feature_fraction": 0.9,
+        "bagging_fraction": 0.8,
+        "bagging_freq": 5,
+        "feature_pre_filter": false
+      }
+    },
+    "CatBoost": {
+      "enabled": true,
+      "hyperparameters": {
+        "lags": 24,
+        "iterations": 200,
+        "depth": 6,
+        "learning_rate": 0.1,
+        "l2_leaf_reg": 3,
+        "subsample": 0.8,
+        "random_state": 42,
+        "verbose": false
+      }
+    },
+    "TCN": {
+      "enabled": true,
+      "hyperparameters": {
+        "input_chunk_length": 12,
+        "output_chunk_length": 1,
+        "n_epochs": 20,
+        "batch_size": 32,
+        "random_state": 42,
+        "pl_trainer_kwargs": {
+          "accelerator": "cpu",
+          "enable_progress_bar": false
+        },
+        "kernel_size": 3,
+        "num_filters": 16,
+        "dropout": 0.1,
+        "weight_norm": true,
+        "optimizer_kwargs": {
+          "lr": 0.001
+        },
+        "model_name": "tcn_forecaster"
+      }
+    },
+    "NBEATS": {
+      "enabled": true,
+      "hyperparameters": {
+        "input_chunk_length": 12,
+        "output_chunk_length": 1,
+        "n_epochs": 20,
+        "batch_size": 32,
+        "random_state": 42,
+        "pl_trainer_kwargs": {
+          "accelerator": "cpu",
+          "enable_progress_bar": false
+        },
+        "num_blocks": 2,
+        "num_layers": 2,
+        "layer_widths": 256,
+        "optimizer_kwargs": {
+          "lr": 0.001
+        },
+        "model_name": "nbeats_forecaster"
+      }
+    },
+    "NHiTS": {
+      "enabled": true,
+      "hyperparameters": {
+        "input_chunk_length": 6,
+        "output_chunk_length": 1,
+        "n_epochs": 20,
+        "batch_size": 32,
+        "random_state": 42,
+        "pl_trainer_kwargs": {
+          "accelerator": "cpu",
+          "enable_progress_bar": false
+        },
+        "num_blocks": 2,
+        "num_layers": 2,
+        "layer_widths": 256,
+        "optimizer_kwargs": {
+          "lr": 0.001
+        },
+        "model_name": "nhits_forecaster"
+      }
+    },
+    "TiDE": {
+      "enabled": true,
+      "hyperparameters": {
+        "input_chunk_length": 12,
+        "output_chunk_length": 1,
+        "n_epochs": 20,
+        "batch_size": 32,
+        "random_state": 42,
+        "pl_trainer_kwargs": {
+          "accelerator": "cpu",
+          "enable_progress_bar": false
+        },
+        "num_encoder_layers": 1,
+        "num_decoder_layers": 1,
+        "decoder_output_dim": 8,
+        "hidden_size": 64,
+        "temporal_width_past": 4,
+        "temporal_width_future": 4,
+        "dropout": 0.1,
+        "optimizer_kwargs": {
+          "lr": 0.001
+        },
+        "model_name": "tide_forecaster"
+      }
+    },
+    "DLinear": {
+      "enabled": true,
+      "hyperparameters": {
+        "input_chunk_length": 12,
+        "output_chunk_length": 1,
+        "n_epochs": 20,
+        "batch_size": 32,
+        "random_state": 42,
+        "pl_trainer_kwargs": {
+          "accelerator": "cpu",
+          "enable_progress_bar": false
+        },
+        "kernel_size": 25,
+        "const_init": true,
+        "use_static_covariates": true,
+        "optimizer_kwargs": {
+          "lr": 0.001
+        },
+        "model_name": "dlinear_forecaster"
+      }
+    },
+    "RandomForest": {
+      "enabled": true,
+      "hyperparameters": {
+        "lags": 48,
+        "n_estimators": 400,
+        "max_depth": null,
+        "min_samples_split": 5,
+        "min_samples_leaf": 2,
+        "n_jobs": -1,
+        "random_state": 42,
+        "max_features": null
+      }
+    },
+    "LinearRegression": {
+      "enabled": true,
+      "hyperparameters": {
+        "lags": 6,
+        "lags_past_covariates": null,
+        "output_chunk_length": 6,
+        "fit_intercept": true,
+        "multi_models": false,
+        "n_jobs": 1,
+        "output_chunk_shift": 0,
+        "positive": false,
+        "likelihood": null,
+        "quantiles": null
+      }
+    },
+    "AutoARIMA": {
+      "enabled": true,
+      "hyperparameters": {
+        "start_p": 0,
+        "start_q": 0,
+        "max_p": 4,
+        "max_q": 6,
+        "seasonal": true,
+        "stepwise": false,
+        "random_state": 42,
+        "approximation": false,
+        "max_d": 1
+      }
+    },
+    "AutoETS": {
+      "enabled": false,
+      "hyperparameters": {}
+    },
+    "AutoTheta": {
+      "enabled": false,
+      "hyperparameters": {}
+    },
+    "Theta": {
+      "enabled": true,
+      "hyperparameters": {
+        "season_mode": "NONE",
+        "theta": 8
+      }
+    },
+    "FourTheta": {
+      "enabled": true,
+      "hyperparameters": {
+        "season_mode": "NONE",
+        "theta": 8
+      }
+    },
+    "KalmanFilter": {
+      "enabled": true,
+      "hyperparameters": {
+        "dim_x": 8
+      }
+    },
+    "Croston": {
+      "enabled": true,
+      "hyperparameters": {
+        "alpha_d": 0.5,
+        "alpha_p": 0.4,
+        "version": "sbj"
+      }
+    },
+    "AutoCES": {
+      "enabled": false,
+      "hyperparameters": {}
+    },
+    "AutoMFLES": {
+      "enabled": false,
+      "hyperparameters": {}
+    },
+    "AutoTBATS": {
+      "enabled": false,
+      "hyperparameters": {}
+    },
+    "NaiveEnsemble": {
+      "enabled": false,
+      "hyperparameters": {
+        "models": [
+          "NaiveMean",
+          "NaiveDrift",
+          "NaiveSeasonal"
+        ]
+      }
+    }
+  },
+  "comprehensive_tuning": {
+    "last_tuned_at": "2025-07-17T16:19:06.764405",
+    "best_model": "Prophet",
+    "best_mape": 15.321612299166777,
+    "optimal_split_ratio": 0.75,
+    "models_tuned": [
+      "Prophet"
+    ],
+    "previous_best_mape": null,
+    "global_improvement": null
+  }
+}
