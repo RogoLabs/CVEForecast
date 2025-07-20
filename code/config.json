@@ -41,16 +41,16 @@
       },
       "optimal_split_ratio": 0.94,
       "tuning_results": {
-        "mape": 12.78046194042241,
-        "mae": 370.12171353485934,
+        "mape": 12.33968261209857,
+        "mae": 363.87171353485934,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.05659198760986328,
+        "training_time": 0.05291438102722168,
         "trial_number": 1427,
-        "tuned_at": "2025-07-19T03:59:31.669182",
+        "tuned_at": "2025-07-20T04:08:40.853461",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 13.519011157797623,
-        "improvement": 0.7385492173752137
+        "previous_mape": 12.78046194042241,
+        "improvement": 0.44077932832383837
       }
     },
     "ExponentialSmoothing": {
@@ -59,8 +59,8 @@
         "trend": null,
         "damped": false,
         "seasonal": null,
-        "seasonal_periods": null,
-        "use_boxcox": false,
+        "seasonal_periods": 12,
+        "use_boxcox": null,
         "remove_bias": true,
         "use_brute": true,
         "damped_trend": false,
@@ -69,16 +69,16 @@
       },
       "optimal_split_ratio": 0.94,
       "tuning_results": {
-        "mape": 12.728994539928681,
-        "mae": 380.85391713923485,
+        "mape": 12.30500969127359,
+        "mae": 374.60391713923485,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.1244039535522461,
-        "trial_number": 62,
-        "tuned_at": "2025-07-19T03:59:31.669172",
+        "training_time": 0.12325191497802734,
+        "trial_number": 71,
+        "tuned_at": "2025-07-20T04:08:40.853448",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 13.439514049434278,
-        "improvement": 0.7105195095055965
+        "previous_mape": 12.728994539928681,
+        "improvement": 0.4239848486550919
       }
     },
     "TBATS": {
@@ -91,9 +91,9 @@
       "enabled": true,
       "hyperparameters": {
         "lags": 48,
-        "n_estimators": 500,
+        "n_estimators": 100,
         "max_depth": 8,
-        "learning_rate": 0.1,
+        "learning_rate": 0.05,
         "subsample": 1.0,
         "colsample_bytree": 1.0,
         "reg_alpha": 0.1,
@@ -106,16 +106,16 @@
       },
       "optimal_split_ratio": 0.94,
       "tuning_results": {
-        "mape": 10.498736812366667,
-        "mae": 278.9320068359375,
+        "mape": 9.96522265175586,
+        "mae": 273.1424255371094,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.23772454261779785,
-        "trial_number": 8429,
-        "tuned_at": "2025-07-19T03:59:31.669199",
+        "training_time": 0.11015844345092773,
+        "trial_number": 6504,
+        "tuned_at": "2025-07-20T04:08:40.853489",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 11.233633372069338,
-        "improvement": 0.7348965597026709
+        "previous_mape": 10.498736812366667,
+        "improvement": 0.5335141606108067
       }
     },
     "LightGBM": {
@@ -161,7 +161,7 @@
       "enabled": true,
       "hyperparameters": {
         "lags": 48,
-        "iterations": 300,
+        "iterations": 200,
         "depth": 6,
         "learning_rate": 0.2,
         "l2_leaf_reg": 1,
@@ -170,18 +170,18 @@
         "verbose": false,
         "border_count": 128
       },
-      "optimal_split_ratio": 0.95,
+      "optimal_split_ratio": 0.94,
       "tuning_results": {
-        "mape": 10.455944373001198,
-        "mae": 322.4432267870416,
+        "mape": 9.479947794752155,
+        "mae": 317.48021090813455,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.35465335845947266,
-        "trial_number": 169,
-        "tuned_at": "2025-07-19T03:59:31.669207",
+        "training_time": 0.2405681610107422,
+        "trial_number": 1986,
+        "tuned_at": "2025-07-20T04:08:40.853496",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 12.043412046108372,
-        "improvement": 1.5874676731071737
+        "previous_mape": 10.455944373001198,
+        "improvement": 0.9759965782490436
       }
     },
     "TCN": {
@@ -208,16 +208,16 @@
       },
       "optimal_split_ratio": 0.76,
       "tuning_results": {
-        "mape": 10.465885162353516,
-        "mae": 339.80438232421875,
+        "mape": 10.354984283447266,
+        "mae": 338.19146728515625,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 1.1150758266448975,
+        "training_time": 1.0942132472991943,
         "trial_number": 423,
-        "tuned_at": "2025-07-19T03:59:31.669186",
+        "tuned_at": "2025-07-20T04:08:40.853468",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 10.651693344116211,
-        "improvement": 0.1858081817626953
+        "previous_mape": 10.465885162353516,
+        "improvement": 0.11090087890625
       }
     },
     "NBEATS": {
@@ -233,7 +233,7 @@
           "enable_progress_bar": false
         },
         "num_blocks": 2,
-        "num_layers": 2,
+        "num_layers": 4,
         "layer_widths": 256,
         "optimizer_kwargs": {
           "lr": 0.001
@@ -241,21 +241,21 @@
         "model_name": "nbeats_forecaster",
         "activation": "ReLU",
         "dropout": 0.1,
-        "expansion_coefficient_dim": 10,
+        "expansion_coefficient_dim": 5,
         "trend_polynomial_degree": 3
       },
-      "optimal_split_ratio": 0.75,
+      "optimal_split_ratio": 0.94,
       "tuning_results": {
-        "mape": 10.570893287658691,
-        "mae": 330.39129638671875,
+        "mape": 9.557158470153809,
+        "mae": 281.9360046386719,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 12.32620120048523,
-        "trial_number": 27,
-        "tuned_at": "2025-07-18T11:10:43.802126",
+        "training_time": 27.879249095916748,
+        "trial_number": 45,
+        "tuned_at": "2025-07-20T04:08:40.853475",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 12.206588745117188,
-        "improvement": 1.635695457458496
+        "previous_mape": 10.570893287658691,
+        "improvement": 1.0137348175048828
       }
     },
     "NHiTS": {
@@ -282,7 +282,7 @@
     "TiDE": {
       "enabled": false,
       "hyperparameters": {
-        "input_chunk_length": 18,
+        "input_chunk_length": 12,
         "output_chunk_length": 1,
         "n_epochs": 50,
         "batch_size": 32,
@@ -291,10 +291,10 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "num_encoder_layers": 1,
-        "num_decoder_layers": 1,
-        "decoder_output_dim": 16,
-        "hidden_size": 64,
+        "num_encoder_layers": 2,
+        "num_decoder_layers": 2,
+        "decoder_output_dim": 8,
+        "hidden_size": 128,
         "temporal_width_past": 8,
         "temporal_width_future": 4,
         "dropout": 0.1,
@@ -304,18 +304,18 @@
         "model_name": "tide_forecaster",
         "temporal_decoder_hidden": 32
       },
-      "optimal_split_ratio": 0.72,
+      "optimal_split_ratio": 0.7,
       "tuning_results": {
-        "mape": 10.686588287353516,
-        "mae": 326.2193298339844,
+        "mape": 10.168145179748535,
+        "mae": 306.9861145019531,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.5099899768829346,
-        "trial_number": 527,
-        "tuned_at": "2025-07-19T03:59:31.669191",
+        "training_time": 0.7169818878173828,
+        "trial_number": 1557,
+        "tuned_at": "2025-07-20T04:08:40.853481",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 10.90489673614502,
-        "improvement": 0.2183084487915039
+        "previous_mape": 10.686588287353516,
+        "improvement": 0.5184431076049805
       }
     },
     "DLinear": {
@@ -340,16 +340,16 @@
       },
       "optimal_split_ratio": 0.72,
       "tuning_results": {
-        "mape": 10.950291633605957,
-        "mae": 332.5788879394531,
+        "mape": 10.856413841247559,
+        "mae": 331.19000244140625,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.332108736038208,
+        "training_time": 0.332211971282959,
         "trial_number": 23,
-        "tuned_at": "2025-07-19T03:59:31.669159",
+        "tuned_at": "2025-07-20T04:08:40.853429",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 11.107586860656738,
-        "improvement": 0.15729522705078125
+        "previous_mape": 10.950291633605957,
+        "improvement": 0.09387779235839844
       }
     },
     "RandomForest": {
@@ -422,16 +422,16 @@
       },
       "optimal_split_ratio": 0.9,
       "tuning_results": {
-        "mape": 15.920140238432055,
-        "mae": 458.04993864328594,
+        "mape": 15.65072990150419,
+        "mae": 454.2037847971321,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 11.955879926681519,
+        "training_time": 11.955476522445679,
         "trial_number": 98,
-        "tuned_at": "2025-07-19T03:59:31.669152",
+        "tuned_at": "2025-07-20T04:08:40.853417",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 16.371651710955515,
-        "improvement": 0.45151147252346036
+        "previous_mape": 15.920140238432055,
+        "improvement": 0.269410336927864
       }
     },
     "AutoETS": {
@@ -446,20 +446,20 @@
       "enabled": true,
       "hyperparameters": {
         "season_mode": "ADDITIVE",
-        "theta": 8
+        "theta": 0.5
       },
-      "optimal_split_ratio": 0.94,
+      "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 13.377238852120337,
-        "mae": 417.50712743746044,
+        "mape": 12.878961235612024,
+        "mae": 374.71024521200883,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.005219936370849609,
-        "trial_number": 559,
-        "tuned_at": "2025-07-19T03:59:31.669164",
+        "training_time": 0.0037097930908203125,
+        "trial_number": 625,
+        "tuned_at": "2025-07-20T04:08:40.853436",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 14.067947851961618,
-        "improvement": 0.6907089998412808
+        "previous_mape": 13.377238852120337,
+        "improvement": 0.4982776165083127
       }
     },
     "FourTheta": {
@@ -470,16 +470,16 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 13.633005200896298,
-        "mae": 375.7970837284918,
+        "mape": 13.076006485978246,
+        "mae": 367.4637503951585,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.004159688949584961,
+        "training_time": 0.004087924957275391,
         "trial_number": 625,
-        "tuned_at": "2025-07-19T03:59:31.669168",
+        "tuned_at": "2025-07-20T04:08:40.853442",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 14.565231489064429,
-        "improvement": 0.9322262881681311
+        "previous_mape": 13.633005200896298,
+        "improvement": 0.556998714918052
       }
     },
     "KalmanFilter": {
@@ -489,43 +489,43 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 13.39035166229518,
-        "mae": 366.6466476643427,
+        "mape": 12.833547275651005,
+        "mae": 358.3133143310094,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.03002333641052246,
+        "training_time": 0.030089855194091797,
         "trial_number": 114,
-        "tuned_at": "2025-07-19T03:59:31.669132",
+        "tuned_at": "2025-07-20T04:08:40.853397",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 14.321705596084284,
-        "improvement": 0.9313539337891044
+        "previous_mape": 13.39035166229518,
+        "improvement": 0.5568043866441741
       }
     },
     "Croston": {
       "enabled": true,
       "hyperparameters": {
         "alpha_d": 0.1,
-        "alpha_p": 0.2,
+        "alpha_p": 0.1,
         "quantiles": [
           0.1,
           0.5,
           0.9
         ],
-        "random_state": null,
+        "random_state": 42,
         "version": "optimized"
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 13.622963793073424,
-        "mae": 387.0,
+        "mape": 13.075536145953839,
+        "mae": 378.6666666666667,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.0021691322326660156,
-        "trial_number": 69,
-        "tuned_at": "2025-07-19T03:59:31.669177",
+        "training_time": 0.0021135807037353516,
+        "trial_number": 39,
+        "tuned_at": "2025-07-20T04:08:40.853455",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 14.538321042920765,
-        "improvement": 0.9153572498473412
+        "previous_mape": 13.622963793073424,
+        "improvement": 0.5474276471195854
       }
     },
     "AutoCES": {
