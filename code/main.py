@@ -299,20 +299,33 @@ class CVEForecastEngine:
         today = self.current_datetime.date()
         last_day_of_month = (today.replace(day=28) + datetime.timedelta(days=4)).replace(day=1) - datetime.timedelta(days=1)
 
-        # This function simulates fetching real-time data for the partial month.
-        def get_partial_cve_count_for_month(year, month):
-            # Using a placeholder as per the original logic.
-            # This would be replaced by a real data source in a live system.
-            if year == 2025 and month == 7:
-                # As per the example, if the date is July 11, the cumulative total is 24521.
-                # The last full month (June) was 19982. The start of July was 23668.
-                # This implies the partial count for July is 24521 - 23668 = 853.
-                return 853
-            return 0
+        # Dynamically count all published CVEs for the current partial month
+        cve_data_path = Path(self.config['file_paths']['cve_data'])
+        json_files = list(cve_data_path.rglob("cves/**/*.json"))
+        current_month_count = 0
+        for json_file in json_files:
+            try:
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                cve_items = data if isinstance(data, list) else [data]
+                for cve_item in cve_items:
+                    if not isinstance(cve_item, dict):
+                        continue
+                    cve_metadata = cve_item.get('cveMetadata', {})
+                    if cve_metadata.get('state') == 'REJECTED':
+                        continue
+                    published_date_str = cve_metadata.get('datePublished')
+                    if published_date_str:
+                        try:
+                            dt_obj = datetime.fromisoformat(published_date_str.replace('Z', '+00:00'))
+                            if dt_obj.year == today.year and dt_obj.month == today.month:
+                                current_month_count += 1
+                        except Exception:
+                            continue
+            except Exception:
+                continue
 
-        current_cve_count = get_partial_cve_count_for_month(today.year, today.month)
-
-        # The cumulative total is the sum of all historical (full) months + the partial current month.
+        current_cve_count = current_month_count
         historical_total = int(self.historical_series.sum().values()[0][0])
 
         return {
