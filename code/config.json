@@ -41,16 +41,16 @@
       },
       "optimal_split_ratio": 0.94,
       "tuning_results": {
-        "mape": 12.33968261209857,
-        "mae": 363.87171353485934,
+        "mape": 11.801641444186071,
+        "mae": 355.87171353485934,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.05291438102722168,
+        "training_time": 0.05670881271362305,
         "trial_number": 1427,
-        "tuned_at": "2025-07-20T04:08:40.853461",
+        "tuned_at": "2025-07-21T04:05:51.102646",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 12.78046194042241,
-        "improvement": 0.44077932832383837
+        "previous_mape": 12.33968261209857,
+        "improvement": 0.5380411679124997
       }
     },
     "ExponentialSmoothing": {
@@ -59,26 +59,26 @@
         "trend": null,
         "damped": false,
         "seasonal": null,
-        "seasonal_periods": 12,
+        "seasonal_periods": null,
         "use_boxcox": null,
         "remove_bias": true,
         "use_brute": true,
-        "damped_trend": false,
+        "damped_trend": true,
         "initialization_method": "heuristic",
         "missing": "none"
       },
       "optimal_split_ratio": 0.94,
       "tuning_results": {
-        "mape": 12.30500969127359,
-        "mae": 374.60391713923485,
+        "mape": 11.787468852833928,
+        "mae": 366.60391713923485,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.12325191497802734,
-        "trial_number": 71,
-        "tuned_at": "2025-07-20T04:08:40.853448",
+        "training_time": 0.12694501876831055,
+        "trial_number": 142,
+        "tuned_at": "2025-07-21T04:05:51.102638",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 12.728994539928681,
-        "improvement": 0.4239848486550919
+        "previous_mape": 12.30500969127359,
+        "improvement": 0.5175408384396611
       }
     },
     "TBATS": {
@@ -91,13 +91,13 @@
       "enabled": true,
       "hyperparameters": {
         "lags": 48,
-        "n_estimators": 100,
+        "n_estimators": 500,
         "max_depth": 8,
-        "learning_rate": 0.05,
-        "subsample": 1.0,
-        "colsample_bytree": 1.0,
+        "learning_rate": 0.2,
+        "subsample": 0.9,
+        "colsample_bytree": 0.8,
         "reg_alpha": 0.1,
-        "reg_lambda": 1.0,
+        "reg_lambda": 0.1,
         "random_state": 42,
         "n_jobs": -1,
         "tree_method": "hist",
@@ -106,16 +106,16 @@
       },
       "optimal_split_ratio": 0.94,
       "tuning_results": {
-        "mape": 9.96522265175586,
-        "mae": 273.1424255371094,
+        "mape": 9.286829633929694,
+        "mae": 256.0626220703125,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.11015844345092773,
-        "trial_number": 6504,
-        "tuned_at": "2025-07-20T04:08:40.853489",
+        "training_time": 0.1465311050415039,
+        "trial_number": 4274,
+        "tuned_at": "2025-07-21T04:05:51.102662",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 10.498736812366667,
-        "improvement": 0.5335141606108067
+        "previous_mape": 9.96522265175586,
+        "improvement": 0.678393017826167
       }
     },
     "LightGBM": {
@@ -208,16 +208,16 @@
       },
       "optimal_split_ratio": 0.76,
       "tuning_results": {
-        "mape": 10.354984283447266,
-        "mae": 338.19146728515625,
+        "mape": 10.219611167907715,
+        "mae": 336.126953125,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 1.0942132472991943,
+        "training_time": 1.0761895179748535,
         "trial_number": 423,
-        "tuned_at": "2025-07-20T04:08:40.853468",
+        "tuned_at": "2025-07-21T04:05:51.102651",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 10.465885162353516,
-        "improvement": 0.11090087890625
+        "previous_mape": 10.354984283447266,
+        "improvement": 0.13537311553955078
       }
     },
     "NBEATS": {
@@ -283,7 +283,7 @@
       "enabled": false,
       "hyperparameters": {
         "input_chunk_length": 12,
-        "output_chunk_length": 1,
+        "output_chunk_length": 6,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -294,8 +294,8 @@
         "num_encoder_layers": 2,
         "num_decoder_layers": 2,
         "decoder_output_dim": 8,
-        "hidden_size": 128,
-        "temporal_width_past": 8,
+        "hidden_size": 64,
+        "temporal_width_past": 4,
         "temporal_width_future": 4,
         "dropout": 0.1,
         "optimizer_kwargs": {
@@ -304,18 +304,18 @@
         "model_name": "tide_forecaster",
         "temporal_decoder_hidden": 32
       },
-      "optimal_split_ratio": 0.7,
+      "optimal_split_ratio": 0.94,
       "tuning_results": {
-        "mape": 10.168145179748535,
-        "mae": 306.9861145019531,
+        "mape": 9.714065551757812,
+        "mae": 306.241943359375,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.7169818878173828,
-        "trial_number": 1557,
-        "tuned_at": "2025-07-20T04:08:40.853481",
+        "training_time": 0.9058136940002441,
+        "trial_number": 1715,
+        "tuned_at": "2025-07-21T04:05:51.102656",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 10.686588287353516,
-        "improvement": 0.5184431076049805
+        "previous_mape": 10.168145179748535,
+        "improvement": 0.45407962799072266
       }
     },
     "DLinear": {
@@ -340,16 +340,16 @@
       },
       "optimal_split_ratio": 0.72,
       "tuning_results": {
-        "mape": 10.856413841247559,
-        "mae": 331.19000244140625,
+        "mape": 10.741820335388184,
+        "mae": 329.4122314453125,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.332211971282959,
+        "training_time": 0.3300437927246094,
         "trial_number": 23,
-        "tuned_at": "2025-07-20T04:08:40.853429",
+        "tuned_at": "2025-07-21T04:05:51.102625",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 10.950291633605957,
-        "improvement": 0.09387779235839844
+        "previous_mape": 10.856413841247559,
+        "improvement": 0.114593505859375
       }
     },
     "RandomForest": {
@@ -422,16 +422,16 @@
       },
       "optimal_split_ratio": 0.9,
       "tuning_results": {
-        "mape": 15.65072990150419,
-        "mae": 454.2037847971321,
+        "mape": 15.32187180173897,
+        "mae": 449.28070787405517,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 11.955476522445679,
+        "training_time": 12.192325830459595,
         "trial_number": 98,
-        "tuned_at": "2025-07-20T04:08:40.853417",
+        "tuned_at": "2025-07-21T04:05:51.102616",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 15.920140238432055,
-        "improvement": 0.269410336927864
+        "previous_mape": 15.65072990150419,
+        "improvement": 0.3288580997652204
       }
     },
     "AutoETS": {
@@ -450,16 +450,16 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 12.878961235612024,
-        "mae": 374.71024521200883,
+        "mape": 12.21917002733303,
+        "mae": 364.04357854534214,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.0037097930908203125,
+        "training_time": 0.0037255287170410156,
         "trial_number": 625,
-        "tuned_at": "2025-07-20T04:08:40.853436",
+        "tuned_at": "2025-07-21T04:05:51.102630",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 13.377238852120337,
-        "improvement": 0.4982776165083127
+        "previous_mape": 12.878961235612024,
+        "improvement": 0.6597912082789943
       }
     },
     "FourTheta": {
@@ -470,16 +470,16 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 13.076006485978246,
-        "mae": 367.4637503951585,
+        "mape": 12.396101100578486,
+        "mae": 356.7970837284918,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.004087924957275391,
+        "training_time": 0.004157066345214844,
         "trial_number": 625,
-        "tuned_at": "2025-07-20T04:08:40.853442",
+        "tuned_at": "2025-07-21T04:05:51.102634",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 13.633005200896298,
-        "improvement": 0.556998714918052
+        "previous_mape": 13.076006485978246,
+        "improvement": 0.6799053853997599
       }
     },
     "KalmanFilter": {
@@ -489,43 +489,39 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 12.833547275651005,
-        "mae": 358.3133143310094,
+        "mape": 12.153879098769698,
+        "mae": 347.6466476643427,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.030089855194091797,
+        "training_time": 0.03239583969116211,
         "trial_number": 114,
-        "tuned_at": "2025-07-20T04:08:40.853397",
+        "tuned_at": "2025-07-21T04:05:51.102593",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 13.39035166229518,
-        "improvement": 0.5568043866441741
+        "previous_mape": 12.833547275651005,
+        "improvement": 0.6796681768813073
       }
     },
     "Croston": {
       "enabled": true,
       "hyperparameters": {
-        "alpha_d": 0.1,
-        "alpha_p": 0.1,
-        "quantiles": [
-          0.1,
-          0.5,
-          0.9
-        ],
-        "random_state": 42,
+        "alpha_d": 0.3,
+        "alpha_p": 0.2,
+        "quantiles": null,
+        "random_state": null,
         "version": "optimized"
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 13.075536145953839,
-        "mae": 378.6666666666667,
+        "mape": 12.4073137687297,
+        "mae": 368.0,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.0021135807037353516,
-        "trial_number": 39,
-        "tuned_at": "2025-07-20T04:08:40.853455",
+        "training_time": 0.0021178722381591797,
+        "trial_number": 23,
+        "tuned_at": "2025-07-21T04:05:51.102642",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 13.622963793073424,
-        "improvement": 0.5474276471195854
+        "previous_mape": 13.075536145953839,
+        "improvement": 0.6682223772241382
       }
     },
     "AutoCES": {
@@ -552,9 +548,9 @@
     }
   },
   "comprehensive_tuning": {
-    "last_tuned_at": "2025-07-19T03:59:31.669240",
-    "best_model": "LightGBM",
-    "best_mape": 9.425562789241582,
+    "last_tuned_at": "2025-07-21T04:05:51.102694",
+    "best_model": "XGBoost",
+    "best_mape": 9.286829633929694,
     "optimal_split_ratio": 0.94,
     "models_tuned": [
       "KalmanFilter",
@@ -567,12 +563,9 @@
       "Prophet",
       "TCN",
       "TiDE",
-      "LinearRegression",
-      "XGBoost",
-      "LightGBM",
-      "CatBoost"
+      "XGBoost"
     ],
-    "previous_best_mape": 10.096250613491675,
-    "global_improvement": 0.6706878242500931
+    "previous_best_mape": 9.425562789241582,
+    "global_improvement": 0.138733155311888
   }
 }
