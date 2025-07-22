@@ -301,37 +301,112 @@ class CVEForecastEngine:
 
         # Dynamically count all published CVEs for the current partial month
         cve_data_path = Path(self.config['file_paths']['cve_data'])
+        self.logger.info(f"Starting CVE count for current month {today.year}-{today.month} from {cve_data_path}")
         json_files = list(cve_data_path.rglob("cves/**/*.json"))
+        self.logger.info(f"Found {len(json_files)} JSON files to process for current month counting")
+        
+        debug_sample_size = 10  # Number of samples to log for debugging
+        debug_samples = []
+        
         current_month_count = 0
+        parsed_success = 0
+        parsing_errors = 0
+        month_matches = 0
+        
         for json_file in json_files:
             try:
                 with open(json_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                 cve_items = data if isinstance(data, list) else [data]
+                
                 for cve_item in cve_items:
                     if not isinstance(cve_item, dict):
                         continue
+                        
                     cve_metadata = cve_item.get('cveMetadata', {})
                     if cve_metadata.get('state') == 'REJECTED':
                         continue
+                        
                     published_date_str = cve_metadata.get('datePublished')
                     if published_date_str:
                         try:
-                            dt_obj = datetime.fromisoformat(published_date_str.replace('Z', '+00:00'))
+                            # Strip timezone info and use dateutil parser for better compatibility
+                            from dateutil import parser
+                            dt_obj = parser.parse(published_date_str)
+                            parsed_success += 1
+                            
                             if dt_obj.year == today.year and dt_obj.month == today.month:
+                                month_matches += 1
                                 current_month_count += 1
-                        except Exception:
+                                
+                                # Collect some examples for debugging
+                                if len(debug_samples) < debug_sample_size:
+                                    cve_id = cve_metadata.get('cveId', 'Unknown')
+                                    debug_samples.append((cve_id, published_date_str))
+                        except Exception as e:
+                            parsing_errors += 1
+                            if parsing_errors < 5:  # Limit error logging
+                                self.logger.error(f"Error parsing date {published_date_str}: {str(e)}")
                             continue
-            except Exception:
+            except Exception as e:
+                if parsing_errors < 10:  # Limit error logging
+                    self.logger.error(f"Error processing file {json_file}: {str(e)}")
                 continue
+                
+        self.logger.info(f"Current month CVE counting results:")
+        self.logger.info(f"  - Files processed: {len(json_files)}")
+        self.logger.info(f"  - Dates parsed successfully: {parsed_success}")
+        self.logger.info(f"  - Parsing errors: {parsing_errors}")
+        self.logger.info(f"  - Matches for current month {today.year}-{today.month}: {month_matches}")
+        self.logger.info(f"  - Final current month count: {current_month_count}")
+        
+        if debug_samples:
+            self.logger.info("Sample CVEs for current month:")
+            for cve_id, date in debug_samples:
+                self.logger.info(f"  - {cve_id}: {date}")
+        else:
+            self.logger.info("No matching CVEs found for current month")
 
+        # Current month count (July)
         current_cve_count = current_month_count
-        historical_total = int(self.historical_series.sum().values()[0][0])
+        
+        # Get June's cumulative total from historical data (the last entry should be June 2025)
+        historical_data = self._get_historical_data()
+        if historical_data:
+            # Find the last entry in historical_data (should be June)
+            sorted_data = sorted(historical_data, key=lambda x: x['date'])
+            if sorted_data:
+                june_entry = sorted_data[-1]  # Last entry should be June
+                june_cumulative_total = 0
+                
+                # Find the cumulative value in actuals_cumulative for July 1st
+                actuals_cumulative = self._get_actuals_cumulative(historical_data, None)
+                july_start_entry = next((item for item in actuals_cumulative 
+                                      if item['date'].startswith(f"{today.year}-07-01")), None)
+                
+                if july_start_entry:
+                    june_cumulative_total = july_start_entry['cumulative_total']
+                    self.logger.info(f"June cumulative total from actuals_cumulative: {june_cumulative_total}")
+                else:
+                    self.logger.warning("Could not find July 1st entry in actuals_cumulative")
+            else:
+                june_cumulative_total = 0
+                self.logger.warning("No historical data entries found")
+        else:
+            june_cumulative_total = 0
+            self.logger.warning("No historical data available")
+        
+        # Total cumulative count is June's total + July's count
+        total_cumulative = june_cumulative_total + current_cve_count
+        self.logger.info(f"July current count: {current_cve_count}, Total cumulative: {total_cumulative}")
 
+        # Use full ISO timestamp format at midnight for proper graph display
+        iso_date = datetime.datetime(today.year, today.month, today.day).replace(hour=0, minute=0, second=0).strftime('%Y-%m-%dT%H:%M:%SZ')
+        
         return {
-            "date": today.strftime('%Y-%m'),
+            "date": iso_date,
             "cve_count": current_cve_count,
-            "cumulative_total": historical_total + current_cve_count,
+            "cumulative_total": total_cumulative,
             "days_elapsed": today.day,
             "total_days": last_day_of_month.day,
             "progress_percentage": round((today.day / last_day_of_month.day) * 100, 1)
@@ -457,14 +532,12 @@ class CVEForecastEngine:
                     actuals_cumulative.append(entry)
 
         # Append the final entry for the current day's cumulative total.
-        if current_month_data and current_month_data['cve_count'] > 0:
-            # If there's historical data for the year, add to its last cumulative total.
-            # Otherwise, the cumulative total is just the current month's count.
-            base_total = actuals_cumulative[-1]['cumulative_total'] if len(actuals_cumulative) > 1 else 0
-            current_day_total = base_total + current_month_data['cve_count']
+        # Always include current month data regardless of whether cve_count is 0
+        if current_month_data:
+            # Use the cumulative_total directly from current_month_data as it already includes historical total
             actuals_cumulative.append({
-                "date": self.current_datetime.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                "cumulative_total": int(current_day_total)
+                "date": current_month_data['date'],
+                "cumulative_total": int(current_month_data['cumulative_total'])
             })
 
         self.logger.info(f"Generated {len(actuals_cumulative)} actuals data points for the current year.")
