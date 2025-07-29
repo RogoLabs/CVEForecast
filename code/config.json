@@ -14,7 +14,7 @@
     "start_date_filter": "2017-01-01"
   },
   "model_evaluation": {
-    "split_ratio": 0.96,
+    "split_ratio": 0.99,
     "forecast_horizon_months": 12,
     "forecast_end_year": 2026,
     "forecast_end_month": 1,
@@ -33,24 +33,24 @@
         "daily_seasonality": false,
         "seasonality_mode": "additive",
         "growth": "linear",
-        "changepoint_prior_scale": 0.5,
+        "changepoint_prior_scale": 0.05,
         "seasonality_prior_scale": 1.0,
         "n_changepoints": 15,
         "mcmc_samples": 0,
         "interval_width": 0.8
       },
-      "optimal_split_ratio": 0.94,
+      "optimal_split_ratio": 0.98,
       "tuning_results": {
-        "mape": 6.720962163692361,
-        "mae": 251.63308969696692,
+        "mape": 5.678816408093795,
+        "mae": 204.02017669932107,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.05374932289123535,
-        "trial_number": 1419,
-        "tuned_at": "2025-07-28T04:07:24.062430",
+        "training_time": 0.05226588249206543,
+        "trial_number": 1659,
+        "tuned_at": "2025-07-29T04:11:33.253896",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 6.798974529668409,
-        "improvement": 0.07801236597604788
+        "previous_mape": 6.720962163692361,
+        "improvement": 1.0421457555985665
       }
     },
     "ExponentialSmoothing": {
@@ -59,26 +59,26 @@
         "trend": null,
         "damping_trend": 0.2,
         "seasonal": null,
-        "seasonal_periods": null,
+        "seasonal_periods": 12,
         "use_boxcox": false,
         "remove_bias": true,
         "use_brute": true,
-        "damped_trend": false,
-        "initialization_method": "estimated",
+        "damped_trend": true,
+        "initialization_method": "heuristic",
         "missing": "none"
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 5.714161885600674,
-        "mae": 199.2846410138587,
+        "mape": 5.001088796609308,
+        "mae": 179.2846410138587,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.14979910850524902,
-        "trial_number": 15,
-        "tuned_at": "2025-07-28T04:07:24.062416",
+        "training_time": 0.14679718017578125,
+        "trial_number": 29,
+        "tuned_at": "2025-07-29T04:11:33.253882",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 5.988836028015541,
-        "improvement": 0.27467414241486665
+        "previous_mape": 5.714161885600674,
+        "improvement": 0.7130730889913668
       }
     },
     "TBATS": {
@@ -90,32 +90,32 @@
     "XGBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 48,
-        "n_estimators": 500,
+        "lags": 36,
+        "n_estimators": 200,
         "max_depth": 4,
-        "learning_rate": 0.2,
+        "learning_rate": 0.01,
         "subsample": 0.8,
-        "colsample_bytree": 0.8,
-        "reg_alpha": 0.1,
-        "reg_lambda": 0,
+        "colsample_bytree": 1.0,
+        "reg_alpha": 1.0,
+        "reg_lambda": 0.1,
         "random_state": 42,
         "n_jobs": -1,
         "tree_method": "hist",
         "early_stopping_rounds": null,
         "eval_metric": "mae"
       },
-      "optimal_split_ratio": 0.96,
+      "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 3.765697504110164,
-        "mae": 127.73457845052083,
+        "mape": 1.822794093205882,
+        "mae": 63.5052490234375,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.11808085441589355,
-        "trial_number": 237,
-        "tuned_at": "2025-07-28T04:07:24.062446",
+        "training_time": 0.09627056121826172,
+        "trial_number": 562,
+        "tuned_at": "2025-07-29T04:11:33.253927",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 4.438043408271458,
-        "improvement": 0.6723459041612938
+        "previous_mape": 3.765697504110164,
+        "improvement": 1.9429034109042822
       }
     },
     "LightGBM": {
@@ -127,8 +127,8 @@
         "num_leaves": 31,
         "min_child_samples": 5,
         "learning_rate": 0.2,
-        "subsample": 0.9,
-        "colsample_bytree": 1.0,
+        "subsample": 1.0,
+        "colsample_bytree": 0.8,
         "reg_alpha": 0.1,
         "reg_lambda": 1.0,
         "min_split_gain": 0.1,
@@ -145,43 +145,43 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 2.8755436018980185,
-        "mae": 104.08974579487949,
+        "mape": 2.2472627605898965,
+        "mae": 84.08974579487949,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.026419878005981445,
-        "trial_number": 12569,
-        "tuned_at": "2025-07-28T04:07:24.062453",
+        "training_time": 0.025682926177978516,
+        "trial_number": 19697,
+        "tuned_at": "2025-07-29T04:11:33.253934",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 3.538121864779351,
-        "improvement": 0.6625782628813326
+        "previous_mape": 2.8755436018980185,
+        "improvement": 0.628280841308122
       }
     },
     "CatBoost": {
       "enabled": true,
       "hyperparameters": {
         "lags": 36,
-        "iterations": 500,
-        "depth": 8,
-        "learning_rate": 0.05,
+        "iterations": 100,
+        "depth": 10,
+        "learning_rate": 0.2,
         "l2_leaf_reg": 1,
         "subsample": 0.8,
         "random_state": 42,
         "verbose": false,
         "border_count": 192
       },
-      "optimal_split_ratio": 0.96,
+      "optimal_split_ratio": 0.98,
       "tuning_results": {
-        "mape": 4.091164498753096,
-        "mae": 153.05965625171726,
+        "mape": 2.8199727854081815,
+        "mae": 108.13698403596497,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 1.5561983585357666,
-        "trial_number": 210,
-        "tuned_at": "2025-07-28T04:07:24.062460",
+        "training_time": 0.988978385925293,
+        "trial_number": 947,
+        "tuned_at": "2025-07-29T04:11:33.253940",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 4.11503097833446,
-        "improvement": 0.023866479581363897
+        "previous_mape": 4.091164498753096,
+        "improvement": 1.2711917133449142
       }
     },
     "TCN": {
@@ -208,23 +208,23 @@
       },
       "optimal_split_ratio": 0.76,
       "tuning_results": {
-        "mape": 8.942098617553711,
-        "mae": 309.385009765625,
+        "mape": 8.808774948120117,
+        "mae": 305.5140380859375,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 1.092134714126587,
+        "training_time": 1.1674425601959229,
         "trial_number": 423,
-        "tuned_at": "2025-07-28T04:07:24.062436",
+        "tuned_at": "2025-07-29T04:11:33.253903",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 8.993454933166504,
-        "improvement": 0.05135631561279297
+        "previous_mape": 8.942098617553711,
+        "improvement": 0.13332366943359375
       }
     },
     "NBEATS": {
       "enabled": false,
       "hyperparameters": {
         "input_chunk_length": 24,
-        "output_chunk_length": 6,
+        "output_chunk_length": 1,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -234,28 +234,28 @@
         },
         "num_blocks": 3,
         "num_layers": 2,
-        "layer_widths": 256,
+        "layer_widths": 128,
         "optimizer_kwargs": {
           "lr": 0.001
         },
         "model_name": "nbeats_forecaster",
         "activation": "ReLU",
         "dropout": 0.1,
-        "expansion_coefficient_dim": 5,
+        "expansion_coefficient_dim": 10,
         "trend_polynomial_degree": 2
       },
-      "optimal_split_ratio": 0.98,
+      "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 6.046875476837158,
-        "mae": 200.0480194091797,
+        "mape": 1.6970690488815308,
+        "mae": 62.260986328125,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 16.933569192886353,
-        "trial_number": 21,
-        "tuned_at": "2025-07-27T04:08:52.956314",
+        "training_time": 20.24524688720703,
+        "trial_number": 44,
+        "tuned_at": "2025-07-29T04:11:33.253911",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 6.806684970855713,
-        "improvement": 0.7598094940185547
+        "previous_mape": 6.046875476837158,
+        "improvement": 4.349806308746338
       }
     },
     "NHiTS": {
@@ -340,16 +340,16 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 6.972189426422119,
-        "mae": 252.3678436279297,
+        "mape": 6.2618255615234375,
+        "mae": 232.3678436279297,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.34144091606140137,
+        "training_time": 0.34592103958129883,
         "trial_number": 204,
-        "tuned_at": "2025-07-28T04:07:24.062394",
+        "tuned_at": "2025-07-29T04:11:33.253860",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 7.245819568634033,
-        "improvement": 0.27363014221191406
+        "previous_mape": 6.972189426422119,
+        "improvement": 0.7103638648986816
       }
     },
     "RandomForest": {
@@ -389,22 +389,22 @@
         "multi_models": false,
         "n_jobs": 1,
         "output_chunk_shift": 1,
-        "positive": true,
+        "positive": false,
         "likelihood": null,
         "quantiles": null
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 6.8696853726286715,
-        "mae": 245.936151514642,
+        "mape": 5.724251160328437,
+        "mae": 213.1361515146431,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.0051538944244384766,
-        "trial_number": 1034,
-        "tuned_at": "2025-07-27T04:08:52.956330",
+        "training_time": 0.004413604736328125,
+        "trial_number": 23,
+        "tuned_at": "2025-07-29T04:11:33.253919",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 7.950991486315968,
-        "improvement": 1.0813061136872966
+        "previous_mape": 6.8696853726286715,
+        "improvement": 1.1454342123002341
       }
     },
     "AutoARIMA": {
@@ -422,16 +422,16 @@
       },
       "optimal_split_ratio": 0.9,
       "tuning_results": {
-        "mape": 12.21846739524535,
-        "mae": 385.5114771048244,
+        "mape": 11.89458824822766,
+        "mae": 376.28070787405517,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 12.166071891784668,
+        "training_time": 12.05792784690857,
         "trial_number": 98,
-        "tuned_at": "2025-07-28T04:07:24.062384",
+        "tuned_at": "2025-07-29T04:11:33.253850",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 12.34322491074629,
-        "improvement": 0.12475751550094039
+        "previous_mape": 12.21846739524535,
+        "improvement": 0.32387914701769027
       }
     },
     "AutoETS": {
@@ -450,16 +450,16 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 5.983839555739642,
-        "mae": 225.54357854534214,
+        "mape": 5.334037668847597,
+        "mae": 205.54357854534214,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.003614664077758789,
+        "training_time": 0.0037233829498291016,
         "trial_number": 625,
-        "tuned_at": "2025-07-28T04:07:24.062402",
+        "tuned_at": "2025-07-29T04:11:33.253868",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 6.234141774091618,
-        "improvement": 0.2503022183519752
+        "previous_mape": 5.983839555739642,
+        "improvement": 0.6498018868920452
       }
     },
     "FourTheta": {
@@ -470,16 +470,16 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 5.979945532252965,
-        "mae": 218.63041706182517,
+        "mape": 5.310333999396635,
+        "mae": 198.63041706182517,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.0051686763763427734,
+        "training_time": 0.004790544509887695,
         "trial_number": 625,
-        "tuned_at": "2025-07-28T04:07:24.062408",
+        "tuned_at": "2025-07-29T04:11:33.253875",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 6.237878381462822,
-        "improvement": 0.2579328492098565
+        "previous_mape": 5.979945532252965,
+        "improvement": 0.6696115328563303
       }
     },
     "KalmanFilter": {
@@ -489,43 +489,43 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 5.739962411868597,
-        "mae": 209.47998099767605,
+        "mape": 5.070584496164092,
+        "mae": 189.47998099767605,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.03064703941345215,
+        "training_time": 0.031109094619750977,
         "trial_number": 114,
-        "tuned_at": "2025-07-28T04:07:24.062363",
+        "tuned_at": "2025-07-29T04:11:33.253829",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 5.99780527227952,
-        "improvement": 0.2578428604109231
+        "previous_mape": 5.739962411868597,
+        "improvement": 0.669377915704505
       }
     },
     "Croston": {
       "enabled": true,
       "hyperparameters": {
         "alpha_d": 0.2,
-        "alpha_p": null,
+        "alpha_p": 0.2,
         "quantiles": [
           0.1,
           0.5,
           0.9
         ],
-        "random_state": null,
+        "random_state": 42,
         "version": "classic"
       },
       "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 5.644920699599476,
-        "mae": 198.5,
+        "mape": 3.8000033532013724,
+        "mae": 138.5,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.0015463829040527344,
-        "trial_number": 18,
-        "tuned_at": "2025-07-28T04:07:24.062423",
+        "training_time": 0.0015108585357666016,
+        "trial_number": 49,
+        "tuned_at": "2025-07-29T04:11:33.253889",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 6.354882541582623,
-        "improvement": 0.709961841983147
+        "previous_mape": 5.644920699599476,
+        "improvement": 1.8449173463981037
       }
     },
     "AutoCES": {
@@ -552,10 +552,10 @@
     }
   },
   "comprehensive_tuning": {
-    "last_tuned_at": "2025-07-28T04:07:24.062516",
-    "best_model": "LightGBM",
-    "best_mape": 2.8755436018980185,
-    "optimal_split_ratio": 0.96,
+    "last_tuned_at": "2025-07-29T04:11:33.253991",
+    "best_model": "NBEATS",
+    "best_mape": 1.6970690488815308,
+    "optimal_split_ratio": 0.99,
     "models_tuned": [
       "KalmanFilter",
       "AutoARIMA",
@@ -566,11 +566,13 @@
       "Croston",
       "Prophet",
       "TCN",
+      "NBEATS",
+      "LinearRegression",
       "XGBoost",
       "LightGBM",
       "CatBoost"
     ],
-    "previous_best_mape": 3.312371015548706,
-    "global_improvement": 0.43682741365068756
+    "previous_best_mape": 2.8755436018980185,
+    "global_improvement": 1.1784745454788208
   }
 }
