@@ -41,16 +41,16 @@
       },
       "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 3.7414261419955746,
-        "mae": 135.0843002703748,
+        "mape": 2.5999742076204684,
+        "mae": 95.5843002703748,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.0513460636138916,
+        "training_time": 0.054388999938964844,
         "trial_number": 1759,
-        "tuned_at": "2025-07-30T04:03:58.670095",
+        "tuned_at": "2025-07-31T04:03:21.183770",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 5.678816408093795,
-        "improvement": 1.93739026609822
+        "previous_mape": 3.7414261419955746,
+        "improvement": 1.1414519343751062
       }
     },
     "ExponentialSmoothing": {
@@ -69,16 +69,16 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 3.995060190847083,
-        "mae": 148.45130768052536,
+        "mape": 3.5963367526877916,
+        "mae": 135.2846410138587,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.14813828468322754,
-        "trial_number": 35,
-        "tuned_at": "2025-07-30T04:03:58.670088",
+        "training_time": 0.14869356155395508,
+        "trial_number": 17,
+        "tuned_at": "2025-07-31T04:03:21.183745",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 5.001088796609308,
-        "improvement": 1.0060286057622245
+        "previous_mape": 3.995060190847083,
+        "improvement": 0.39872343815929145
       }
     },
     "TBATS": {
@@ -121,16 +121,16 @@
     "LightGBM": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 24,
-        "n_estimators": 200,
-        "max_depth": 10,
+        "lags": 36,
+        "n_estimators": 500,
+        "max_depth": 4,
         "num_leaves": 50,
-        "min_child_samples": 5,
-        "learning_rate": 0.01,
+        "min_child_samples": 10,
+        "learning_rate": 0.2,
         "subsample": 1.0,
-        "colsample_bytree": 0.8,
-        "reg_alpha": 1.0,
-        "reg_lambda": 1.0,
+        "colsample_bytree": 1.0,
+        "reg_alpha": 0.1,
+        "reg_lambda": 0,
         "min_split_gain": 0.1,
         "random_state": 42,
         "force_row_wise": true,
@@ -145,43 +145,43 @@
       },
       "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 0.9615793405753555,
-        "mae": 35.16695042909873,
+        "mape": 0.03719807943546785,
+        "mae": 1.3675614970179595,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.032265424728393555,
-        "trial_number": 4685,
-        "tuned_at": "2025-07-30T04:03:58.670131",
+        "training_time": 0.04757380485534668,
+        "trial_number": 19744,
+        "tuned_at": "2025-07-31T04:03:21.183789",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 2.2472627605898965,
-        "improvement": 1.285683420014541
+        "previous_mape": 0.9615793405753555,
+        "improvement": 0.9243812611398877
       }
     },
     "CatBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 36,
-        "iterations": 300,
+        "lags": 12,
+        "iterations": 500,
         "depth": 10,
         "learning_rate": 0.01,
-        "l2_leaf_reg": 1,
+        "l2_leaf_reg": 10,
         "subsample": 0.8,
         "random_state": 42,
         "verbose": false,
-        "border_count": 192
+        "border_count": 128
       },
       "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 0.7831535476934492,
-        "mae": 28.181935277178127,
+        "mape": 0.38204219048060445,
+        "mae": 14.048246899122205,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 2.9900622367858887,
-        "trial_number": 1711,
-        "tuned_at": "2025-07-30T04:03:58.670138",
+        "training_time": 2.1499059200286865,
+        "trial_number": 764,
+        "tuned_at": "2025-07-31T04:03:21.183794",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 2.8199727854081815,
-        "improvement": 2.0368192377147323
+        "previous_mape": 0.7831535476934492,
+        "improvement": 0.4011113572128448
       }
     },
     "TCN": {
@@ -282,7 +282,7 @@
     "TiDE": {
       "enabled": false,
       "hyperparameters": {
-        "input_chunk_length": 18,
+        "input_chunk_length": 24,
         "output_chunk_length": 1,
         "n_epochs": 50,
         "batch_size": 32,
@@ -291,38 +291,38 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "num_encoder_layers": 1,
-        "num_decoder_layers": 2,
-        "decoder_output_dim": 8,
+        "num_encoder_layers": 2,
+        "num_decoder_layers": 1,
+        "decoder_output_dim": 16,
         "hidden_size": 128,
-        "temporal_width_past": 8,
-        "temporal_width_future": 4,
+        "temporal_width_past": 4,
+        "temporal_width_future": 8,
         "dropout": 0.1,
         "optimizer_kwargs": {
           "lr": 0.001
         },
         "model_name": "tide_forecaster",
-        "temporal_decoder_hidden": 32
+        "temporal_decoder_hidden": 64
       },
       "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 2.1169862747192383,
-        "mae": 77.625,
+        "mape": 1.0787864923477173,
+        "mae": 39.72705078125,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.7918949127197266,
-        "trial_number": 480,
-        "tuned_at": "2025-07-30T04:03:58.670110",
+        "training_time": 0.8335309028625488,
+        "trial_number": 1240,
+        "tuned_at": "2025-07-31T04:03:21.183779",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 3.312371015548706,
-        "improvement": 1.1953847408294678
+        "previous_mape": 2.1169862747192383,
+        "improvement": 1.038199782371521
       }
     },
     "DLinear": {
       "enabled": false,
       "hyperparameters": {
         "input_chunk_length": 24,
-        "output_chunk_length": 6,
+        "output_chunk_length": 1,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -338,18 +338,18 @@
         },
         "model_name": "dlinear_forecaster"
       },
-      "optimal_split_ratio": 0.96,
+      "optimal_split_ratio": 0.98,
       "tuning_results": {
-        "mape": 5.259619235992432,
-        "mae": 201.5345001220703,
+        "mape": 4.522787570953369,
+        "mae": 168.5245819091797,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.33536863327026367,
-        "trial_number": 204,
-        "tuned_at": "2025-07-30T04:03:58.670067",
+        "training_time": 0.4371604919433594,
+        "trial_number": 215,
+        "tuned_at": "2025-07-31T04:03:21.183722",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 6.2618255615234375,
-        "improvement": 1.0022063255310059
+        "previous_mape": 5.259619235992432,
+        "improvement": 0.7368316650390625
       }
     },
     "RandomForest": {
@@ -382,10 +382,10 @@
     "LinearRegression": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 18,
+        "lags": 30,
         "lags_past_covariates": null,
         "output_chunk_length": 6,
-        "fit_intercept": true,
+        "fit_intercept": false,
         "multi_models": false,
         "n_jobs": 1,
         "output_chunk_shift": 1,
@@ -395,16 +395,16 @@
       },
       "optimal_split_ratio": 0.98,
       "tuning_results": {
-        "mape": 2.924513014088851,
-        "mae": 105.1173984264874,
+        "mape": 2.419108184050902,
+        "mae": 88.87379120293235,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.0043680667877197266,
-        "trial_number": 1210,
-        "tuned_at": "2025-07-30T04:03:58.670117",
+        "training_time": 0.0044095516204833984,
+        "trial_number": 549,
+        "tuned_at": "2025-07-31T04:03:21.183784",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 5.724251160328437,
-        "improvement": 2.7997381462395863
+        "previous_mape": 2.924513014088851,
+        "improvement": 0.505404830037949
       }
     },
     "AutoARIMA": {
@@ -422,16 +422,16 @@
       },
       "optimal_split_ratio": 0.9,
       "tuning_results": {
-        "mape": 11.437648150866043,
-        "mae": 362.04993864328594,
+        "mape": 11.256547210386495,
+        "mae": 355.97301556636285,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 11.931817293167114,
+        "training_time": 11.986809968948364,
         "trial_number": 98,
-        "tuned_at": "2025-07-30T04:03:58.670057",
+        "tuned_at": "2025-07-31T04:03:21.183711",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 11.89458824822766,
-        "improvement": 0.4569400973616169
+        "previous_mape": 11.437648150866043,
+        "improvement": 0.1811009404795474
       }
     },
     "AutoETS": {
@@ -448,18 +448,18 @@
         "season_mode": "ADDITIVE",
         "theta": 0.5
       },
-      "optimal_split_ratio": 0.96,
+      "optimal_split_ratio": 0.98,
       "tuning_results": {
-        "mape": 4.417274301411667,
-        "mae": 174.7102452120088,
+        "mape": 3.802714927040063,
+        "mae": 142.63251185204172,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.003682851791381836,
-        "trial_number": 625,
-        "tuned_at": "2025-07-30T04:03:58.670074",
+        "training_time": 0.003778696060180664,
+        "trial_number": 664,
+        "tuned_at": "2025-07-31T04:03:21.183730",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 5.334037668847597,
-        "improvement": 0.9167633674359301
+        "previous_mape": 4.417274301411667,
+        "improvement": 0.6145593743716042
       }
     },
     "FourTheta": {
@@ -470,16 +470,16 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 4.365622486366985,
-        "mae": 167.79708372849186,
+        "mape": 3.991201102734006,
+        "mae": 154.63041706182517,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.004728794097900391,
+        "training_time": 0.004254579544067383,
         "trial_number": 625,
-        "tuned_at": "2025-07-30T04:03:58.670081",
+        "tuned_at": "2025-07-31T04:03:21.183738",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 5.310333999396635,
-        "improvement": 0.9447115130296497
+        "previous_mape": 4.365622486366985,
+        "improvement": 0.37442138363297905
       }
     },
     "KalmanFilter": {
@@ -489,16 +489,16 @@
       },
       "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 4.126202578432822,
-        "mae": 158.6466476643427,
+        "mape": 3.751911824654519,
+        "mae": 145.47998099767605,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.030980348587036133,
+        "training_time": 0.030379056930541992,
         "trial_number": 114,
-        "tuned_at": "2025-07-30T04:03:58.670037",
+        "tuned_at": "2025-07-31T04:03:21.183688",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 5.070584496164092,
-        "improvement": 0.9443819177312704
+        "previous_mape": 4.126202578432822,
+        "improvement": 0.3742907537783027
       }
     },
     "Croston": {
@@ -552,9 +552,9 @@
     }
   },
   "comprehensive_tuning": {
-    "last_tuned_at": "2025-07-30T04:03:58.670204",
-    "best_model": "XGBoost",
-    "best_mape": 0.06365205572950683,
+    "last_tuned_at": "2025-07-31T04:03:21.183828",
+    "best_model": "LightGBM",
+    "best_mape": 0.03719807943546785,
     "optimal_split_ratio": 0.99,
     "models_tuned": [
       "KalmanFilter",
@@ -564,14 +564,12 @@
       "FourTheta",
       "ExponentialSmoothing",
       "Prophet",
-      "TCN",
       "TiDE",
       "LinearRegression",
-      "XGBoost",
       "LightGBM",
       "CatBoost"
     ],
-    "previous_best_mape": 1.6970690488815308,
-    "global_improvement": 1.633416993152024
+    "previous_best_mape": 0.06365205572950683,
+    "global_improvement": 0.026453976294038978
   }
 }
