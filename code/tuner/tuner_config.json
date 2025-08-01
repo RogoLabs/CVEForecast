@@ -53,13 +53,13 @@
         "improvement": null
       },
       "best_results": {
-        "mape": 2.5999742076204684,
-        "mae": 95.5843002703748,
+        "mape": 1.1166855081887115,
+        "mae": 41.5843002703748,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.99,
-        "training_time": 0.054388999938964844,
-        "found_at": "2025-07-31T04:03:21.185936"
+        "training_time": 0.05185675621032715,
+        "found_at": "2025-08-01T04:10:53.308382"
       }
     },
     "ExponentialSmoothing": {
@@ -69,7 +69,7 @@
         "damped": false,
         "seasonal": null,
         "seasonal_periods": null,
-        "use_boxcox": false,
+        "use_boxcox": null,
         "remove_bias": true,
         "use_brute": true,
         "damping_trend": 0.2,
@@ -78,13 +78,13 @@
         "missing": "none"
       },
       "best_results": {
-        "mape": 3.5963367526877916,
-        "mae": 135.2846410138587,
+        "mape": 3.0782054567396764,
+        "mae": 117.28464101385869,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.96,
-        "training_time": 0.14869356155395508,
-        "found_at": "2025-07-31T04:03:21.185930"
+        "training_time": 0.14478015899658203,
+        "found_at": "2025-08-01T04:10:53.308374"
       }
     },
     "TBATS": {
@@ -100,13 +100,13 @@
     "XGBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 48,
-        "n_estimators": 100,
-        "max_depth": 8,
-        "learning_rate": 0.1,
-        "subsample": 1.0,
+        "lags": 18,
+        "n_estimators": 300,
+        "max_depth": 10,
+        "learning_rate": 0.01,
+        "subsample": 0.8,
         "colsample_bytree": 0.9,
-        "reg_alpha": 1.0,
+        "reg_alpha": 0.1,
         "reg_lambda": 0,
         "random_state": 42,
         "n_jobs": -1,
@@ -127,16 +127,16 @@
     "LightGBM": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 36,
+        "lags": 12,
         "n_estimators": 500,
-        "max_depth": 4,
-        "num_leaves": 50,
-        "min_child_samples": 10,
-        "learning_rate": 0.2,
+        "max_depth": 10,
+        "num_leaves": 150,
+        "min_child_samples": 20,
+        "learning_rate": 0.1,
         "subsample": 1.0,
-        "colsample_bytree": 1.0,
+        "colsample_bytree": 0.8,
         "reg_alpha": 0.1,
-        "reg_lambda": 0,
+        "reg_lambda": 1.0,
         "min_split_gain": 0.1,
         "random_state": 42,
         "force_row_wise": true,
@@ -163,10 +163,10 @@
       "enabled": true,
       "hyperparameters": {
         "lags": 12,
-        "iterations": 500,
-        "depth": 10,
-        "learning_rate": 0.01,
-        "l2_leaf_reg": 10,
+        "iterations": 200,
+        "depth": 8,
+        "learning_rate": 0.05,
+        "l2_leaf_reg": 3,
         "subsample": 0.8,
         "random_state": 42,
         "verbose": false,
@@ -185,7 +185,7 @@
     "TCN": {
       "enabled": true,
       "hyperparameters": {
-        "input_chunk_length": 12,
+        "input_chunk_length": 24,
         "output_chunk_length": 6,
         "n_epochs": 50,
         "batch_size": 32,
@@ -194,7 +194,7 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "kernel_size": 5,
+        "kernel_size": 3,
         "num_filters": 32,
         "dropout": 0.2,
         "weight_norm": true,
@@ -217,8 +217,8 @@
     "NBEATS": {
       "enabled": true,
       "hyperparameters": {
-        "input_chunk_length": 24,
-        "output_chunk_length": 1,
+        "input_chunk_length": 12,
+        "output_chunk_length": 6,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -226,16 +226,16 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "num_blocks": 2,
+        "num_blocks": 3,
         "num_layers": 4,
-        "layer_widths": 256,
+        "layer_widths": 128,
         "optimizer_kwargs": {
           "lr": 0.001
         },
         "model_name": "nbeats_forecaster",
         "activation": "ReLU",
         "dropout": 0.1,
-        "expansion_coefficient_dim": 10,
+        "expansion_coefficient_dim": 5,
         "trend_polynomial_degree": 2
       },
       "best_results": {
@@ -272,8 +272,8 @@
     "TiDE": {
       "enabled": true,
       "hyperparameters": {
-        "input_chunk_length": 24,
-        "output_chunk_length": 1,
+        "input_chunk_length": 18,
+        "output_chunk_length": 6,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -282,11 +282,11 @@
           "enable_progress_bar": false
         },
         "num_encoder_layers": 2,
-        "num_decoder_layers": 1,
+        "num_decoder_layers": 2,
         "decoder_output_dim": 16,
         "hidden_size": 128,
-        "temporal_width_past": 4,
-        "temporal_width_future": 8,
+        "temporal_width_past": 8,
+        "temporal_width_future": 4,
         "dropout": 0.1,
         "optimizer_kwargs": {
           "lr": 0.001
@@ -325,22 +325,22 @@
         "model_name": "dlinear_forecaster"
       },
       "best_results": {
-        "mape": 4.522787570953369,
-        "mae": 168.5245819091797,
+        "mape": 3.4974632263183594,
+        "mae": 132.5245819091797,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.98,
-        "training_time": 0.4371604919433594,
-        "found_at": "2025-07-31T04:03:21.185912"
+        "training_time": 0.42996740341186523,
+        "found_at": "2025-08-01T04:10:53.308354"
       }
     },
     "RandomForest": {
       "enabled": true,
       "hyperparameters": {
         "lags": 18,
-        "n_estimators": 500,
+        "n_estimators": 300,
         "max_depth": 15,
-        "min_samples_split": 2,
+        "min_samples_split": 5,
         "min_samples_leaf": 5,
         "n_jobs": -1,
         "random_state": 42,
@@ -365,20 +365,20 @@
         "output_chunk_length": 6,
         "fit_intercept": false,
         "multi_models": false,
-        "n_jobs": 1,
+        "n_jobs": -1,
         "output_chunk_shift": 1,
         "positive": true,
         "likelihood": null,
         "quantiles": null
       },
       "best_results": {
-        "mape": 2.419108184050902,
-        "mae": 88.87379120293235,
+        "mape": 0.9261984169810139,
+        "mae": 34.87379120293235,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.98,
-        "training_time": 0.0044095516204833984,
-        "found_at": "2025-07-31T04:03:21.185948"
+        "training_time": 0.00408625602722168,
+        "found_at": "2025-08-01T04:10:53.308390"
       }
     },
     "AutoARIMA": {
@@ -397,13 +397,13 @@
         "season_length": 24
       },
       "best_results": {
-        "mape": 11.256547210386495,
-        "mae": 355.97301556636285,
+        "mape": 11.021210994834995,
+        "mae": 347.6653232586705,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.9,
-        "training_time": 11.986809968948364,
-        "found_at": "2025-07-31T04:03:21.185901"
+        "training_time": 12.01833963394165,
+        "found_at": "2025-08-01T04:10:53.308344"
       }
     },
     "AutoETS": {
@@ -421,13 +421,13 @@
         "theta": 0.5
       },
       "best_results": {
-        "mape": 3.802714927040063,
-        "mae": 142.63251185204172,
+        "mape": 2.810324954075876,
+        "mae": 106.63251185204172,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.98,
-        "training_time": 0.003778696060180664,
-        "found_at": "2025-07-31T04:03:21.185919"
+        "training_time": 0.004034996032714844,
+        "found_at": "2025-08-01T04:10:53.308362"
       }
     },
     "FourTheta": {
@@ -437,13 +437,13 @@
         "theta": 0.5
       },
       "best_results": {
-        "mape": 3.991201102734006,
-        "mae": 154.63041706182517,
+        "mape": 3.2819989502193567,
+        "mae": 123.20300022358106,
         "mase": 0,
         "rmsse": 0,
-        "split_ratio": 0.96,
-        "training_time": 0.004254579544067383,
-        "found_at": "2025-07-31T04:03:21.185925"
+        "split_ratio": 0.98,
+        "training_time": 0.004536151885986328,
+        "found_at": "2025-08-01T04:10:53.308368"
       }
     },
     "KalmanFilter": {
@@ -452,19 +452,19 @@
         "dim_x": 3
       },
       "best_results": {
-        "mape": 3.751911824654519,
-        "mae": 145.47998099767605,
+        "mape": 3.5159060456489413,
+        "mae": 136.94669169101385,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.96,
-        "training_time": 0.030379056930541992,
-        "found_at": "2025-07-31T04:03:21.185884"
+        "training_time": 0.03028392791748047,
+        "found_at": "2025-08-01T04:10:53.308327"
       }
     },
     "Croston": {
       "enabled": true,
       "hyperparameters": {
-        "alpha_d": 0.2,
+        "alpha_d": 0.1,
         "alpha_p": null,
         "version": "optimized",
         "quantiles": [
@@ -475,13 +475,13 @@
         "random_state": null
       },
       "best_results": {
-        "mape": 3.8000033532013724,
-        "mae": 138.5,
+        "mape": 3.2798151754549676,
+        "mae": 124.59833113017066,
         "mase": 0,
         "rmsse": 0,
-        "split_ratio": 0.99,
-        "training_time": 0.0015108585357666016,
-        "found_at": "2025-07-29T04:11:33.256460"
+        "split_ratio": 0.98,
+        "training_time": 0.002107381820678711,
+        "found_at": "2025-08-01T04:10:53.308378"
       }
     },
     "AutoCES": {
@@ -643,6 +643,13 @@
       "best_model": "LightGBM",
       "best_mape": 0.03719807943546785,
       "models_improved": 11,
+      "total_models_tested": 16
+    },
+    {
+      "timestamp": "2025-08-01T04:10:53.308404",
+      "best_model": "LightGBM",
+      "best_mape": 0.17269216148389044,
+      "models_improved": 9,
       "total_models_tested": 16
     }
   ]
