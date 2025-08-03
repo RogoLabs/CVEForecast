@@ -2,7 +2,7 @@
 
 **CVE Forecast** is a sophisticated, self-improving automated platform that leverages advanced hyperparameter optimization and multiple time series forecasting models to predict the number of Common Vulnerabilities and Exposures (CVEs). It provides a comprehensive, data-driven view of future trends in vulnerability disclosures, all accessible through a sleek, interactive web dashboard.
 
-> **Version 0.6 "Karlův mos" 🇨🇿 (July 2025)**: Revolutionary self-improving forecasting system with intelligent hyperparameter optimization, automated GitHub Actions integration, and comprehensive model stability enhancements. This major release transforms CVE Forecast into a truly intelligent, continuously-improving forecasting platform.
+> **Version 0.7 "Security Summer Camp Prep" 🏕️ (August 2025)**: Fixed critical month transition bug in cumulative total calculations, ensuring accurate data representation across month boundaries. This release guarantees consistent and reliable cumulative CVE statistics by implementing dynamic month detection instead of hard-coded references, making the system fully resilient to calendar transitions.
 
 ## 🚀 Key Features
 
