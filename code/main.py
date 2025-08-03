@@ -379,26 +379,32 @@ class CVEForecastEngine:
                 june_entry = sorted_data[-1]  # Last entry should be June
                 june_cumulative_total = 0
                 
-                # Find the cumulative value in actuals_cumulative for July 1st
+                # Find the cumulative value in actuals_cumulative for the current month's first day
+                # Note: Dynamic month determination ensures proper cumulative totals across month transitions
+                # Previously this was hardcoded to July which broke when moving to August
                 actuals_cumulative = self._get_actuals_cumulative(historical_data, None)
-                july_start_entry = next((item for item in actuals_cumulative 
-                                      if item['date'].startswith(f"{today.year}-07-01")), None)
                 
-                if july_start_entry:
-                    june_cumulative_total = july_start_entry['cumulative_total']
-                    self.logger.info(f"June cumulative total from actuals_cumulative: {june_cumulative_total}")
+                # Get the current month's start date in the format YYYY-MM-01
+                current_month_start_str = f"{today.year}-{today.month:02d}-01T00:00:00Z"
+                
+                current_month_start_entry = next((item for item in actuals_cumulative 
+                                          if item['date'] == current_month_start_str), None)
+                
+                if current_month_start_entry:
+                    previous_month_cumulative_total = current_month_start_entry['cumulative_total']
+                    self.logger.info(f"Previous month cumulative total from actuals_cumulative: {previous_month_cumulative_total}")
                 else:
-                    self.logger.warning("Could not find July 1st entry in actuals_cumulative")
+                    self.logger.warning(f"Could not find {today.strftime('%B')} 1st entry in actuals_cumulative")
             else:
-                june_cumulative_total = 0
+                previous_month_cumulative_total = 0
                 self.logger.warning("No historical data entries found")
         else:
-            june_cumulative_total = 0
+            previous_month_cumulative_total = 0
             self.logger.warning("No historical data available")
         
-        # Total cumulative count is June's total + July's count
-        total_cumulative = june_cumulative_total + current_cve_count
-        self.logger.info(f"July current count: {current_cve_count}, Total cumulative: {total_cumulative}")
+        # Total cumulative count is previous month's total + current month's count
+        total_cumulative = previous_month_cumulative_total + current_cve_count
+        self.logger.info(f"{today.strftime('%B')} current count: {current_cve_count}, Total cumulative: {total_cumulative}")
 
         # Use full ISO timestamp format at midnight for proper graph display
         iso_date = datetime.datetime(today.year, today.month, today.day).replace(hour=0, minute=0, second=0).strftime('%Y-%m-%dT%H:%M:%SZ')
