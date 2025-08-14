@@ -16,7 +16,7 @@
     "start_date_filter": "2015-01-01"
   },
   "model_evaluation": {
-    "split_ratio": 0.99,
+    "split_ratio": 0.74,
     "forecast_horizon_months": 12,
     "forecast_end_year": 2026,
     "forecast_end_month": 1,
@@ -30,16 +30,16 @@
     "Prophet": {
       "enabled": true,
       "hyperparameters": {
-        "yearly_seasonality": true,
+        "yearly_seasonality": "auto",
         "weekly_seasonality": false,
         "daily_seasonality": false,
         "seasonality_mode": "additive",
         "growth": "linear",
-        "changepoint_prior_scale": 0.05,
-        "seasonality_prior_scale": 0.1,
+        "changepoint_prior_scale": 0.5,
+        "seasonality_prior_scale": 10.0,
         "n_changepoints": 25,
         "mcmc_samples": 0,
-        "interval_width": 0.8
+        "interval_width": 0.95
       },
       "optimal_split_ratio": 0.75,
       "tuning_results": {
@@ -67,14 +67,14 @@
       "hyperparameters": {
         "trend": null,
         "damped": false,
-        "seasonal": null,
-        "seasonal_periods": null,
+        "seasonal": "add",
+        "seasonal_periods": 12,
         "use_boxcox": null,
         "remove_bias": true,
         "use_brute": true,
         "damping_trend": 0.2,
-        "damped_trend": false,
-        "initialization_method": "heuristic",
+        "damped_trend": true,
+        "initialization_method": "estimated",
         "missing": "none"
       },
       "best_results": {
@@ -100,13 +100,13 @@
     "XGBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 18,
-        "n_estimators": 300,
-        "max_depth": 10,
+        "lags": 48,
+        "n_estimators": 200,
+        "max_depth": 6,
         "learning_rate": 0.01,
-        "subsample": 0.8,
-        "colsample_bytree": 0.9,
-        "reg_alpha": 0.1,
+        "subsample": 0.9,
+        "colsample_bytree": 1.0,
+        "reg_alpha": 0,
         "reg_lambda": 0,
         "random_state": 42,
         "n_jobs": -1,
@@ -127,15 +127,15 @@
     "LightGBM": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 12,
-        "n_estimators": 500,
-        "max_depth": 10,
-        "num_leaves": 150,
-        "min_child_samples": 20,
-        "learning_rate": 0.1,
-        "subsample": 1.0,
-        "colsample_bytree": 0.8,
-        "reg_alpha": 0.1,
+        "lags": 48,
+        "n_estimators": 200,
+        "max_depth": 6,
+        "num_leaves": 31,
+        "min_child_samples": 5,
+        "learning_rate": 0.2,
+        "subsample": 0.9,
+        "colsample_bytree": 1.0,
+        "reg_alpha": 0,
         "reg_lambda": 1.0,
         "min_split_gain": 0.1,
         "random_state": 42,
@@ -162,11 +162,11 @@
     "CatBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 12,
+        "lags": 18,
         "iterations": 200,
         "depth": 8,
-        "learning_rate": 0.05,
-        "l2_leaf_reg": 3,
+        "learning_rate": 0.2,
+        "l2_leaf_reg": 10,
         "subsample": 0.8,
         "random_state": 42,
         "verbose": false,
@@ -185,8 +185,8 @@
     "TCN": {
       "enabled": true,
       "hyperparameters": {
-        "input_chunk_length": 24,
-        "output_chunk_length": 6,
+        "input_chunk_length": 18,
+        "output_chunk_length": 1,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -194,12 +194,12 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "kernel_size": 3,
-        "num_filters": 32,
+        "kernel_size": 5,
+        "num_filters": 16,
         "dropout": 0.2,
         "weight_norm": true,
         "optimizer_kwargs": {
-          "lr": 0.01
+          "lr": 0.001
         },
         "model_name": "tcn_forecaster",
         "dilation_base": 2
@@ -217,7 +217,7 @@
     "NBEATS": {
       "enabled": true,
       "hyperparameters": {
-        "input_chunk_length": 12,
+        "input_chunk_length": 24,
         "output_chunk_length": 6,
         "n_epochs": 50,
         "batch_size": 32,
@@ -235,7 +235,7 @@
         "model_name": "nbeats_forecaster",
         "activation": "ReLU",
         "dropout": 0.1,
-        "expansion_coefficient_dim": 5,
+        "expansion_coefficient_dim": 10,
         "trend_polynomial_degree": 2
       },
       "best_results": {
@@ -281,10 +281,10 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "num_encoder_layers": 2,
+        "num_encoder_layers": 1,
         "num_decoder_layers": 2,
         "decoder_output_dim": 16,
-        "hidden_size": 128,
+        "hidden_size": 64,
         "temporal_width_past": 8,
         "temporal_width_future": 4,
         "dropout": 0.1,
@@ -292,7 +292,7 @@
           "lr": 0.001
         },
         "model_name": "tide_forecaster",
-        "temporal_decoder_hidden": 64
+        "temporal_decoder_hidden": 32
       },
       "best_results": {
         "mape": 1.0787864923477173,
@@ -308,7 +308,7 @@
       "enabled": true,
       "hyperparameters": {
         "input_chunk_length": 24,
-        "output_chunk_length": 1,
+        "output_chunk_length": 6,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -337,32 +337,32 @@
     "RandomForest": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 18,
-        "n_estimators": 300,
+        "lags": 12,
+        "n_estimators": 100,
         "max_depth": 15,
-        "min_samples_split": 5,
-        "min_samples_leaf": 5,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
         "n_jobs": -1,
         "random_state": 42,
-        "max_features": "sqrt",
+        "max_features": 0.5,
         "bootstrap": true
       },
       "best_results": {
-        "mape": 27.84527974304879,
-        "mae": 920.0110256410256,
+        "mape": 27.561784955660194,
+        "mae": 912.4279487179488,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.7,
-        "training_time": 0.9976582527160645,
-        "found_at": "2025-07-18T11:10:43.804125"
+        "training_time": 1.0069754123687744,
+        "found_at": "2025-08-14T03:59:27.531912"
       }
     },
     "LinearRegression": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 30,
+        "lags": 12,
         "lags_past_covariates": null,
-        "output_chunk_length": 6,
+        "output_chunk_length": 3,
         "fit_intercept": false,
         "multi_models": false,
         "n_jobs": -1,
@@ -393,8 +393,12 @@
         "random_state": null,
         "approximation": false,
         "max_d": 1,
-        "quantiles": null,
-        "season_length": 24
+        "quantiles": [
+          0.1,
+          0.5,
+          0.9
+        ],
+        "season_length": 12
       },
       "best_results": {
         "mape": 11.021210994834995,
@@ -417,8 +421,8 @@
     "Theta": {
       "enabled": true,
       "hyperparameters": {
-        "season_mode": "ADDITIVE",
-        "theta": 0.5
+        "season_mode": "NONE",
+        "theta": 8
       },
       "best_results": {
         "mape": 2.810324954075876,
@@ -433,8 +437,8 @@
     "FourTheta": {
       "enabled": true,
       "hyperparameters": {
-        "season_mode": "ADDITIVE",
-        "theta": 0.5
+        "season_mode": "NONE",
+        "theta": 8
       },
       "best_results": {
         "mape": 3.2819989502193567,
@@ -449,7 +453,7 @@
     "KalmanFilter": {
       "enabled": true,
       "hyperparameters": {
-        "dim_x": 3
+        "dim_x": 8
       },
       "best_results": {
         "mape": 3.5159060456489413,
@@ -464,14 +468,10 @@
     "Croston": {
       "enabled": true,
       "hyperparameters": {
-        "alpha_d": 0.1,
-        "alpha_p": null,
-        "version": "optimized",
-        "quantiles": [
-          0.1,
-          0.5,
-          0.9
-        ],
+        "alpha_d": 0.2,
+        "alpha_p": 0.2,
+        "version": "classic",
+        "quantiles": null,
         "random_state": null
       },
       "best_results": {
@@ -650,6 +650,13 @@
       "best_model": "LightGBM",
       "best_mape": 0.17269216148389044,
       "models_improved": 9,
+      "total_models_tested": 16
+    },
+    {
+      "timestamp": "2025-08-14T03:59:27.531938",
+      "best_model": "TCN",
+      "best_mape": 13.238358497619629,
+      "models_improved": 1,
       "total_models_tested": 16
     }
   ]
