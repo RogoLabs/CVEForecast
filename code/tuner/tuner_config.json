@@ -65,15 +65,15 @@
     "ExponentialSmoothing": {
       "enabled": true,
       "hyperparameters": {
-        "trend": null,
+        "trend": "add",
         "damped": false,
-        "seasonal": "add",
+        "seasonal": null,
         "seasonal_periods": 12,
         "use_boxcox": null,
         "remove_bias": true,
         "use_brute": true,
         "damping_trend": 0.2,
-        "damped_trend": true,
+        "damped_trend": false,
         "initialization_method": "estimated",
         "missing": "none"
       },
@@ -100,13 +100,13 @@
     "XGBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 48,
-        "n_estimators": 200,
-        "max_depth": 6,
-        "learning_rate": 0.01,
-        "subsample": 0.9,
-        "colsample_bytree": 1.0,
-        "reg_alpha": 0,
+        "lags": 36,
+        "n_estimators": 300,
+        "max_depth": 10,
+        "learning_rate": 0.1,
+        "subsample": 1.0,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.1,
         "reg_lambda": 0,
         "random_state": 42,
         "n_jobs": -1,
@@ -127,16 +127,16 @@
     "LightGBM": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 48,
-        "n_estimators": 200,
+        "lags": 36,
+        "n_estimators": 100,
         "max_depth": 6,
         "num_leaves": 31,
-        "min_child_samples": 5,
+        "min_child_samples": 20,
         "learning_rate": 0.2,
-        "subsample": 0.9,
+        "subsample": 1.0,
         "colsample_bytree": 1.0,
-        "reg_alpha": 0,
-        "reg_lambda": 1.0,
+        "reg_alpha": 1.0,
+        "reg_lambda": 0.1,
         "min_split_gain": 0.1,
         "random_state": 42,
         "force_row_wise": true,
@@ -163,14 +163,14 @@
       "enabled": true,
       "hyperparameters": {
         "lags": 18,
-        "iterations": 200,
-        "depth": 8,
-        "learning_rate": 0.2,
-        "l2_leaf_reg": 10,
+        "iterations": 500,
+        "depth": 10,
+        "learning_rate": 0.1,
+        "l2_leaf_reg": 3,
         "subsample": 0.8,
         "random_state": 42,
         "verbose": false,
-        "border_count": 128
+        "border_count": 64
       },
       "best_results": {
         "mape": 0.38204219048060445,
@@ -194,12 +194,12 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "kernel_size": 5,
+        "kernel_size": 3,
         "num_filters": 16,
-        "dropout": 0.2,
+        "dropout": 0.1,
         "weight_norm": true,
         "optimizer_kwargs": {
-          "lr": 0.001
+          "lr": 0.01
         },
         "model_name": "tcn_forecaster",
         "dilation_base": 2
@@ -217,7 +217,7 @@
     "NBEATS": {
       "enabled": true,
       "hyperparameters": {
-        "input_chunk_length": 24,
+        "input_chunk_length": 18,
         "output_chunk_length": 6,
         "n_epochs": 50,
         "batch_size": 32,
@@ -226,16 +226,16 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "num_blocks": 3,
-        "num_layers": 4,
-        "layer_widths": 128,
+        "num_blocks": 2,
+        "num_layers": 2,
+        "layer_widths": 256,
         "optimizer_kwargs": {
           "lr": 0.001
         },
         "model_name": "nbeats_forecaster",
         "activation": "ReLU",
         "dropout": 0.1,
-        "expansion_coefficient_dim": 10,
+        "expansion_coefficient_dim": 5,
         "trend_polynomial_degree": 2
       },
       "best_results": {
@@ -281,11 +281,11 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "num_encoder_layers": 1,
+        "num_encoder_layers": 2,
         "num_decoder_layers": 2,
-        "decoder_output_dim": 16,
+        "decoder_output_dim": 8,
         "hidden_size": 64,
-        "temporal_width_past": 8,
+        "temporal_width_past": 4,
         "temporal_width_future": 4,
         "dropout": 0.1,
         "optimizer_kwargs": {
@@ -348,25 +348,25 @@
         "bootstrap": true
       },
       "best_results": {
-        "mape": 27.561784955660194,
-        "mae": 912.4279487179488,
+        "mape": 26.923959640638394,
+        "mae": 904.4023076923078,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.7,
-        "training_time": 1.0069754123687744,
-        "found_at": "2025-08-14T03:59:27.531912"
+        "training_time": 1.0217561721801758,
+        "found_at": "2025-08-15T04:00:30.504836"
       }
     },
     "LinearRegression": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 12,
+        "lags": 6,
         "lags_past_covariates": null,
-        "output_chunk_length": 3,
-        "fit_intercept": false,
-        "multi_models": false,
+        "output_chunk_length": 1,
+        "fit_intercept": true,
+        "multi_models": true,
         "n_jobs": -1,
-        "output_chunk_shift": 1,
+        "output_chunk_shift": 0,
         "positive": true,
         "likelihood": null,
         "quantiles": null
@@ -390,14 +390,10 @@
         "max_q": 6,
         "seasonal": true,
         "stepwise": false,
-        "random_state": null,
+        "random_state": 42,
         "approximation": false,
         "max_d": 1,
-        "quantiles": [
-          0.1,
-          0.5,
-          0.9
-        ],
+        "quantiles": null,
         "season_length": 12
       },
       "best_results": {
@@ -468,10 +464,14 @@
     "Croston": {
       "enabled": true,
       "hyperparameters": {
-        "alpha_d": 0.2,
-        "alpha_p": 0.2,
+        "alpha_d": 0.1,
+        "alpha_p": null,
         "version": "classic",
-        "quantiles": null,
+        "quantiles": [
+          0.1,
+          0.5,
+          0.9
+        ],
         "random_state": null
       },
       "best_results": {
@@ -656,6 +656,13 @@
       "timestamp": "2025-08-14T03:59:27.531938",
       "best_model": "TCN",
       "best_mape": 13.238358497619629,
+      "models_improved": 1,
+      "total_models_tested": 16
+    },
+    {
+      "timestamp": "2025-08-15T04:00:30.504863",
+      "best_model": "TCN",
+      "best_mape": 11.783926963806152,
       "models_improved": 1,
       "total_models_tested": 16
     }
