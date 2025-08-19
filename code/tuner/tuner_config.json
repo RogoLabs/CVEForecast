@@ -16,7 +16,7 @@
     "start_date_filter": "2015-01-01"
   },
   "model_evaluation": {
-    "split_ratio": 0.74,
+    "split_ratio": 0.96,
     "forecast_horizon_months": 12,
     "forecast_end_year": 2026,
     "forecast_end_month": 1,
@@ -65,11 +65,11 @@
     "ExponentialSmoothing": {
       "enabled": true,
       "hyperparameters": {
-        "trend": null,
+        "trend": "add",
         "damped": false,
-        "seasonal": null,
+        "seasonal": "add",
         "seasonal_periods": 12,
-        "use_boxcox": null,
+        "use_boxcox": false,
         "remove_bias": true,
         "use_brute": true,
         "damping_trend": 0.2,
@@ -100,14 +100,14 @@
     "XGBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 24,
-        "n_estimators": 300,
-        "max_depth": 8,
+        "lags": 12,
+        "n_estimators": 500,
+        "max_depth": 4,
         "learning_rate": 0.05,
-        "subsample": 0.8,
-        "colsample_bytree": 1.0,
-        "reg_alpha": 0,
-        "reg_lambda": 0,
+        "subsample": 1.0,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 1.0,
+        "reg_lambda": 0.1,
         "random_state": 42,
         "n_jobs": -1,
         "tree_method": "hist",
@@ -129,14 +129,14 @@
       "hyperparameters": {
         "lags": 24,
         "n_estimators": 300,
-        "max_depth": 6,
-        "num_leaves": 50,
-        "min_child_samples": 20,
-        "learning_rate": 0.01,
-        "subsample": 0.8,
+        "max_depth": 4,
+        "num_leaves": 100,
+        "min_child_samples": 10,
+        "learning_rate": 0.1,
+        "subsample": 0.9,
         "colsample_bytree": 0.9,
         "reg_alpha": 1.0,
-        "reg_lambda": 0.1,
+        "reg_lambda": 0,
         "min_split_gain": 0.1,
         "random_state": 42,
         "force_row_wise": true,
@@ -162,15 +162,15 @@
     "CatBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 18,
-        "iterations": 500,
+        "lags": 48,
+        "iterations": 200,
         "depth": 10,
-        "learning_rate": 0.2,
+        "learning_rate": 0.01,
         "l2_leaf_reg": 10,
         "subsample": 0.8,
         "random_state": 42,
         "verbose": false,
-        "border_count": 192
+        "border_count": 64
       },
       "best_results": {
         "mape": 0.38204219048060445,
@@ -194,12 +194,12 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "kernel_size": 5,
-        "num_filters": 16,
-        "dropout": 0.1,
+        "kernel_size": 3,
+        "num_filters": 32,
+        "dropout": 0.2,
         "weight_norm": true,
         "optimizer_kwargs": {
-          "lr": 0.01
+          "lr": 0.001
         },
         "model_name": "tcn_forecaster",
         "dilation_base": 2
@@ -218,7 +218,7 @@
       "enabled": true,
       "hyperparameters": {
         "input_chunk_length": 12,
-        "output_chunk_length": 1,
+        "output_chunk_length": 6,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -227,8 +227,8 @@
           "enable_progress_bar": false
         },
         "num_blocks": 2,
-        "num_layers": 2,
-        "layer_widths": 128,
+        "num_layers": 4,
+        "layer_widths": 256,
         "optimizer_kwargs": {
           "lr": 0.001
         },
@@ -273,7 +273,7 @@
       "enabled": true,
       "hyperparameters": {
         "input_chunk_length": 18,
-        "output_chunk_length": 6,
+        "output_chunk_length": 1,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -282,17 +282,17 @@
           "enable_progress_bar": false
         },
         "num_encoder_layers": 2,
-        "num_decoder_layers": 1,
+        "num_decoder_layers": 2,
         "decoder_output_dim": 8,
         "hidden_size": 128,
-        "temporal_width_past": 8,
-        "temporal_width_future": 4,
+        "temporal_width_past": 4,
+        "temporal_width_future": 8,
         "dropout": 0.1,
         "optimizer_kwargs": {
           "lr": 0.001
         },
         "model_name": "tide_forecaster",
-        "temporal_decoder_hidden": 32
+        "temporal_decoder_hidden": 64
       },
       "best_results": {
         "mape": 1.0787864923477173,
@@ -348,13 +348,13 @@
         "bootstrap": true
       },
       "best_results": {
-        "mape": 26.625057195168537,
-        "mae": 899.3253846153847,
+        "mape": 26.545263865319793,
+        "mae": 897.79,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.7,
-        "training_time": 0.9981541633605957,
-        "found_at": "2025-08-18T04:02:24.794950"
+        "training_time": 1.007169246673584,
+        "found_at": "2025-08-19T03:55:36.358256"
       }
     },
     "LinearRegression": {
@@ -363,17 +363,13 @@
         "lags": 24,
         "lags_past_covariates": null,
         "output_chunk_length": 6,
-        "fit_intercept": false,
-        "multi_models": false,
-        "n_jobs": -1,
-        "output_chunk_shift": 1,
-        "positive": false,
-        "likelihood": "quantile",
-        "quantiles": [
-          0.1,
-          0.5,
-          0.9
-        ]
+        "fit_intercept": true,
+        "multi_models": true,
+        "n_jobs": 1,
+        "output_chunk_shift": 0,
+        "positive": true,
+        "likelihood": null,
+        "quantiles": null
       },
       "best_results": {
         "mape": 0.9261984169810139,
@@ -394,10 +390,14 @@
         "max_q": 6,
         "seasonal": true,
         "stepwise": false,
-        "random_state": 42,
+        "random_state": null,
         "approximation": false,
         "max_d": 1,
-        "quantiles": null,
+        "quantiles": [
+          0.1,
+          0.5,
+          0.9
+        ],
         "season_length": 24
       },
       "best_results": {
@@ -468,8 +468,8 @@
     "Croston": {
       "enabled": true,
       "hyperparameters": {
-        "alpha_d": 0.1,
-        "alpha_p": 0.2,
+        "alpha_d": 0.2,
+        "alpha_p": 0.1,
         "version": "optimized",
         "quantiles": null,
         "random_state": null
@@ -684,6 +684,13 @@
       "timestamp": "2025-08-18T04:02:24.794976",
       "best_model": "TCN",
       "best_mape": 11.101571083068848,
+      "models_improved": 1,
+      "total_models_tested": 16
+    },
+    {
+      "timestamp": "2025-08-19T03:55:36.358283",
+      "best_model": "XGBoost",
+      "best_mape": 10.144843793173962,
       "models_improved": 1,
       "total_models_tested": 16
     }
