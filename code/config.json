@@ -283,7 +283,7 @@
       "enabled": false,
       "hyperparameters": {
         "input_chunk_length": 24,
-        "output_chunk_length": 1,
+        "output_chunk_length": 6,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -292,30 +292,30 @@
           "enable_progress_bar": false
         },
         "num_encoder_layers": 2,
-        "num_decoder_layers": 1,
-        "decoder_output_dim": 16,
-        "hidden_size": 128,
-        "temporal_width_past": 4,
-        "temporal_width_future": 8,
+        "num_decoder_layers": 2,
+        "decoder_output_dim": 8,
+        "hidden_size": 64,
+        "temporal_width_past": 8,
+        "temporal_width_future": 4,
         "dropout": 0.1,
         "optimizer_kwargs": {
           "lr": 0.001
         },
         "model_name": "tide_forecaster",
-        "temporal_decoder_hidden": 64
+        "temporal_decoder_hidden": 32
       },
       "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 1.0787864923477173,
-        "mae": 39.72705078125,
+        "mape": 0.6844309568405151,
+        "mae": 23.1229248046875,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.8335309028625488,
-        "trial_number": 1240,
-        "tuned_at": "2025-07-31T04:03:21.183779",
+        "training_time": 0.8487453460693359,
+        "trial_number": 1464,
+        "tuned_at": "2025-08-28T03:51:45.881803",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 2.1169862747192383,
-        "improvement": 1.038199782371521
+        "previous_mape": 1.0787864923477173,
+        "improvement": 0.39435553550720215
       }
     },
     "DLinear": {
@@ -418,20 +418,20 @@
         "stepwise": true,
         "random_state": null,
         "quantiles": null,
-        "season_length": 24
+        "season_length": 12
       },
       "optimal_split_ratio": 0.9,
       "tuning_results": {
-        "mape": 11.021210994834995,
-        "mae": 347.6653232586705,
+        "mape": 10.855395279299469,
+        "mae": 360.3421534124625,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 12.01833963394165,
-        "trial_number": 98,
-        "tuned_at": "2025-08-01T04:10:53.306304",
+        "training_time": 9.558623313903809,
+        "trial_number": 97,
+        "tuned_at": "2025-08-28T03:51:45.881767",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 11.256547210386495,
-        "improvement": 0.23533621555150042
+        "previous_mape": 11.021210994834995,
+        "improvement": 0.1658157155355262
       }
     },
     "AutoETS": {
