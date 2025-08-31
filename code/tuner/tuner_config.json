@@ -65,15 +65,15 @@
     "ExponentialSmoothing": {
       "enabled": true,
       "hyperparameters": {
-        "trend": "add",
+        "trend": null,
         "damped": false,
-        "seasonal": null,
+        "seasonal": "add",
         "seasonal_periods": 12,
-        "use_boxcox": null,
+        "use_boxcox": false,
         "remove_bias": true,
         "use_brute": true,
         "damping_trend": 0.2,
-        "damped_trend": false,
+        "damped_trend": true,
         "initialization_method": "estimated",
         "missing": "none"
       },
@@ -100,14 +100,14 @@
     "XGBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 12,
-        "n_estimators": 300,
-        "max_depth": 10,
-        "learning_rate": 0.05,
-        "subsample": 0.9,
-        "colsample_bytree": 0.8,
+        "lags": 18,
+        "n_estimators": 500,
+        "max_depth": 6,
+        "learning_rate": 0.1,
+        "subsample": 1.0,
+        "colsample_bytree": 0.9,
         "reg_alpha": 1.0,
-        "reg_lambda": 0,
+        "reg_lambda": 1.0,
         "random_state": 42,
         "n_jobs": -1,
         "tree_method": "hist",
@@ -127,15 +127,15 @@
     "LightGBM": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 18,
-        "n_estimators": 200,
-        "max_depth": 8,
-        "num_leaves": 150,
-        "min_child_samples": 5,
+        "lags": 48,
+        "n_estimators": 300,
+        "max_depth": 6,
+        "num_leaves": 31,
+        "min_child_samples": 20,
         "learning_rate": 0.01,
-        "subsample": 0.9,
-        "colsample_bytree": 0.9,
-        "reg_alpha": 1.0,
+        "subsample": 0.8,
+        "colsample_bytree": 1.0,
+        "reg_alpha": 0,
         "reg_lambda": 1.0,
         "min_split_gain": 0.1,
         "random_state": 42,
@@ -162,31 +162,31 @@
     "CatBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 36,
-        "iterations": 500,
+        "lags": 48,
+        "iterations": 100,
         "depth": 10,
-        "learning_rate": 0.2,
-        "l2_leaf_reg": 1,
+        "learning_rate": 0.1,
+        "l2_leaf_reg": 10,
         "subsample": 0.8,
         "random_state": 42,
         "verbose": false,
-        "border_count": 192
+        "border_count": 64
       },
       "best_results": {
-        "mape": 0.38204219048060445,
-        "mae": 14.048246899122205,
+        "mape": 0.24218948599533097,
+        "mae": 8.842313600174293,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.99,
-        "training_time": 2.1499059200286865,
-        "found_at": "2025-07-31T04:03:21.185958"
+        "training_time": 1.0175838470458984,
+        "found_at": "2025-08-31T03:35:04.270544"
       }
     },
     "TCN": {
       "enabled": true,
       "hyperparameters": {
-        "input_chunk_length": 12,
-        "output_chunk_length": 1,
+        "input_chunk_length": 24,
+        "output_chunk_length": 6,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -195,11 +195,11 @@
           "enable_progress_bar": false
         },
         "kernel_size": 5,
-        "num_filters": 32,
+        "num_filters": 16,
         "dropout": 0.2,
         "weight_norm": true,
         "optimizer_kwargs": {
-          "lr": 0.01
+          "lr": 0.001
         },
         "model_name": "tcn_forecaster",
         "dilation_base": 2
@@ -272,8 +272,8 @@
     "TiDE": {
       "enabled": true,
       "hyperparameters": {
-        "input_chunk_length": 18,
-        "output_chunk_length": 6,
+        "input_chunk_length": 24,
+        "output_chunk_length": 1,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -281,18 +281,18 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "num_encoder_layers": 1,
+        "num_encoder_layers": 2,
         "num_decoder_layers": 1,
-        "decoder_output_dim": 8,
-        "hidden_size": 64,
+        "decoder_output_dim": 16,
+        "hidden_size": 128,
         "temporal_width_past": 4,
-        "temporal_width_future": 8,
+        "temporal_width_future": 4,
         "dropout": 0.1,
         "optimizer_kwargs": {
           "lr": 0.001
         },
         "model_name": "tide_forecaster",
-        "temporal_decoder_hidden": 64
+        "temporal_decoder_hidden": 32
       },
       "best_results": {
         "mape": 0.6844309568405151,
@@ -338,10 +338,10 @@
       "enabled": true,
       "hyperparameters": {
         "lags": 18,
-        "n_estimators": 300,
+        "n_estimators": 500,
         "max_depth": 15,
         "min_samples_split": 10,
-        "min_samples_leaf": 2,
+        "min_samples_leaf": 1,
         "n_jobs": -1,
         "random_state": 42,
         "max_features": "sqrt",
@@ -360,14 +360,14 @@
     "LinearRegression": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 12,
+        "lags": 6,
         "lags_past_covariates": null,
-        "output_chunk_length": 6,
+        "output_chunk_length": 3,
         "fit_intercept": false,
         "multi_models": true,
         "n_jobs": -1,
         "output_chunk_shift": 0,
-        "positive": true,
+        "positive": false,
         "likelihood": "quantile",
         "quantiles": [
           0.1,
@@ -401,13 +401,13 @@
         "season_length": 12
       },
       "best_results": {
-        "mape": 9.945123596595225,
-        "mae": 333.03446110477023,
+        "mape": 9.842579176744392,
+        "mae": 329.5729226432317,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.9,
-        "training_time": 9.62556266784668,
-        "found_at": "2025-08-30T03:49:00.623391"
+        "training_time": 9.566555976867676,
+        "found_at": "2025-08-31T03:35:04.270503"
       }
     },
     "AutoETS": {
@@ -421,17 +421,17 @@
     "Theta": {
       "enabled": true,
       "hyperparameters": {
-        "season_mode": "NONE",
-        "theta": 8
+        "season_mode": "ADDITIVE",
+        "theta": 0.5
       },
       "best_results": {
-        "mape": 2.810324954075876,
-        "mae": 106.63251185204172,
+        "mape": 2.4150974913507928,
+        "mae": 86.97869545083086,
         "mase": 0,
         "rmsse": 0,
-        "split_ratio": 0.98,
-        "training_time": 0.004034996032714844,
-        "found_at": "2025-08-01T04:10:53.308362"
+        "split_ratio": 0.99,
+        "training_time": 0.0038945674896240234,
+        "found_at": "2025-08-31T03:35:04.270519"
       }
     },
     "FourTheta": {
@@ -441,13 +441,13 @@
         "theta": 0.5
       },
       "best_results": {
-        "mape": 2.9676608635800017,
-        "mae": 105.4242875680311,
+        "mape": 2.305019931053282,
+        "mae": 82.9242875680311,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.99,
-        "training_time": 0.004626274108886719,
-        "found_at": "2025-08-30T03:49:00.623409"
+        "training_time": 0.004039287567138672,
+        "found_at": "2025-08-31T03:35:04.270527"
       }
     },
     "KalmanFilter": {
@@ -468,11 +468,15 @@
     "Croston": {
       "enabled": true,
       "hyperparameters": {
-        "alpha_d": null,
-        "alpha_p": 0.1,
+        "alpha_d": 0.1,
+        "alpha_p": null,
         "version": "classic",
-        "quantiles": null,
-        "random_state": 42
+        "quantiles": [
+          0.1,
+          0.5,
+          0.9
+        ],
+        "random_state": null
       },
       "best_results": {
         "mape": 3.2798151754549676,
@@ -714,6 +718,13 @@
       "best_mape": 0.6095115672362917,
       "models_improved": 2,
       "total_models_tested": 16
+    },
+    {
+      "timestamp": "2025-08-31T03:35:04.270559",
+      "best_model": "CatBoost",
+      "best_mape": 0.24218948599533097,
+      "models_improved": 4,
+      "total_models_tested": 15
     }
   ]
 }
