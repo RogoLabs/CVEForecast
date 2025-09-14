@@ -209,6 +209,7 @@
       
       // Add current month partial data if available
       if (rec.current_month && rec.current_month.partial_count >= 0) {
+        console.log('Adding current month data for', rec.name, ':', rec.current_month);
         const currentMonthPoint = {
           x: rec.current_month.month + '-01',
           y: rec.current_month.partial_count
@@ -224,6 +225,8 @@
           showLine: false,
           pointStyle: 'circle'
         });
+      } else {
+        console.log('No current month data for', rec.name, '- current_month:', rec.current_month);
       }
       
       if (lgb.length > 0) {
@@ -288,8 +291,11 @@
       // Update panel title with current month progress if available
       let titleText = displayName;
       if (rec.current_month) {
+        console.log('Updating title with current month data:', rec.current_month);
         const progress = Math.round((rec.current_month.days_elapsed / rec.current_month.days_in_month) * 100);
         titleText += ` (${rec.current_month.partial_count} CVEs this month, ${progress}% through)`;
+      } else {
+        console.log('No current month data for title update');
       }
       document.getElementById('panelTitle').textContent = titleText;
     }
@@ -391,9 +397,13 @@
         // Load CNA name mapping first
         await loadCnaNameMapping();
         
-        const res = await fetch('cna_data.json', { cache: 'no-store' });
+        const res = await fetch('cna_data.json?t=' + Date.now(), { cache: 'no-store' });
         if (!res.ok) throw new Error('Failed to load cna_data.json');
         cnaData = await res.json();
+        
+        // Debug: Log sample CNA data to console
+        const sampleCna = Object.values(cnaData)[0];
+        console.log('Sample CNA current_month data:', sampleCna.current_month);
 
         sortedCnaIds = sortCnasByTotal(cnaData);
         populateSelect();
