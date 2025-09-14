@@ -169,14 +169,15 @@ def scan_cvelist_for_cna_counts(cvelist_dir: str) -> Tuple[pd.DataFrame, Dict[st
     return df, names
 
 
-def build_monthly_series(df: pd.DataFrame, org_id: str) -> pd.Series:
+def build_monthly_series(df: pd.DataFrame, org_id: str) -> tuple[pd.Series, int]:
     """Build a complete monthly count series (MS frequency) for a given CNA org_id.
 
     Missing months are filled with zeros to create a contiguous time series.
+    Returns both the full series and current month partial count.
     """
     sub = df[df["org_id"] == org_id].copy()
     if sub.empty:
-        return pd.Series(dtype=float)
+        return pd.Series(dtype=float), 0
     sub = sub.sort_values("date")
 
     # Monthly start frequency
@@ -190,7 +191,13 @@ def build_monthly_series(df: pd.DataFrame, org_id: str) -> pd.Series:
     full_index = pd.date_range(start=start, end=end, freq="MS")
     counts = counts.reindex(full_index, fill_value=0).astype(float)
     counts.index.name = "date"
-    return counts
+    
+    # Calculate current month partial count (up to today)
+    current_month_start = pd.Timestamp.now().to_period("M").to_timestamp(how="start")
+    current_month_data = sub[sub["date"] >= current_month_start]
+    current_month_partial = len(current_month_data)
+    
+    return counts, current_month_partial
 
 
 def series_to_darts(counts: pd.Series) -> TimeSeries:
@@ -313,7 +320,7 @@ def run(cvelist_dir: str, output_path: str, min_cves: int, horizon: int) -> None
 
     for i, org_id in enumerate(eligible_orgs, start=1):
         try:
-            counts = build_monthly_series(df, org_id)
+            counts, current_month_partial = build_monthly_series(df, org_id)
             if counts.empty or counts.sum() < min_cves:
                 continue
 
@@ -322,12 +329,21 @@ def run(cvelist_dir: str, output_path: str, min_cves: int, horizon: int) -> None
 
             # Format historical dict as YYYY-MM -> int
             hist = {idx.strftime("%Y-%m"): int(v) for idx, v in counts.items()}
+            
+            # Add current month partial data
+            current_month_key = pd.Timestamp.now().strftime("%Y-%m")
 
             results[org_id] = {
                 "id": org_id,
                 "name": cna_names.get(org_id),
                 "scope": None,  # placeholder; can be enriched from a CNA registry later
                 "historical": hist,
+                "current_month": {
+                    "month": current_month_key,
+                    "partial_count": current_month_partial,
+                    "days_elapsed": pd.Timestamp.now().day,
+                    "days_in_month": pd.Timestamp.now().days_in_month
+                },
                 "forecasts": forecasts,
             }
             if i % 25 == 0:

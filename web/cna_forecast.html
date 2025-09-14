@@ -207,6 +207,26 @@
         });
       }
       
+      // Add current month partial data if available
+      if (rec.current_month && rec.current_month.partial_count > 0) {
+        const currentDate = new Date();
+        const currentMonthPoint = {
+          x: rec.current_month.month + '-01',
+          y: rec.current_month.partial_count
+        };
+        
+        datasets.push({
+          label: `Current Month Progress (${rec.current_month.days_elapsed}/${rec.current_month.days_in_month} days)`,
+          data: [currentMonthPoint],
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239,68,68,0.3)',
+          pointRadius: 8,
+          pointHoverRadius: 10,
+          showLine: false,
+          pointStyle: 'circle'
+        });
+      }
+      
       if (lgb.length > 0) {
         datasets.push({
           label: 'LightGBM Forecast',
@@ -265,7 +285,14 @@
       document.getElementById('summaryId').textContent = shortName;
       document.getElementById('summaryHistorical').textContent = numberFmt.format(Math.round(totalHist));
       document.getElementById('summaryForecast').textContent = numberFmt.format(Math.round(avgNext12));
-      document.getElementById('panelTitle').textContent = displayName;
+      
+      // Update panel title with current month progress if available
+      let titleText = displayName;
+      if (rec.current_month && rec.current_month.partial_count > 0) {
+        const progress = Math.round((rec.current_month.days_elapsed / rec.current_month.days_in_month) * 100);
+        titleText += ` (${rec.current_month.partial_count} CVEs this month, ${progress}% through)`;
+      }
+      document.getElementById('panelTitle').textContent = titleText;
     }
 
     function renderChart(rec) {
