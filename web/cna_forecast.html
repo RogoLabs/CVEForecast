@@ -215,8 +215,10 @@
           y: rec.current_month.partial_count
         };
         
+        const labelText = `Current Month Progress (${rec.current_month.days_elapsed}/${rec.current_month.days_in_month} days)`;
+        console.log('Chart label being created:', labelText);
         datasets.push({
-          label: `Current Month Progress (${rec.current_month.days_elapsed}/${rec.current_month.days_in_month} days)`,
+          label: labelText,
           data: [currentMonthPoint],
           borderColor: '#ef4444',
           backgroundColor: 'rgba(239,68,68,0.3)',
