@@ -272,14 +272,23 @@
     function updateSummary(rec) {
       const displayName = getCnaDisplayName(rec.id, rec.name);
       const shortName = getCnaShortName(rec.id, rec.name);
-      const totalHist = rec.historical_data.reduce((a, b) => a + b.count, 0);
-      const months = rec.forecasts.LightGBM.map(item => item.x);
-      const avgNext12 = months.reduce((sum, ym) => {
-        const l = rec.forecasts.LightGBM.find(item => item.x === ym).y || 0;
-        const x = rec.forecasts.XGBoost.find(item => item.x === ym).y || 0;
-        const p = rec.forecasts.Prophet.find(item => item.x === ym).y || 0;
-        return sum + (l + x + p) / 3.0;
-      }, 0);
+      
+      // Safe handling of historical data
+      const totalHist = rec.historical_data && rec.historical_data.length > 0 
+        ? rec.historical_data.reduce((a, b) => a + b.count, 0) 
+        : 0;
+      
+      // Safe handling of forecast data
+      let avgNext12 = 0;
+      if (rec.forecasts && rec.forecasts.LightGBM && rec.forecasts.LightGBM.length > 0) {
+        const months = rec.forecasts.LightGBM.map(item => item.x);
+        avgNext12 = months.reduce((sum, ym) => {
+          const l = rec.forecasts.LightGBM.find(item => item.x === ym)?.y || 0;
+          const x = rec.forecasts.XGBoost?.find(item => item.x === ym)?.y || 0;
+          const p = rec.forecasts.Prophet?.find(item => item.x === ym)?.y || 0;
+          return sum + (l + x + p) / 3.0;
+        }, 0);
+      }
 
       document.getElementById('summaryName').textContent = displayName;
       document.getElementById('summaryId').textContent = shortName;
