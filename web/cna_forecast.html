@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CNA Forecasts - CVEForecast</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .gradient-bg { background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #111827 100%); }
+    .card-shadow { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
+    .chart-container { position: relative; height: 420px; }
+    .loading-spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 20px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- Header -->
+  <header class="gradient-bg text-white shadow-lg">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex justify-between items-end">
+        <div>
+          <h1 class="text-3xl font-bold"><span class="text-white">CVE</span><span class="text-blue-300">Forecast</span></h1>
+          <p class="text-gray-300 mt-1">CNA Growth Forecasts</p>
+        </div>
+        <nav class="space-x-6">
+          <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
+          <a href="technical_details.html" class="text-gray-300 hover:text-white transition-colors">Technical Details</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-6 py-8">
+    <!-- Controls -->
+    <div class="bg-white rounded-lg card-shadow p-6 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1" for="cnaSelect">Select CNA</label>
+          <select id="cnaSelect" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1" for="searchInput">Filter by Name/ID</label>
+          <input id="searchInput" type="text" placeholder="Type to filter..." class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2" />
+        </div>
+        <div>
+          <button id="resetBtn" class="mt-6 md:mt-0 w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="bg-white rounded-lg card-shadow p-6 mb-6">
+      <div class="mb-4">
+        <h2 class="text-xl font-bold text-gray-800" id="panelTitle">CNA Forecast</h2>
+        <p class="text-gray-600 mt-1">Historical monthly CVE publications and 12-month forecast per model</p>
+      </div>
+      <div id="loadingState" class="text-center">
+        <div class="loading-spinner"></div>
+        <p class="text-gray-600 mt-4">Loading CNA forecast data...</p>
+      </div>
+      <div class="chart-container">
+        <canvas id="cnaChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Summary Panel -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white rounded-lg card-shadow p-6">
+        <div class="text-sm text-gray-600">CNA</div>
+        <div class="text-2xl font-semibold text-gray-900" id="summaryName">-</div>
+        <div class="text-sm text-gray-500" id="summaryId">-</div>
+      </div>
+      <div class="bg-white rounded-lg card-shadow p-6">
+        <div class="text-sm text-gray-600">Total Historical CVEs</div>
+        <div class="text-2xl font-bold text-gray-900" id="summaryHistorical">-</div>
+      </div>
+      <div class="bg-white rounded-lg card-shadow p-6">
+        <div class="text-sm text-gray-600">Forecasted Next 12 Months (avg of 3 models)</div>
+        <div class="text-2xl font-bold text-gray-900" id="summaryForecast">-</div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-gray-900 text-white py-8 mt-12">
+    <div class="container mx-auto px-6 text-center">
+      <p class="mb-2">CVEForecast - CNA Forecasts</p>
+      <p class="text-gray-300 text-sm">Data source: <a href="https://github.com/CVEProject/cvelistV5" class="text-blue-400 hover:text-blue-300 transition-colors">CVE Project Official Repository</a></p>
+    </div>
+  </footer>
+
+  <script>
+    const numberFmt = new Intl.NumberFormat('en-US');
+    let cnaData = {};
+    let sortedCnaIds = [];
+    let chartInstance = null;
+
+    function sortCnasByTotal(data) {
+      return Object.entries(data)
+        .map(([id, obj]) => [id, Object.values(obj.historical || {}).reduce((a,b) => a + b, 0)])
+        .sort((a,b) => b[1] - a[1])
+        .map(([id]) => id);
+    }
+
+    function populateSelect(filterTerm = '') {
+      const select = document.getElementById('cnaSelect');
+      const term = filterTerm.toLowerCase();
+      select.innerHTML = '';
+      const fragment = document.createDocumentFragment();
+
+      sortedCnaIds.forEach(id => {
+        const rec = cnaData[id];
+        const name = rec.name || '';
+        const label = name ? `${name} (${id})` : id;
+        if (!term || label.toLowerCase().includes(term)) {
+          const opt = document.createElement('option');
+          opt.value = id;
+          opt.textContent = label;
+          fragment.appendChild(opt);
+        }
+      });
+      select.appendChild(fragment);
+    }
+
+    function toXY(dict) {
+      return Object.entries(dict || {})
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([ym, v]) => ({ x: ym + '-01', y: v }));
+    }
+
+    function buildDatasets(rec) {
+      const hist = toXY(rec.historical);
+      const lgb = toXY((rec.forecasts || {}).LightGBM || {});
+      const xgb = toXY((rec.forecasts || {}).XGBoost || {});
+      const prophet = toXY((rec.forecasts || {}).Prophet || {});
+
+      return [
+        {
+          label: 'Historical',
+          data: hist,
+          borderColor: '#6b7280',
+          backgroundColor: 'rgba(107,114,128,0.2)',
+          tension: 0.2,
+          borderWidth: 2,
+          pointRadius: 0
+        },
+        {
+          label: 'LightGBM',
+          data: lgb,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16,185,129,0.15)',
+          tension: 0.2,
+          borderWidth: 2,
+          pointRadius: 0
+        },
+        {
+          label: 'XGBoost',
+          data: xgb,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59,130,246,0.15)',
+          tension: 0.2,
+          borderWidth: 2,
+          pointRadius: 0
+        },
+        {
+          label: 'Prophet',
+          data: prophet,
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245,158,11,0.15)',
+          tension: 0.2,
+          borderWidth: 2,
+          pointRadius: 0
+        }
+      ];
+    }
+
+    function updateSummary(rec) {
+      const name = rec.name || 'Unknown';
+      const totalHist = Object.values(rec.historical || {}).reduce((a,b) => a + b, 0);
+      const months = Object.keys((rec.forecasts || {}).LightGBM || {});
+      const avgNext12 = months.reduce((sum, ym) => {
+        const l = (rec.forecasts.LightGBM || {})[ym] ?? 0;
+        const x = (rec.forecasts.XGBoost || {})[ym] ?? 0;
+        const p = (rec.forecasts.Prophet || {})[ym] ?? 0;
+        return sum + (l + x + p) / 3.0;
+      }, 0);
+
+      document.getElementById('summaryName').textContent = name;
+      document.getElementById('summaryId').textContent = rec.id;
+      document.getElementById('summaryHistorical').textContent = numberFmt.format(Math.round(totalHist));
+      document.getElementById('summaryForecast').textContent = numberFmt.format(Math.round(avgNext12));
+      document.getElementById('panelTitle').textContent = `${name} (${rec.id})`;
+    }
+
+    function renderChart(rec) {
+      const ctx = document.getElementById('cnaChart').getContext('2d');
+      const datasets = buildDatasets(rec);
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { datasets },
+        options: {
+          parsing: false,
+          scales: {
+            x: {
+              type: 'time',
+              time: { unit: 'month' },
+              ticks: { autoSkip: true, maxTicksLimit: 12 }
+            },
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'CVE Publications' }
+            }
+          },
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: { mode: 'nearest', intersect: false }
+          },
+          elements: { point: { radius: 0 } },
+          maintainAspectRatio: false
+        }
+      });
+    }
+
+    async function init() {
+      try {
+        const res = await fetch('cna_data.json', { cache: 'no-store' });
+        if (!res.ok) throw new Error('Failed to load cna_data.json');
+        cnaData = await res.json();
+
+        sortedCnaIds = sortCnasByTotal(cnaData);
+        populateSelect();
+
+        document.getElementById('loadingState').style.display = 'none';
+
+        const firstId = document.getElementById('cnaSelect').value || sortedCnaIds[0];
+        if (firstId) {
+          const rec = cnaData[firstId];
+          updateSummary(rec);
+          renderChart(rec);
+        }
+      } catch (e) {
+        document.getElementById('loadingState').innerHTML = '<p class="text-red-600">Error loading CNA data.</p>';
+        console.error(e);
+      }
+    }
+
+    document.getElementById('cnaSelect').addEventListener('change', (e) => {
+      const id = e.target.value;
+      const rec = cnaData[id];
+      if (rec) {
+        updateSummary(rec);
+        renderChart(rec);
+      }
+    });
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      populateSelect(e.target.value || '');
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      document.getElementById('searchInput').value = '';
+      populateSelect('');
+      const first = document.getElementById('cnaSelect').value;
+      if (first && cnaData[first]) {
+        updateSummary(cnaData[first]);
+        renderChart(cnaData[first]);
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

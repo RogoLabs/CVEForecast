@@ -1,0 +1,70 @@
+name: CNA Forecast Daily Update
+
+on:
+  schedule:
+    # Run daily at 00:30 UTC to avoid overlapping exactly with main
+    - cron: '30 0 * * *'
+  # Allow manual triggering
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-cna-forecast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Clone CVE data repository
+        run: |
+          git clone --depth 1 https://github.com/CVEProject/cvelistV5.git cvelistV5
+          echo "CVE data cloned successfully"
+
+      - name: Run CNA forecast generation
+        env:
+          PYTHONUNBUFFERED: 1
+        run: |
+          python code/cna_main.py --cvelist_dir cvelistV5 --output web/cna_data.json --min_cves 100 --horizon 12
+
+      - name: Check for changes
+        id: verify-changed-files
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add web/cna_data.json
+          git commit -m "Update CNA forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          git push
+
+      - name: Upload CNA forecast artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cna-forecast-data
+          path: web/cna_data.json
