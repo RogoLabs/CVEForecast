@@ -410,6 +410,11 @@
           });
         } catch (error) {
           console.error('Chart rendering error:', error);
+          console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          });
           ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
           ctx.font = '16px Inter';
           ctx.fillStyle = '#ef4444';
@@ -424,17 +429,44 @@
         // Load CNA name mapping first
         await loadCnaNameMapping();
         
-        const res = await fetch('cna_data.json?t=' + Date.now(), { cache: 'no-store' });
-        if (!res.ok) throw new Error('Failed to load cna_data.json');
-        cnaData = await res.json();
+        async function loadCnaData() {
+          console.log('Loading CNA data...');
+          try {
+            const response = await fetch('cna_data.json?v=' + new Date().getTime());
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            const responseText = await response.text();
+            console.log('Raw response length:', responseText.length);
+            
+            try {
+              cnaData = JSON.parse(responseText);
+            } catch (parseError) {
+              console.error('JSON parse error:', parseError);
+              console.error('Response text preview:', responseText.substring(0, 500));
+              throw new Error('Failed to parse JSON response');
+            }
+            
+            console.log('Loaded CNA mappings:', Object.keys(cnaData).length);
+            const sampleCna = Object.values(cnaData)[0];
+            console.log('Sample CNA current_month data:', JSON.stringify(sampleCna.current_month, null, 2));
+
+            sortedCnaIds = sortCnasByTotal(cnaData);
+            populateSelect();
+          } catch (error) {
+            console.error('Error loading CNA data:', error);
+            console.error('Error details:', {
+              message: error.message,
+              stack: error.stack,
+              name: error.name,
+              url: error.url || 'N/A'
+            });
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('errorState').classList.remove('hidden');
+          }
+        }
+        await loadCnaData();
         
-        // Debug: Log sample CNA data to console
-        const sampleCna = Object.values(cnaData)[0];
-        console.log('Sample CNA current_month data:', JSON.stringify(sampleCna.current_month, null, 2));
-
-        sortedCnaIds = sortCnasByTotal(cnaData);
-        populateSelect();
-
         document.getElementById('loadingState').style.display = 'none';
 
         const firstId = document.getElementById('cnaSelect').value || sortedCnaIds[0];
