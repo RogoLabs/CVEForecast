@@ -64,8 +64,10 @@
         <div class="loading-spinner"></div>
         <p class="text-gray-600 mt-4">Loading CNA forecast data...</p>
       </div>
-      <div class="chart-container">
-        <canvas id="cnaChart"></canvas>
+      <div id="chartSection" class="hidden">
+        <div class="chart-container">
+          <canvas id="cnaChart"></canvas>
+        </div>
       </div>
     </div>
 
@@ -97,8 +99,45 @@
   <script>
     const numberFmt = new Intl.NumberFormat('en-US');
     let cnaData = {};
+    let cnaNameMapping = {};
     let sortedCnaIds = [];
     let chartInstance = null;
+
+    // Fetch CNA name mapping from CNAScoreCard data
+    async function loadCnaNameMapping() {
+      try {
+        const response = await fetch('https://raw.githubusercontent.com/RogoLabs/CNAScoreCard/main/web/data/cna_list.json');
+        if (response.ok) {
+          const cnaList = await response.json();
+          cnaList.forEach(cna => {
+            if (cna.cnaID) {
+              cnaNameMapping[cna.cnaID] = {
+                shortName: cna.shortName || 'Unknown',
+                organizationName: cna.organizationName || cna.shortName || 'Unknown Organization'
+              };
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Could not load CNA name mapping:', e);
+      }
+    }
+
+    function getCnaDisplayName(cnaId, fallbackName) {
+      const mapping = cnaNameMapping[cnaId];
+      if (mapping) {
+        return mapping.organizationName;
+      }
+      return fallbackName || cnaId;
+    }
+
+    function getCnaShortName(cnaId, fallbackName) {
+      const mapping = cnaNameMapping[cnaId];
+      if (mapping) {
+        return mapping.shortName;
+      }
+      return fallbackName || cnaId.substring(0, 8);
+    }
 
     function sortCnasByTotal(data) {
       return Object.entries(data)
@@ -115,9 +154,10 @@
 
       sortedCnaIds.forEach(id => {
         const rec = cnaData[id];
-        const name = rec.name || '';
-        const label = name ? `${name} (${id})` : id;
-        if (!term || label.toLowerCase().includes(term)) {
+        const displayName = getCnaDisplayName(id, rec.name);
+        const shortName = getCnaShortName(id, rec.name);
+        const label = `${displayName}`;
+        if (!term || label.toLowerCase().includes(term) || shortName.toLowerCase().includes(term)) {
           const opt = document.createElement('option');
           opt.value = id;
           opt.textContent = label;
@@ -180,7 +220,8 @@
     }
 
     function updateSummary(rec) {
-      const name = rec.name || 'Unknown';
+      const displayName = getCnaDisplayName(rec.id, rec.name);
+      const shortName = getCnaShortName(rec.id, rec.name);
       const totalHist = Object.values(rec.historical || {}).reduce((a,b) => a + b, 0);
       const months = Object.keys((rec.forecasts || {}).LightGBM || {});
       const avgNext12 = months.reduce((sum, ym) => {
@@ -190,45 +231,56 @@
         return sum + (l + x + p) / 3.0;
       }, 0);
 
-      document.getElementById('summaryName').textContent = name;
-      document.getElementById('summaryId').textContent = rec.id;
+      document.getElementById('summaryName').textContent = displayName;
+      document.getElementById('summaryId').textContent = shortName;
       document.getElementById('summaryHistorical').textContent = numberFmt.format(Math.round(totalHist));
       document.getElementById('summaryForecast').textContent = numberFmt.format(Math.round(avgNext12));
-      document.getElementById('panelTitle').textContent = `${name} (${rec.id})`;
+      document.getElementById('panelTitle').textContent = displayName;
     }
 
     function renderChart(rec) {
+      // Ensure chart section is visible
+      document.getElementById('chartSection').classList.remove('hidden');
+      
       const ctx = document.getElementById('cnaChart').getContext('2d');
       const datasets = buildDatasets(rec);
       if (chartInstance) chartInstance.destroy();
-      chartInstance = new Chart(ctx, {
-        type: 'line',
-        data: { datasets },
-        options: {
-          parsing: false,
-          scales: {
-            x: {
-              type: 'time',
-              time: { unit: 'month' },
-              ticks: { autoSkip: true, maxTicksLimit: 12 }
+      
+      // Small delay to ensure canvas is rendered
+      setTimeout(() => {
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: { datasets },
+          options: {
+            parsing: false,
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                type: 'time',
+                time: { unit: 'month' },
+                ticks: { autoSkip: true, maxTicksLimit: 12 }
+              },
+              y: {
+                beginAtZero: true,
+                title: { display: true, text: 'CVE Publications' }
+              }
             },
-            y: {
-              beginAtZero: true,
-              title: { display: true, text: 'CVE Publications' }
-            }
-          },
-          plugins: {
-            legend: { position: 'bottom' },
-            tooltip: { mode: 'nearest', intersect: false }
-          },
-          elements: { point: { radius: 0 } },
-          maintainAspectRatio: false
-        }
-      });
+            plugins: {
+              legend: { position: 'bottom' },
+              tooltip: { mode: 'nearest', intersect: false }
+            },
+            elements: { point: { radius: 0 } }
+          }
+        });
+      }, 100);
     }
 
     async function init() {
       try {
+        // Load CNA name mapping first
+        await loadCnaNameMapping();
+        
         const res = await fetch('cna_data.json', { cache: 'no-store' });
         if (!res.ok) throw new Error('Failed to load cna_data.json');
         cnaData = await res.json();

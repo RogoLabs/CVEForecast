@@ -112,8 +112,10 @@ def parse_cve_file(path: str) -> Optional[Tuple[datetime, CNARecord]]:
 
         # Parse date
         try:
-            # Ensure compatible ISO parsing
-            published = pd.to_datetime(date_str, utc=False).to_pydatetime()
+            # Parse as UTC then drop timezone to ensure tz-naive timestamps
+            ts = pd.to_datetime(date_str, utc=True)
+            ts = ts.tz_convert(None)  # make tz-naive
+            published = ts.to_pydatetime()
         except Exception:
             return None
 
@@ -154,7 +156,8 @@ def scan_cvelist_for_cna_counts(cvelist_dir: str) -> Tuple[pd.DataFrame, Dict[st
         if not parsed:
             continue
         published, cna = parsed
-        rows.append((cna.org_id, pd.to_datetime(published).normalize()))
+        # ensure tz-naive normalized month start
+        rows.append((cna.org_id, pd.to_datetime(published).tz_localize(None).normalize()))
         if cna.short_name and cna.org_id not in names:
             names[cna.org_id] = cna.short_name
 
@@ -235,16 +238,22 @@ def forecast_with_models(
         # Ensure enough history for lags
         if len(ts) <= lags:
             lags = max(1, min(lags, len(ts) - 1))
+        # Require at least two effective samples after lagging
+        if len(ts) - lags < 2:
+            raise ValueError("Insufficient samples for LightGBM after applying lags")
         # Map config to LightGBM params
-        lgbm_specific = {
-            k: v
-            for k, v in lgb_params.items()
-            if k
-            not in {
-                "lags",
-            }
-        }
-        model_lgb = LightGBMModel(lags=lags, lgbm_params=lgbm_specific, random_state=lgb_params.get("random_state", 42))
+        lgbm_specific = {}
+        for k, v in lgb_params.items():
+            if k in {"lags", "random_state", "feature_pre_filter"}:
+                continue
+            if v is None:
+                continue
+            lgbm_specific[k] = v
+        model_lgb = LightGBMModel(
+            lags=lags,
+            random_state=lgb_params.get("random_state", 42),
+            **lgbm_specific,
+        )
         model_lgb.fit(ts)
         f_lgb = model_lgb.predict(horizon)
         out["LightGBM"] = {idx.strftime("%Y-%m"): float(val) for idx, val in zip(f_lgb.time_index, f_lgb.values().flatten())}
@@ -257,8 +266,20 @@ def forecast_with_models(
         lags = int(xgb_params.pop("lags", 12) or 12)
         if len(ts) <= lags:
             lags = max(1, min(lags, len(ts) - 1))
-        xgb_specific = {k: v for k, v in xgb_params.items() if k not in {"lags"}}
-        model_xgb = XGBModel(lags=lags, xgb_params=xgb_specific, random_state=xgb_params.get("random_state", 42))
+        if len(ts) - lags < 2:
+            raise ValueError("Insufficient samples for XGBoost after applying lags")
+        xgb_specific = {}
+        for k, v in xgb_params.items():
+            if k in {"lags", "random_state", "early_stopping_rounds"}:
+                continue
+            if v is None:
+                continue
+            xgb_specific[k] = v
+        model_xgb = XGBModel(
+            lags=lags,
+            random_state=xgb_params.get("random_state", 42),
+            **xgb_specific,
+        )
         model_xgb.fit(ts)
         f_xgb = model_xgb.predict(horizon)
         out["XGBoost"] = {idx.strftime("%Y-%m"): float(val) for idx, val in zip(f_xgb.time_index, f_xgb.values().flatten())}
