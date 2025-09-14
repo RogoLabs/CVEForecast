@@ -188,6 +188,9 @@
     function buildDatasets(rec) {
       const datasets = [];
       
+      console.log('Building datasets for CNA:', rec.name);
+      console.log('Full CNA record:', JSON.stringify(rec, null, 2));
+      
       // Combine historical data with current month data into one continuous dataset
       const allData = [];
       
@@ -200,6 +203,9 @@
             y: item.count
           });
         });
+      } else {
+        console.log('No historical_data found for', rec.name, '- checking for other data fields');
+        console.log('Available fields:', Object.keys(rec));
       }
       
       // Add current month data as the next point in the timeline
@@ -210,6 +216,9 @@
           y: rec.current_month.partial_count
         });
       }
+      
+      console.log('Total data points for chart:', allData.length);
+      console.log('Chart data:', allData);
       
       if (allData.length > 0) {
         datasets.push({
