@@ -306,16 +306,21 @@
       // Ensure chart section is visible
       document.getElementById('chartSection').classList.remove('hidden');
       
-      const ctx = document.getElementById('cnaChart').getContext('2d');
+      // Force complete canvas recreation to avoid Chart.js caching
+      const oldCanvas = document.getElementById('cnaChart');
+      const newCanvas = document.createElement('canvas');
+      newCanvas.id = 'cnaChart';
+      newCanvas.width = oldCanvas.width;
+      newCanvas.height = oldCanvas.height;
+      oldCanvas.parentNode.replaceChild(newCanvas, oldCanvas);
+      
+      const ctx = newCanvas.getContext('2d');
       const datasets = buildDatasets(rec);
       
       if (chartInstance) {
         chartInstance.destroy();
         chartInstance = null;
       }
-      
-      // Clear canvas completely
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       
       if (datasets.length === 0) {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -326,11 +331,9 @@
         return;
       }
       
-      // Small delay to ensure canvas is rendered and cleared
+      // Small delay to ensure canvas is rendered
       setTimeout(() => {
         try {
-          // Force complete re-render
-          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
           chartInstance = new Chart(ctx, {
             type: 'line',
             data: { datasets },
