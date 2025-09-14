@@ -209,7 +209,7 @@
       
       // Add current month partial data if available
       if (rec.current_month && rec.current_month.partial_count >= 0) {
-        console.log('Adding current month data for', rec.name, ':', rec.current_month);
+        console.log('Adding current month data for', rec.name, ':', JSON.stringify(rec.current_month, null, 2));
         const currentMonthPoint = {
           x: rec.current_month.month + '-01',
           y: rec.current_month.partial_count
@@ -226,7 +226,7 @@
           pointStyle: 'circle'
         });
       } else {
-        console.log('No current month data for', rec.name, '- current_month:', rec.current_month);
+        console.log('No current month data for', rec.name, '- current_month:', JSON.stringify(rec.current_month, null, 2));
       }
       
       if (lgb.length > 0) {
@@ -291,7 +291,7 @@
       // Update panel title with current month progress if available
       let titleText = displayName;
       if (rec.current_month) {
-        console.log('Updating title with current month data:', rec.current_month);
+        console.log('Updating title with current month data:', JSON.stringify(rec.current_month, null, 2));
         const progress = Math.round((rec.current_month.days_elapsed / rec.current_month.days_in_month) * 100);
         titleText += ` (${rec.current_month.partial_count} CVEs this month, ${progress}% through)`;
       } else {
@@ -312,6 +312,9 @@
         chartInstance = null;
       }
       
+      // Clear canvas completely
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      
       if (datasets.length === 0) {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.font = '16px Inter';
@@ -321,9 +324,11 @@
         return;
       }
       
-      // Small delay to ensure canvas is rendered
+      // Small delay to ensure canvas is rendered and cleared
       setTimeout(() => {
         try {
+          // Force complete re-render
+          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
           chartInstance = new Chart(ctx, {
             type: 'line',
             data: { datasets },
@@ -403,7 +408,7 @@
         
         // Debug: Log sample CNA data to console
         const sampleCna = Object.values(cnaData)[0];
-        console.log('Sample CNA current_month data:', sampleCna.current_month);
+        console.log('Sample CNA current_month data:', JSON.stringify(sampleCna.current_month, null, 2));
 
         sortedCnaIds = sortCnasByTotal(cnaData);
         populateSelect();
