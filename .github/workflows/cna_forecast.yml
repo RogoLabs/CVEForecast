@@ -9,10 +9,20 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+# Use a distinct concurrency group to avoid interfering with the main Pages deploy
+concurrency:
+  group: "pages-cna"
+  cancel-in-progress: false
 
 jobs:
   update-cna-forecast:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,6 +35,10 @@ jobs:
         with:
           python-version: '3.13'
           cache: 'pip'
+
+      - name: Install PyTorch (CPU-only)
+        run: |
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
       - name: Install dependencies
         run: |
@@ -40,7 +54,7 @@ jobs:
         env:
           PYTHONUNBUFFERED: 1
         run: |
-          python code/cna_main.py --cvelist_dir cvelistV5 --output web/cna_data.json --min_cves 100 --horizon 12
+          python code/cna_main.py --cvelist_dir cvelistV5 --output web/cna_data.json --min_cves 200 --horizon 12
 
       - name: Check for changes
         id: verify-changed-files
@@ -68,3 +82,15 @@ jobs:
         with:
           name: cna-forecast-data
           path: web/cna_data.json
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
