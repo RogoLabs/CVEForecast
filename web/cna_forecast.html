@@ -110,13 +110,15 @@
         if (response.ok) {
           const cnaList = await response.json();
           cnaList.forEach(cna => {
-            if (cna.cnaID) {
-              cnaNameMapping[cna.cnaID] = {
-                shortName: cna.shortName || 'Unknown',
+            if (cna.shortName) {
+              // Map by shortName since our data uses shortNames as the 'name' field
+              cnaNameMapping[cna.shortName.toLowerCase()] = {
+                shortName: cna.shortName,
                 organizationName: cna.organizationName || cna.shortName || 'Unknown Organization'
               };
             }
           });
+          console.log('Loaded CNA mappings:', Object.keys(cnaNameMapping).length);
         }
       } catch (e) {
         console.warn('Could not load CNA name mapping:', e);
@@ -124,7 +126,8 @@
     }
 
     function getCnaDisplayName(cnaId, fallbackName) {
-      const mapping = cnaNameMapping[cnaId];
+      // Try mapping by fallbackName (which is the shortName from our data)
+      const mapping = cnaNameMapping[fallbackName?.toLowerCase()];
       if (mapping) {
         return mapping.organizationName;
       }
@@ -132,7 +135,7 @@
     }
 
     function getCnaShortName(cnaId, fallbackName) {
-      const mapping = cnaNameMapping[cnaId];
+      const mapping = cnaNameMapping[fallbackName?.toLowerCase()];
       if (mapping) {
         return mapping.shortName;
       }
@@ -167,56 +170,83 @@
       select.appendChild(fragment);
     }
 
-    function toXY(dict) {
-      return Object.entries(dict || {})
+    function toXY(dict, isHistorical = false) {
+      const entries = Object.entries(dict || {})
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([ym, v]) => ({ x: ym + '-01', y: v }));
+      
+      if (isHistorical) {
+        // For historical data, only show last 6 months
+        const now = new Date();
+        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+        return entries.filter(entry => new Date(entry.x) >= sixMonthsAgo);
+      }
+      
+      return entries;
     }
 
     function buildDatasets(rec) {
-      const hist = toXY(rec.historical);
+      const hist = toXY(rec.historical, true); // Only last 6 months
       const lgb = toXY((rec.forecasts || {}).LightGBM || {});
       const xgb = toXY((rec.forecasts || {}).XGBoost || {});
       const prophet = toXY((rec.forecasts || {}).Prophet || {});
 
-      return [
-        {
-          label: 'Historical',
+      const datasets = [];
+      
+      // Only add datasets that have data
+      if (hist.length > 0) {
+        datasets.push({
+          label: 'Historical (Last 6 Months)',
           data: hist,
           borderColor: '#6b7280',
           backgroundColor: 'rgba(107,114,128,0.2)',
           tension: 0.2,
-          borderWidth: 2,
-          pointRadius: 0
-        },
-        {
-          label: 'LightGBM',
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        });
+      }
+      
+      if (lgb.length > 0) {
+        datasets.push({
+          label: 'LightGBM Forecast',
           data: lgb,
           borderColor: '#10b981',
           backgroundColor: 'rgba(16,185,129,0.15)',
           tension: 0.2,
           borderWidth: 2,
-          pointRadius: 0
-        },
-        {
-          label: 'XGBoost',
+          pointRadius: 3,
+          borderDash: [5, 5]
+        });
+      }
+      
+      if (xgb.length > 0) {
+        datasets.push({
+          label: 'XGBoost Forecast',
           data: xgb,
           borderColor: '#3b82f6',
           backgroundColor: 'rgba(59,130,246,0.15)',
           tension: 0.2,
           borderWidth: 2,
-          pointRadius: 0
-        },
-        {
-          label: 'Prophet',
+          pointRadius: 3,
+          borderDash: [5, 5]
+        });
+      }
+      
+      if (prophet.length > 0) {
+        datasets.push({
+          label: 'Prophet Forecast',
           data: prophet,
           borderColor: '#f59e0b',
           backgroundColor: 'rgba(245,158,11,0.15)',
           tension: 0.2,
           borderWidth: 2,
-          pointRadius: 0
-        }
-      ];
+          pointRadius: 3,
+          borderDash: [5, 5]
+        });
+      }
+      
+      return datasets;
     }
 
     function updateSummary(rec) {
@@ -244,36 +274,90 @@
       
       const ctx = document.getElementById('cnaChart').getContext('2d');
       const datasets = buildDatasets(rec);
-      if (chartInstance) chartInstance.destroy();
+      
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+      }
+      
+      if (datasets.length === 0) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.font = '16px Inter';
+        ctx.fillStyle = '#6b7280';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data available for this CNA', ctx.canvas.width / 2, ctx.canvas.height / 2);
+        return;
+      }
       
       // Small delay to ensure canvas is rendered
       setTimeout(() => {
-        chartInstance = new Chart(ctx, {
-          type: 'line',
-          data: { datasets },
-          options: {
-            parsing: false,
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              x: {
-                type: 'time',
-                time: { unit: 'month' },
-                ticks: { autoSkip: true, maxTicksLimit: 12 }
+        try {
+          chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { datasets },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: {
+                mode: 'index',
+                intersect: false,
               },
-              y: {
-                beginAtZero: true,
-                title: { display: true, text: 'CVE Publications' }
+              scales: {
+                x: {
+                  type: 'time',
+                  time: { 
+                    unit: 'month',
+                    displayFormats: {
+                      month: 'MMM yyyy'
+                    }
+                  },
+                  title: {
+                    display: true,
+                    text: 'Time Period (Last 6 Months + Next 12 Months)'
+                  }
+                },
+                y: {
+                  beginAtZero: true,
+                  title: { 
+                    display: true, 
+                    text: 'CVE Publications' 
+                  },
+                  ticks: {
+                    callback: function(value) {
+                      return numberFmt.format(value);
+                    }
+                  }
+                }
+              },
+              plugins: {
+                legend: { 
+                  position: 'bottom',
+                  labels: {
+                    usePointStyle: true,
+                    padding: 20
+                  }
+                },
+                tooltip: { 
+                  mode: 'index', 
+                  intersect: false,
+                  callbacks: {
+                    label: function(context) {
+                      return context.dataset.label + ': ' + numberFmt.format(context.parsed.y);
+                    }
+                  }
+                }
               }
-            },
-            plugins: {
-              legend: { position: 'bottom' },
-              tooltip: { mode: 'nearest', intersect: false }
-            },
-            elements: { point: { radius: 0 } }
-          }
-        });
-      }, 100);
+            }
+          });
+        } catch (error) {
+          console.error('Chart rendering error:', error);
+          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+          ctx.font = '16px Inter';
+          ctx.fillStyle = '#ef4444';
+          ctx.textAlign = 'center';
+          ctx.fillText('Error rendering chart', ctx.canvas.width / 2, ctx.canvas.height / 2);
+        }
+      }, 150);
     }
 
     async function init() {
