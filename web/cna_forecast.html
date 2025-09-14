@@ -186,55 +186,51 @@
     }
 
     function buildDatasets(rec) {
-      const hist = toXY(rec.historical, true); // Only last 6 months
-      const lgb = toXY((rec.forecasts || {}).LightGBM || {});
-      const xgb = toXY((rec.forecasts || {}).XGBoost || {});
-      const prophet = toXY((rec.forecasts || {}).Prophet || {});
-
       const datasets = [];
       
-      // Only add datasets that have data
-      if (hist.length > 0) {
-        datasets.push({
-          label: 'Historical (Last 6 Months)',
-          data: hist,
-          borderColor: '#6b7280',
-          backgroundColor: 'rgba(107,114,128,0.2)',
-          tension: 0.2,
-          borderWidth: 3,
-          pointRadius: 4,
-          pointHoverRadius: 6
+      // Combine historical data with current month data into one continuous dataset
+      const allData = [];
+      
+      // Add historical data
+      if (rec.historical_data && rec.historical_data.length > 0) {
+        console.log('Adding historical data for', rec.name, ':', rec.historical_data.length, 'points');
+        rec.historical_data.forEach(item => {
+          allData.push({
+            x: item.month + '-01',
+            y: item.count
+          });
         });
       }
       
-      // Add current month partial data if available
+      // Add current month data as the next point in the timeline
       if (rec.current_month && rec.current_month.partial_count >= 0) {
         console.log('Adding current month data for', rec.name, ':', JSON.stringify(rec.current_month, null, 2));
-        const currentMonthPoint = {
+        allData.push({
           x: rec.current_month.month + '-01',
           y: rec.current_month.partial_count
-        };
-        
-        const labelText = `Current Month Progress (${rec.current_month.days_elapsed}/${rec.current_month.days_in_month} days)`;
-        console.log('Chart label being created:', labelText);
-        datasets.push({
-          label: labelText,
-          data: [currentMonthPoint],
-          borderColor: '#ef4444',
-          backgroundColor: 'rgba(239,68,68,0.3)',
-          pointRadius: 8,
-          pointHoverRadius: 10,
-          showLine: false,
-          pointStyle: 'circle'
         });
-      } else {
-        console.log('No current month data for', rec.name, '- current_month:', JSON.stringify(rec.current_month, null, 2));
       }
       
-      if (lgb.length > 0) {
+      if (allData.length > 0) {
+        datasets.push({
+          label: `CVE Publications`,
+          data: allData,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59,130,246,0.1)',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          tension: 0.1,
+          fill: false
+        });
+      } else {
+        console.log('No data available for', rec.name);
+      }
+      
+      if (rec.forecasts && rec.forecasts.LightGBM && rec.forecasts.LightGBM.length > 0) {
         datasets.push({
           label: 'LightGBM Forecast',
-          data: lgb,
+          data: rec.forecasts.LightGBM,
           borderColor: '#10b981',
           backgroundColor: 'rgba(16,185,129,0.15)',
           tension: 0.2,
@@ -244,10 +240,10 @@
         });
       }
       
-      if (xgb.length > 0) {
+      if (rec.forecasts && rec.forecasts.XGBoost && rec.forecasts.XGBoost.length > 0) {
         datasets.push({
           label: 'XGBoost Forecast',
-          data: xgb,
+          data: rec.forecasts.XGBoost,
           borderColor: '#3b82f6',
           backgroundColor: 'rgba(59,130,246,0.15)',
           tension: 0.2,
@@ -257,10 +253,10 @@
         });
       }
       
-      if (prophet.length > 0) {
+      if (rec.forecasts && rec.forecasts.Prophet && rec.forecasts.Prophet.length > 0) {
         datasets.push({
           label: 'Prophet Forecast',
-          data: prophet,
+          data: rec.forecasts.Prophet,
           borderColor: '#f59e0b',
           backgroundColor: 'rgba(245,158,11,0.15)',
           tension: 0.2,
@@ -276,12 +272,12 @@
     function updateSummary(rec) {
       const displayName = getCnaDisplayName(rec.id, rec.name);
       const shortName = getCnaShortName(rec.id, rec.name);
-      const totalHist = Object.values(rec.historical || {}).reduce((a,b) => a + b, 0);
-      const months = Object.keys((rec.forecasts || {}).LightGBM || {});
+      const totalHist = rec.historical_data.reduce((a, b) => a + b.count, 0);
+      const months = rec.forecasts.LightGBM.map(item => item.x);
       const avgNext12 = months.reduce((sum, ym) => {
-        const l = (rec.forecasts.LightGBM || {})[ym] ?? 0;
-        const x = (rec.forecasts.XGBoost || {})[ym] ?? 0;
-        const p = (rec.forecasts.Prophet || {})[ym] ?? 0;
+        const l = rec.forecasts.LightGBM.find(item => item.x === ym).y || 0;
+        const x = rec.forecasts.XGBoost.find(item => item.x === ym).y || 0;
+        const p = rec.forecasts.Prophet.find(item => item.x === ym).y || 0;
         return sum + (l + x + p) / 3.0;
       }, 0);
 
@@ -379,12 +375,33 @@
                     padding: 20
                   }
                 },
-                tooltip: { 
-                  mode: 'index', 
+                tooltip: {
+                  mode: 'index',
                   intersect: false,
                   callbacks: {
+                    title: function(tooltipItems) {
+                      if (tooltipItems.length === 0) return '';
+                      const date = new Date(tooltipItems[0].parsed.x);
+                      const dataIndex = tooltipItems[0].dataIndex;
+                      const isLastPoint = dataIndex === tooltipItems[0].dataset.data.length - 1;
+                      
+                      if (isLastPoint && rec.current_month) {
+                        return `${date.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })} (${rec.current_month.days_elapsed}/${rec.current_month.days_in_month} days)`;
+                      } else {
+                        return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+                      }
+                    },
                     label: function(context) {
-                      return context.dataset.label + ': ' + numberFmt.format(context.parsed.y);
+                      const label = context.dataset.label || '';
+                      const value = context.parsed.y;
+                      const dataIndex = context.dataIndex;
+                      const isLastPoint = dataIndex === context.dataset.data.length - 1;
+                      
+                      if (isLastPoint && rec.current_month) {
+                        return `${label}: ${value.toLocaleString()} (partial month)`;
+                      } else {
+                        return `${label}: ${value.toLocaleString()}`;
+                      }
                     }
                   }
                 }
