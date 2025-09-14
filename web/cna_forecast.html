@@ -208,8 +208,7 @@
       }
       
       // Add current month partial data if available
-      if (rec.current_month && rec.current_month.partial_count > 0) {
-        const currentDate = new Date();
+      if (rec.current_month && rec.current_month.partial_count >= 0) {
         const currentMonthPoint = {
           x: rec.current_month.month + '-01',
           y: rec.current_month.partial_count
@@ -288,7 +287,7 @@
       
       // Update panel title with current month progress if available
       let titleText = displayName;
-      if (rec.current_month && rec.current_month.partial_count > 0) {
+      if (rec.current_month) {
         const progress = Math.round((rec.current_month.days_elapsed / rec.current_month.days_in_month) * 100);
         titleText += ` (${rec.current_month.partial_count} CVEs this month, ${progress}% through)`;
       }
