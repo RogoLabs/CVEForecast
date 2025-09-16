@@ -4,20 +4,110 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CNA Forecasts - CVEForecast</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .gradient-bg {
+      background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #111827 100%);
+    }
+    .rogo-blue {
+      color: #60a5fa;
+    }
+    .rogo-dark {
+      color: #1f2937;
+    }
+    .card-shadow {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .chart-container {
+      position: relative;
+      height: 400px;
+    }
+    .summary-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .summary-item:last-child {
+      border-bottom: none;
+    }
+    .summary-label {
+      font-weight: 500;
+      color: #374151;
+    }
+    .summary-value {
+      font-weight: 600;
+      color: #111827;
+    }
+    .forecast-value {
+      color: #dc2626;
+    }
+    .growth-positive {
+      color: #dc2626;
+    }
+    .growth-negative {
+      color: #059669;
+    }
+    .growth-neutral {
+      color: #6b7280;
+    }
+    .metric-highlight {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border-left: 4px solid #1e40af;
+    }
+    .custom-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.9rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    .custom-table th,
+    .custom-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+    }
+    .custom-table thead {
+      background-color: #f8fafc;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .custom-table th {
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.75rem;
+    }
+    .custom-table tbody tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .custom-table tbody tr:hover {
+      background-color: #f1f5f9;
+    }
+    .custom-table td {
+      color: #334155;
+    }
+  </style>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-    .gradient-bg { background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #111827 100%); }
-    .card-shadow { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
-    .chart-container { position: relative; height: 420px; }
-    .loading-spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 20px auto; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="cna.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen">
   <!-- Header -->
@@ -25,11 +115,11 @@
     <div class="container mx-auto px-6 py-4">
       <div class="flex justify-between items-end">
         <div>
-          <h1 class="text-3xl font-bold"><span class="text-white">CVE</span><span class="text-blue-300">Forecast</span></h1>
-          <p class="text-gray-300 mt-1">CNA Growth Forecasts</p>
+          <h1 class="text-3xl font-bold">CVE<span class="rogo-blue">Forecast</span></h1>
+          <p class="text-blue-100 mt-1">Predictive Analytics for CVE Publications</p>
         </div>
-        <nav class="space-x-6">
-          <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
+        <nav>
+          <a href="index.html" class="text-gray-300 hover:text-white transition-colors mr-6">Home</a>
           <a href="technical_details.html" class="text-gray-300 hover:text-white transition-colors">Technical Details</a>
         </nav>
       </div>
@@ -37,490 +127,183 @@
   </header>
 
   <main class="container mx-auto px-6 py-8">
-    <!-- Controls -->
+    <!-- CNA Table Section -->
     <div class="bg-white rounded-lg card-shadow p-6 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+      <div class="flex justify-between items-center mb-6">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="cnaSelect">Select CNA</label>
-          <select id="cnaSelect" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2"></select>
+          <h2 class="text-2xl font-bold text-gray-800">CNA Overview Table</h2>
+          <p class="text-gray-600 mt-1">Comprehensive view of all CNAs with current and predicted CVE counts</p>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="searchInput">Filter by Name/ID</label>
-          <input id="searchInput" type="text" placeholder="Type to filter..." class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2" />
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-2">
+            <label class="text-sm font-medium text-gray-700">Show:</label>
+            <select id="tablePageSize" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+          <div>
+            <input id="tableSearch" type="text" placeholder="Search CNAs..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-48" />
+          </div>
         </div>
-        <div>
-          <button id="resetBtn" class="mt-6 md:mt-0 w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Reset</button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table id="cnaTable" class="w-full text-sm text-left text-gray-500">
+          <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+            <tr>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="name">
+                CNA Name <span class="sort-indicator">↕</span>
+              </th>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="total2024">
+                2024 Published <span class="sort-indicator">↕</span>
+              </th>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="forecasted2025">
+                2025 Forecasted <span class="sort-indicator">↕</span>
+              </th>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="forecasted2026">
+                2026 Forecasted <span class="sort-indicator">↕</span>
+              </th>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="growthRate">
+                2024→2025 Growth <span class="sort-indicator">↕</span>
+              </th>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="model">
+                Model <span class="sort-indicator">↕</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="cnaTableBody">
+            <!-- Table rows will be populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex items-center justify-between mt-6">
+        <div class="text-sm text-gray-700">
+          Showing <span id="tableShowingStart">1</span> to <span id="tableShowingEnd">10</span> of <span id="tableTotal">0</span> CNAs
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="tablePrevBtn" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            Previous
+          </button>
+          <div id="tablePaginationNumbers" class="flex items-center space-x-1">
+            <!-- Page numbers will be populated by JavaScript -->
+          </div>
+          <button id="tableNextBtn" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            Next
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Chart -->
+    <!-- Chart Section -->
     <div class="bg-white rounded-lg card-shadow p-6 mb-6">
-      <div class="mb-4">
-        <h2 class="text-xl font-bold text-gray-800" id="panelTitle">CNA Forecast</h2>
-        <p class="text-gray-600 mt-1">Historical monthly CVE publications and 12-month forecast per model</p>
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h2 class="text-xl font-bold text-gray-800" id="panelTitle">CNA Forecast Chart</h2>
+          <p class="text-gray-600 mt-1">Historical monthly CVE publications and forecast per model</p>
+        </div>
+        <div id="yearToggleContainer" class="hidden">
+          <div class="flex items-center space-x-2">
+            <span class="text-sm font-medium text-gray-700">Year:</span>
+            <button id="year2025Btn" class="px-3 py-1 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">2025</button>
+            <button id="year2026Btn" class="px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">2026</button>
+          </div>
+        </div>
       </div>
+      
+      
       <div id="loadingState" class="text-center">
+        <div id="errorState" class="hidden text-center">
+          <p class="text-red-600">Failed to load CNA data. Please try refreshing the page.</p>
+        </div>
         <div class="loading-spinner"></div>
         <p class="text-gray-600 mt-4">Loading CNA forecast data...</p>
       </div>
       <div id="chartSection" class="hidden">
-        <div class="chart-container">
+        <div class="chart-container" style="height: 300px;">
           <canvas id="cnaChart"></canvas>
         </div>
       </div>
     </div>
 
-    <!-- Summary Panel -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-white rounded-lg card-shadow p-6">
-        <div class="text-sm text-gray-600">CNA</div>
-        <div class="text-2xl font-semibold text-gray-900" id="summaryName">-</div>
-        <div class="text-sm text-gray-500" id="summaryId">-</div>
+    <!-- Enhanced Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg card-shadow p-6 border-l-4 border-blue-500">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-blue-900">Selected CNA</h3>
+          <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="text-2xl font-bold text-blue-900" id="summaryPanelTitle">Select a CNA</div>
+        <div class="text-sm text-blue-600 mt-1" id="summaryId">Choose from table below</div>
       </div>
-      <div class="bg-white rounded-lg card-shadow p-6">
-        <div class="text-sm text-gray-600">Total Historical CVEs</div>
-        <div class="text-2xl font-bold text-gray-900" id="summaryHistorical">-</div>
+
+      <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg card-shadow p-6 border-l-4 border-gray-500">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-gray-900">2024 Published</h3>
+          <div class="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="text-2xl font-bold text-gray-900" id="summary2024">-</div>
+        <div class="text-sm text-gray-600 mt-1">Historical baseline</div>
       </div>
-      <div class="bg-white rounded-lg card-shadow p-6">
-        <div class="text-sm text-gray-600">Forecasted Next 12 Months (avg of 3 models)</div>
-        <div class="text-2xl font-bold text-gray-900" id="summaryForecast">-</div>
+
+      <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg card-shadow p-6 border-l-4 border-green-500">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-green-900">2025 Forecasted</h3>
+          <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="text-2xl font-bold text-green-900" id="summary2025">-</div>
+        <div class="text-sm text-green-600 mt-1" id="summaryModelInfo">Select CNA to see model</div>
+      </div>
+
+      <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg card-shadow p-6 border-l-4 border-purple-500">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-purple-900">Growth Rate</h3>
+          <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="text-2xl font-bold" id="summaryGrowthRate">-</div>
+        <div class="text-sm text-purple-600 mt-1">2024 → 2025 change</div>
       </div>
     </div>
   </main>
 
-  <footer class="bg-gray-900 text-white py-8 mt-12">
+  <footer class="bg-gray-800 text-white py-8 mt-6">
     <div class="container mx-auto px-6 text-center">
-      <p class="mb-2">CVEForecast - CNA Forecasts</p>
-      <p class="text-gray-300 text-sm">Data source: <a href="https://github.com/CVEProject/cvelistV5" class="text-blue-400 hover:text-blue-300 transition-colors">CVE Project Official Repository</a></p>
+      <p class="text-gray-300">
+        Send element <a href="mailto:info@rogodata.com" class="text-blue-400 hover:text-blue-300">info@rogodata.com</a> |
+        <a href="https://github.com/RogoLabs/CVEForecast" class="text-blue-400 hover:text-blue-300">GitHub</a> |
+        <a href="https://github.com/RogoLabs/CVEForecast/issues" class="text-blue-400 hover:text-blue-300">Report Issue</a>
+      </p>
+      <p class="text-gray-400 text-sm mt-2"> 2024 RogoLabs. CVE data sourced from NIST NVD.</p>
     </div>
   </footer>
 
   <script>
-    const numberFmt = new Intl.NumberFormat('en-US');
-    let cnaData = {};
-    let cnaNameMapping = {};
-    let sortedCnaIds = [];
-    let chartInstance = null;
-
-    // Fetch CNA name mapping from CNAScoreCard data
-    async function loadCnaNameMapping() {
-      try {
-        const response = await fetch('https://raw.githubusercontent.com/RogoLabs/CNAScoreCard/main/web/data/cna_list.json');
-        if (response.ok) {
-          const cnaList = await response.json();
-          cnaList.forEach(cna => {
-            if (cna.shortName) {
-              // Map by shortName since our data uses shortNames as the 'name' field
-              cnaNameMapping[cna.shortName.toLowerCase()] = {
-                shortName: cna.shortName,
-                organizationName: cna.organizationName || cna.shortName || 'Unknown Organization'
-              };
-            }
-          });
-          console.log('Loaded CNA mappings:', Object.keys(cnaNameMapping).length);
-        }
-      } catch (e) {
-        console.warn('Could not load CNA name mapping:', e);
-      }
-    }
-
-    function getCnaDisplayName(cnaId, fallbackName) {
-      // Try mapping by fallbackName (which is the shortName from our data)
-      const mapping = cnaNameMapping[fallbackName?.toLowerCase()];
-      if (mapping) {
-        return mapping.organizationName;
-      }
-      return fallbackName || cnaId;
-    }
-
-    function getCnaShortName(cnaId, fallbackName) {
-      const mapping = cnaNameMapping[fallbackName?.toLowerCase()];
-      if (mapping) {
-        return mapping.shortName;
-      }
-      return fallbackName || cnaId.substring(0, 8);
-    }
-
-    function sortCnasByTotal(data) {
-      return Object.entries(data)
-        .map(([id, obj]) => [id, Object.values(obj.historical || {}).reduce((a,b) => a + b, 0)])
-        .sort((a,b) => b[1] - a[1])
-        .map(([id]) => id);
-    }
-
-    function populateSelect(filterTerm = '') {
-      const select = document.getElementById('cnaSelect');
-      const term = filterTerm.toLowerCase();
-      select.innerHTML = '';
-      const fragment = document.createDocumentFragment();
-
-      sortedCnaIds.forEach(id => {
-        const rec = cnaData[id];
-        const displayName = getCnaDisplayName(id, rec.name);
-        const shortName = getCnaShortName(id, rec.name);
-        const label = `${displayName}`;
-        if (!term || label.toLowerCase().includes(term) || shortName.toLowerCase().includes(term)) {
-          const opt = document.createElement('option');
-          opt.value = id;
-          opt.textContent = label;
-          fragment.appendChild(opt);
-        }
-      });
-      select.appendChild(fragment);
-    }
-
-    function toXY(dict, isHistorical = false) {
-      const entries = Object.entries(dict || {})
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([ym, v]) => ({ x: ym + '-01', y: v }));
-      
-      if (isHistorical) {
-        // For historical data, only show last 6 months
-        const now = new Date();
-        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
-        return entries.filter(entry => new Date(entry.x) >= sixMonthsAgo);
-      }
-      
-      return entries;
-    }
-
-    function buildDatasets(rec) {
-      const datasets = [];
-      
-      console.log('Building datasets for CNA:', rec.name);
-      console.log('Full CNA record:', JSON.stringify(rec, null, 2));
-      
-      // Combine historical data with current month data into one continuous dataset
-      const allData = [];
-      
-      // Add historical data
-      if (rec.historical_data && rec.historical_data.length > 0) {
-        console.log('Adding historical data for', rec.name, ':', rec.historical_data.length, 'points');
-        rec.historical_data.forEach(item => {
-          allData.push({
-            x: item.month + '-01',
-            y: item.count
-          });
-        });
-      } else {
-        console.log('No historical_data found for', rec.name, '- checking for other data fields');
-        console.log('Available fields:', Object.keys(rec));
-      }
-      
-      // Add current month data as the next point in the timeline
-      if (rec.current_month && rec.current_month.partial_count >= 0) {
-        console.log('Adding current month data for', rec.name, ':', JSON.stringify(rec.current_month, null, 2));
-        allData.push({
-          x: rec.current_month.month + '-01',
-          y: rec.current_month.partial_count
-        });
-      }
-      
-      console.log('Total data points for chart:', allData.length);
-      console.log('Chart data:', allData);
-      
-      if (allData.length > 0) {
-        datasets.push({
-          label: `CVE Publications`,
-          data: allData,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59,130,246,0.1)',
-          borderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          tension: 0.1,
-          fill: false
-        });
-      } else {
-        console.log('No data available for', rec.name);
-      }
-      
-      if (rec.forecasts && rec.forecasts.LightGBM && rec.forecasts.LightGBM.length > 0) {
-        datasets.push({
-          label: 'LightGBM Forecast',
-          data: rec.forecasts.LightGBM,
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16,185,129,0.15)',
-          tension: 0.2,
-          borderWidth: 2,
-          pointRadius: 3,
-          borderDash: [5, 5]
-        });
-      }
-      
-      if (rec.forecasts && rec.forecasts.XGBoost && rec.forecasts.XGBoost.length > 0) {
-        datasets.push({
-          label: 'XGBoost Forecast',
-          data: rec.forecasts.XGBoost,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59,130,246,0.15)',
-          tension: 0.2,
-          borderWidth: 2,
-          pointRadius: 3,
-          borderDash: [5, 5]
-        });
-      }
-      
-      if (rec.forecasts && rec.forecasts.Prophet && rec.forecasts.Prophet.length > 0) {
-        datasets.push({
-          label: 'Prophet Forecast',
-          data: rec.forecasts.Prophet,
-          borderColor: '#f59e0b',
-          backgroundColor: 'rgba(245,158,11,0.15)',
-          tension: 0.2,
-          borderWidth: 2,
-          pointRadius: 3,
-          borderDash: [5, 5]
-        });
-      }
-      
-      return datasets;
-    }
-
-    function updateSummary(rec) {
-      const displayName = getCnaDisplayName(rec.id, rec.name);
-      const shortName = getCnaShortName(rec.id, rec.name);
-      
-      // Safe handling of historical data
-      const totalHist = rec.historical_data && rec.historical_data.length > 0 
-        ? rec.historical_data.reduce((a, b) => a + b.count, 0) 
-        : 0;
-      
-      // Safe handling of forecast data
-      let avgNext12 = 0;
-      if (rec.forecasts && rec.forecasts.LightGBM && rec.forecasts.LightGBM.length > 0) {
-        const months = rec.forecasts.LightGBM.map(item => item.x);
-        avgNext12 = months.reduce((sum, ym) => {
-          const l = rec.forecasts.LightGBM.find(item => item.x === ym)?.y || 0;
-          const x = rec.forecasts.XGBoost?.find(item => item.x === ym)?.y || 0;
-          const p = rec.forecasts.Prophet?.find(item => item.x === ym)?.y || 0;
-          return sum + (l + x + p) / 3.0;
-        }, 0);
-      }
-
-      document.getElementById('summaryName').textContent = displayName;
-      document.getElementById('summaryId').textContent = shortName;
-      document.getElementById('summaryHistorical').textContent = numberFmt.format(Math.round(totalHist));
-      document.getElementById('summaryForecast').textContent = numberFmt.format(Math.round(avgNext12));
-      
-      // Update panel title with current month progress if available
-      let titleText = displayName;
-      if (rec.current_month) {
-        console.log('Updating title with current month data:', JSON.stringify(rec.current_month, null, 2));
-        const progress = Math.round((rec.current_month.days_elapsed / rec.current_month.days_in_month) * 100);
-        titleText += ` (${rec.current_month.partial_count} CVEs this month, ${progress}% through)`;
-      } else {
-        console.log('No current month data for title update');
-      }
-      document.getElementById('panelTitle').textContent = titleText;
-    }
-
-    function renderChart(rec) {
-      // Ensure chart section is visible
-      document.getElementById('chartSection').classList.remove('hidden');
-      
-      // Force complete canvas recreation to avoid Chart.js caching
-      const oldCanvas = document.getElementById('cnaChart');
-      const newCanvas = document.createElement('canvas');
-      newCanvas.id = 'cnaChart';
-      newCanvas.width = oldCanvas.width;
-      newCanvas.height = oldCanvas.height;
-      oldCanvas.parentNode.replaceChild(newCanvas, oldCanvas);
-      
-      const ctx = newCanvas.getContext('2d');
-      const datasets = buildDatasets(rec);
-      
-      if (chartInstance) {
-        chartInstance.destroy();
-        chartInstance = null;
-      }
-      
-      if (datasets.length === 0) {
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        ctx.font = '16px Inter';
-        ctx.fillStyle = '#6b7280';
-        ctx.textAlign = 'center';
-        ctx.fillText('No data available for this CNA', ctx.canvas.width / 2, ctx.canvas.height / 2);
-        return;
-      }
-      
-      // Small delay to ensure canvas is rendered
-      setTimeout(() => {
-        try {
-          chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: { datasets },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              interaction: {
-                mode: 'index',
-                intersect: false,
-              },
-              scales: {
-                x: {
-                  type: 'time',
-                  time: { 
-                    unit: 'month',
-                    displayFormats: {
-                      month: 'MMM yyyy'
-                    }
-                  },
-                  title: {
-                    display: true,
-                    text: 'Time Period (Last 6 Months + Next 12 Months)'
-                  }
-                },
-                y: {
-                  beginAtZero: true,
-                  title: { 
-                    display: true, 
-                    text: 'CVE Publications' 
-                  },
-                  ticks: {
-                    callback: function(value) {
-                      return numberFmt.format(value);
-                    }
-                  }
-                }
-              },
-              plugins: {
-                legend: { 
-                  position: 'bottom',
-                  labels: {
-                    usePointStyle: true,
-                    padding: 20
-                  }
-                },
-                tooltip: {
-                  mode: 'index',
-                  intersect: false,
-                  callbacks: {
-                    title: function(tooltipItems) {
-                      if (tooltipItems.length === 0) return '';
-                      const date = new Date(tooltipItems[0].parsed.x);
-                      const dataIndex = tooltipItems[0].dataIndex;
-                      const isLastPoint = dataIndex === tooltipItems[0].dataset.data.length - 1;
-                      
-                      if (isLastPoint && rec.current_month) {
-                        return `${date.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })} (${rec.current_month.days_elapsed}/${rec.current_month.days_in_month} days)`;
-                      } else {
-                        return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-                      }
-                    },
-                    label: function(context) {
-                      const label = context.dataset.label || '';
-                      const value = context.parsed.y;
-                      const dataIndex = context.dataIndex;
-                      const isLastPoint = dataIndex === context.dataset.data.length - 1;
-                      
-                      if (isLastPoint && rec.current_month) {
-                        return `${label}: ${value.toLocaleString()} (partial month)`;
-                      } else {
-                        return `${label}: ${value.toLocaleString()}`;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          });
-        } catch (error) {
-          console.error('Chart rendering error:', error);
-          console.error('Error details:', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-          });
-          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-          ctx.font = '16px Inter';
-          ctx.fillStyle = '#ef4444';
-          ctx.textAlign = 'center';
-          ctx.fillText('Error rendering chart', ctx.canvas.width / 2, ctx.canvas.height / 2);
-        }
-      }, 150);
-    }
-
+    // Initialize everything
     async function init() {
-      try {
-        // Load CNA name mapping first
-        await loadCnaNameMapping();
-        
-        async function loadCnaData() {
-          console.log('Loading CNA data...');
-          try {
-            const response = await fetch('cna_data.json?v=' + new Date().getTime());
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            const responseText = await response.text();
-            console.log('Raw response length:', responseText.length);
-            
-            try {
-              cnaData = JSON.parse(responseText);
-            } catch (parseError) {
-              console.error('JSON parse error:', parseError);
-              console.error('Response text preview:', responseText.substring(0, 500));
-              throw new Error('Failed to parse JSON response');
-            }
-            
-            console.log('Loaded CNA mappings:', Object.keys(cnaData).length);
-            const sampleCna = Object.values(cnaData)[0];
-            console.log('Sample CNA current_month data:', JSON.stringify(sampleCna.current_month, null, 2));
-
-            sortedCnaIds = sortCnasByTotal(cnaData);
-            populateSelect();
-          } catch (error) {
-            console.error('Error loading CNA data:', error);
-            console.error('Error details:', {
-              message: error.message,
-              stack: error.stack,
-              name: error.name,
-              url: error.url || 'N/A'
-            });
-            document.getElementById('loadingState').classList.add('hidden');
-            document.getElementById('errorState').classList.remove('hidden');
-          }
-        }
-        await loadCnaData();
-        
-        document.getElementById('loadingState').style.display = 'none';
-
-        const firstId = document.getElementById('cnaSelect').value || sortedCnaIds[0];
-        if (firstId) {
-          const rec = cnaData[firstId];
-          updateSummary(rec);
-          renderChart(rec);
-        }
-      } catch (e) {
-        document.getElementById('loadingState').innerHTML = '<p class="text-red-600">Error loading CNA data.</p>';
-        console.error(e);
-      }
+      await loadCnaNameMapping();
+      await loadCnaData();
     }
-
-    document.getElementById('cnaSelect').addEventListener('change', (e) => {
-      const id = e.target.value;
-      const rec = cnaData[id];
-      if (rec) {
-        updateSummary(rec);
-        renderChart(rec);
-      }
-    });
-
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-      populateSelect(e.target.value || '');
-    });
-
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      document.getElementById('searchInput').value = '';
-      populateSelect('');
-      const first = document.getElementById('cnaSelect').value;
-      if (first && cnaData[first]) {
-        updateSummary(cnaData[first]);
-        renderChart(cnaData[first]);
-      }
-    });
 
     init();
   </script>
