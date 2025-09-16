@@ -2,7 +2,7 @@
 
 **CVE Forecast** is a sophisticated, self-improving automated platform that leverages advanced hyperparameter optimization and multiple time series forecasting models to predict the number of Common Vulnerabilities and Exposures (CVEs). It provides a comprehensive, data-driven view of future trends in vulnerability disclosures, all accessible through a sleek, interactive web dashboard.
 
-> **Version 0.7 "Security Summer Camp Prep" 🏕️ (August 2025)**: Fixed critical month transition bug in cumulative total calculations, ensuring accurate data representation across month boundaries. This release guarantees consistent and reliable cumulative CVE statistics by implementing dynamic month detection instead of hard-coded references, making the system fully resilient to calendar transitions.
+> **Version 0.8 "Opening Drive" 🏈 (September 2025)**: Launch of Individual CNA Forecasts - Revolutionary organization-specific vulnerability prediction system with dedicated forecasting pipeline for 166+ CVE Numbering Authorities (CNAs). Features advanced model ensemble including LightGBM, XGBoost, Prophet, and ExponentialSmoothing with intelligent model selection based on validation performance for each CNA's unique patterns.
 
 ## 🚀 Key Features
 
@@ -19,16 +19,17 @@
 - **End-to-End Validation**: Complete pipeline from optimization to forecasting with comprehensive testing
 
 ### 📊 **Advanced Forecasting Engine**
-- **25+ Models Supported**: Comprehensive suite including statistical (Prophet, ARIMA, Theta), tree-based (XGBoost, LightGBM, CatBoost), and deep learning models (TCN, NBEATS, TiDE)
+- **25+ Models Supported**: Comprehensive suite including statistical (Prophet, ARIMA, Theta), tree-based (XGBoost, LightGBM, CatBoost), and deep learning models (TCN, NBEATS, DLinear)
+- **CNA-Specific Forecasting**: Individual predictions for 166+ CVE Numbering Authorities with organization-specific model selection
 - **Dynamic Forecasting**: Automatically adapts forecast periods based on current date and data availability
 - **Optimized for Production**: CPU-optimized models with robust error handling and numerical stability
-- **Performance Validation**: Rigorous model evaluation with historical backtesting and performance metrics
+- **Performance Validation**: Rigorous model evaluation with historical backtesting and MAPE-based performance metrics
 
 ### 🛠️ **Enterprise-Grade Infrastructure**
-- **Automated CI/CD Pipeline**: Fully automated daily workflow with GitHub Actions for optimization, training, and deployment
+- **Unified CI/CD Pipeline**: Single automated daily workflow with GitHub Actions for CVE and CNA forecast generation and deployment
 - **Robust Error Handling**: Comprehensive error handling and fallback mechanisms throughout the entire pipeline
-- **Interactive Web Dashboard**: Real-time visualization of historical data, model comparisons, and performance analytics
-- **Complete Documentation**: In-depth technical documentation covering architecture, optimization strategies, and deployment
+- **Interactive Web Dashboard**: Real-time visualization of historical data, model comparisons, and CNA-specific analytics
+- **Complete Documentation**: In-depth technical documentation covering architecture, optimization strategies, and CNA forecasting workflows
 
 ## 🌐 Live Dashboard
 

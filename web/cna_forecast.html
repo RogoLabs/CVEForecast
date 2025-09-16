@@ -233,68 +233,88 @@
     <!-- Enhanced Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg card-shadow p-6 border-l-4 border-blue-500">
-        <div class="flex items-center justify-between mb-2">
+        <div class="mb-2">
           <h3 class="text-lg font-semibold text-blue-900">Selected CNA</h3>
-          <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
         </div>
         <div class="text-2xl font-bold text-blue-900" id="summaryPanelTitle">Select a CNA</div>
         <div class="text-sm text-blue-600 mt-1" id="summaryId">Choose from table below</div>
       </div>
 
       <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg card-shadow p-6 border-l-4 border-gray-500">
-        <div class="flex items-center justify-between mb-2">
+        <div class="mb-2">
           <h3 class="text-lg font-semibold text-gray-900">2024 Published</h3>
-          <div class="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center">
-            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-            </svg>
-          </div>
         </div>
         <div class="text-2xl font-bold text-gray-900" id="summary2024">-</div>
         <div class="text-sm text-gray-600 mt-1">Historical baseline</div>
       </div>
 
       <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg card-shadow p-6 border-l-4 border-green-500">
-        <div class="flex items-center justify-between mb-2">
+        <div class="mb-2">
           <h3 class="text-lg font-semibold text-green-900">2025 Forecasted</h3>
-          <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
         </div>
         <div class="text-2xl font-bold text-green-900" id="summary2025">-</div>
         <div class="text-sm text-green-600 mt-1" id="summaryModelInfo">Select CNA to see model</div>
       </div>
 
       <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg card-shadow p-6 border-l-4 border-purple-500">
-        <div class="flex items-center justify-between mb-2">
+        <div class="mb-2">
           <h3 class="text-lg font-semibold text-purple-900">Growth Rate</h3>
-          <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-            </svg>
-          </div>
         </div>
         <div class="text-2xl font-bold" id="summaryGrowthRate">-</div>
         <div class="text-sm text-purple-600 mt-1">2024 → 2025 change</div>
       </div>
     </div>
+
+    <!-- Model Usage Statistics Card -->
+    <div class="bg-white rounded-lg card-shadow p-6 mt-8">
+      <h2 class="text-xl font-bold text-gray-800 mb-6">Model Performance Overview</h2>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Model Distribution -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-700 mb-4">Model Usage Distribution</h3>
+          <div id="modelDistribution" class="space-y-3">
+            <!-- Model bars will be populated by JavaScript -->
+          </div>
+        </div>
+        
+        <!-- Performance Metrics -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-700 mb-4">Performance Metrics</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+              <div class="text-sm text-blue-600 font-medium">Total CNAs</div>
+              <div class="text-2xl font-bold text-blue-900" id="totalCnas">-</div>
+            </div>
+            <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+              <div class="text-sm text-green-600 font-medium">Average MAPE</div>
+              <div class="text-2xl font-bold text-green-900" id="averageMape">-</div>
+            </div>
+            <div class="bg-yellow-50 rounded-lg p-4 border-l-4 border-yellow-500">
+              <div class="text-sm text-yellow-600 font-medium">Best MAPE</div>
+              <div class="text-2xl font-bold text-yellow-900" id="bestMape">-</div>
+            </div>
+            <div class="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-500">
+              <div class="text-sm text-purple-600 font-medium">Models Used</div>
+              <div class="text-2xl font-bold text-purple-900" id="modelsUsed">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
-  <footer class="bg-gray-800 text-white py-8 mt-6">
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white py-8 mt-12">
     <div class="container mx-auto px-6 text-center">
-      <p class="text-gray-300">
-        Send element <a href="mailto:info@rogodata.com" class="text-blue-400 hover:text-blue-300">info@rogodata.com</a> |
-        <a href="https://github.com/RogoLabs/CVEForecast" class="text-blue-400 hover:text-blue-300">GitHub</a> |
-        <a href="https://github.com/RogoLabs/CVEForecast/issues" class="text-blue-400 hover:text-blue-300">Report Issue</a>
-      </p>
-      <p class="text-gray-400 text-sm mt-2"> 2024 RogoLabs. CVE data sourced from NIST NVD.</p>
+      <p class="mb-2">CVEForecast - Part of <a href="https://rogolabs.net" class="text-blue-400 hover:text-blue-300 transition-colors">RogoLabs</a> Open-Source Security Tools</p>
+      <p class="text-gray-300 text-sm">Data source: <a href="https://github.com/CVEProject/cvelistV5" class="text-blue-400 hover:text-blue-300 transition-colors">CVE Project Official Repository</a></p>
+      <p class="text-gray-300 text-sm mt-2">Powered by time series forecasting models using the <a href="https://unit8co.github.io/darts/" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">Darts library</a></p>
+      <div class="mt-4 pt-4 border-t border-gray-600">
+        <div class="mt-2">
+          <span class="inline-block bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-mono">v.08 Opening Drive 🏈</span>
+        </div>
+      </div>
     </div>
   </footer>
 

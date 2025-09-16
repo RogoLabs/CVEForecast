@@ -6,7 +6,7 @@ CNA-specific CVE forecasting script.
 - Groups monthly publication counts by CNA (provider orgId)
 - Filters to CNAs with at least --min_cves total published CVEs
 - Trains 3 fast models (LightGBM, XGBoost, Prophet) with hyperparameters loaded from code/config.json
-- Produces 12-month forecasts for each eligible CNA
+- Produces forecasts for rest of current year + all of next year for each eligible CNA
 - Writes output to web/cna_data.json in the following structure:
 
 {
@@ -25,7 +25,7 @@ CNA-specific CVE forecasting script.
 }
 
 Usage:
-  python code/cna_main.py --cvelist_dir cvelistV5 --output web/cna_data.json --min_cves 100 --horizon 12
+  python code/cna_main.py --cvelist_dir cvelistV5 --output web/cna_data.json --min_cves 100
 
 Notes:
 - This script intentionally does not depend on the main forecasting pipeline to keep runtime fast and isolated.
@@ -33,11 +33,11 @@ Notes:
 """
 from __future__ import annotations
 
-import argparse
 import json
 import logging
 import os
 import sys
+import warnings
 from dataclasses import dataclass
 from datetime import datetime
 from glob import glob
@@ -45,6 +45,10 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+
+# Suppress sklearn feature names warning for LightGBM
+warnings.filterwarnings("ignore", message="X does not have valid feature names, but LGBMRegressor was fitted with feature names")
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
 
 # Darts time series and models
 from darts import TimeSeries
@@ -144,8 +148,8 @@ def scan_cvelist_for_cna_counts(cvelist_dir: str) -> Tuple[pd.DataFrame, Dict[st
         - DataFrame with columns: ['org_id', 'date'] (date is pandas.Timestamp)
         - Mapping org_id -> short_name (best effort)
     """
-    pattern = os.path.join(cvelist_dir, "cves", "**", "**", "*.json")
-    paths = glob(pattern, recursive=True)
+    pattern = os.path.join(cvelist_dir, "cves", "*", "*", "CVE-*.json")
+    paths = glob(pattern)
     logger.info("Scanning %d CVE files from %s", len(paths), cvelist_dir)
 
     rows: List[Tuple[str, pd.Timestamp]] = []
@@ -174,14 +178,23 @@ def build_monthly_series(df: pd.DataFrame, org_id: str) -> tuple[pd.Series, int]
 
     Missing months are filled with zeros to create a contiguous time series.
     Returns both the full series and current month partial count.
+    Limits historical data to start from 2017-01-01 for consistency.
     """
     sub = df[df["org_id"] == org_id].copy()
     if sub.empty:
         return pd.Series(dtype=float), 0
     sub = sub.sort_values("date")
 
-    # Monthly start frequency
-    start = sub["date"].min().to_period("M").to_timestamp(how="start")
+    # Limit historical data to start from 2017-01-01 for consistency with main page
+    start_cutoff = pd.Timestamp("2017-01-01")
+    sub = sub[sub["date"] >= start_cutoff]
+    
+    if sub.empty:
+        return pd.Series(dtype=float), 0
+
+    # Monthly start frequency - start from 2017-01-01 or first data point, whichever is later
+    data_start = sub["date"].min().to_period("M").to_timestamp(how="start")
+    start = max(start_cutoff, data_start)
     end = sub["date"].max().to_period("M").to_timestamp(how="start")
 
     # Count per month
@@ -206,100 +219,310 @@ def series_to_darts(counts: pd.Series) -> TimeSeries:
     return TimeSeries.from_dataframe(df, time_col="date", value_cols="value", fill_missing_dates=True, freq="MS")
 
 
+def validate_model_performance(
+    ts: TimeSeries,
+    model_class,
+    model_params: Dict[str, Any],
+    validation_months: int = 6
+) -> float:
+    """Validate model performance using walk-forward validation.
+    
+    Returns MAPE (Mean Absolute Percentage Error) - lower is better.
+    """
+    if len(ts) < validation_months + 12:  # Need enough data for validation
+        return float('inf')
+    
+    try:
+        # Use last validation_months for testing
+        train_ts = ts[:-validation_months]
+        test_ts = ts[-validation_months:]
+        
+        # Train model
+        if model_class.__name__ == 'Prophet':
+            model = model_class(**model_params)
+        elif model_class.__name__ in ['LightGBMModel', 'XGBModel']:
+            lags = model_params.pop('lags', 12)
+            if len(train_ts) <= lags:
+                return float('inf')
+            model = model_class(lags=lags, **model_params)
+        else:
+            model = model_class(**model_params)
+        
+        model.fit(train_ts)
+        predictions = model.predict(validation_months)
+        
+        # Calculate MAPE
+        actual = test_ts.values().flatten()
+        predicted = predictions.values().flatten()
+        
+        # Avoid division by zero
+        mask = actual != 0
+        if not mask.any():
+            return float('inf')
+        
+        mape = np.mean(np.abs((actual[mask] - predicted[mask]) / actual[mask])) * 100
+        return mape
+        
+    except Exception:
+        return float('inf')
+
+
+def select_best_models_for_cna(
+    ts: TimeSeries,
+    config: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Test multiple models and return the best performing one with its validation score.
+    
+    Returns dict with 'best_model', 'model_name', 'mape_score', and 'all_scores'.
+    """
+    from darts.models import ExponentialSmoothing, AutoARIMA, LinearRegressionModel
+    from darts.models import LightGBMModel, XGBModel
+    
+    try:
+        from darts.models import Prophet as DartsProphet
+    except ImportError:
+        try:
+            from darts.models.forecasting.prophet import Prophet as DartsProphet
+        except ImportError:
+            DartsProphet = None
+            logger.warning("Prophet model not available, skipping")
+    
+    # Top 5 CPU-only models based on validation MAPE performance
+    model_candidates = [
+        # Best performing models (ordered by MAPE) - ExponentialSmoothing replaces TiDE for reliability
+        ('ExponentialSmoothing', ExponentialSmoothing, get_model_hyperparameters(config, "ExponentialSmoothing")),
+        ('LightGBM', LightGBMModel, get_model_hyperparameters(config, "LightGBM")),
+        ('XGBoost', XGBModel, get_model_hyperparameters(config, "XGBoost")),
+        ('LinearRegression', LinearRegressionModel, get_model_hyperparameters(config, "LinearRegression") if LinearRegressionModel else {}),
+        ('Prophet', DartsProphet, get_model_hyperparameters(config, "Prophet")),
+    ]
+    
+    # Filter out unavailable models
+    model_candidates = [(name, cls, params) for name, cls, params in model_candidates if cls is not None]
+    
+    validation_scores = {}
+    
+    for model_name, model_class, params in model_candidates:
+        try:
+            # Clean params for each model type
+            clean_params = dict(params)
+            
+            if model_name == 'Prophet':
+                # Prophet-specific parameter handling
+                clean_params = {k: v for k, v in clean_params.items() 
+                              if k in ['yearly_seasonality', 'weekly_seasonality', 'daily_seasonality',
+                                     'seasonality_mode', 'growth', 'changepoint_prior_scale',
+                                     'seasonality_prior_scale', 'n_changepoints', 'mcmc_samples',
+                                     'interval_width']}
+            elif model_name in ['LightGBM', 'XGBoost']:
+                # Remove non-model parameters
+                clean_params = {k: v for k, v in clean_params.items() 
+                              if k not in ['random_state', 'feature_pre_filter', 'early_stopping_rounds']}
+                clean_params['random_state'] = params.get('random_state', 42)
+            elif model_name == 'ExponentialSmoothing':
+                # ExponentialSmoothing-specific parameter handling
+                clean_params = {k: v for k, v in clean_params.items() 
+                              if k not in ['random_state']}
+                # ExponentialSmoothing handles trend and seasonality
+            elif model_name == 'LinearRegression':
+                # LinearRegression-specific parameter handling
+                clean_params = {k: v for k, v in clean_params.items() 
+                              if k not in ['likelihood', 'quantiles']}
+            
+            mape = validate_model_performance(ts, model_class, clean_params)
+            validation_scores[model_name] = mape
+            logger.info(f"  {model_name}: MAPE = {mape:.2f}%")
+            
+        except Exception as e:
+            logger.warning(f"  {model_name} validation failed: {e}")
+            validation_scores[model_name] = float('inf')
+    
+    # Find best model with fallback logic
+    valid_scores = {k: v for k, v in validation_scores.items() if v != float('inf')}
+    
+    if not valid_scores:
+        # Fallback: if all models failed, use LightGBM as default
+        logger.warning("All models failed validation, using LightGBM as fallback")
+        return {
+            'best_model': 'LightGBM',
+            'mape_score': 100.0,  # High MAPE to indicate fallback
+            'all_scores': validation_scores
+        }
+    
+    best_model_name = min(valid_scores.keys(), key=lambda k: valid_scores[k])
+    best_mape = valid_scores[best_model_name]
+    
+    return {
+        'best_model': best_model_name,
+        'mape_score': best_mape,
+        'all_scores': validation_scores
+    }
+
+
 def forecast_with_models(
     ts: TimeSeries,
-    horizon: int,
     config: Dict[str, Any],
 ) -> Dict[str, Dict[str, float]]:
-    """Train LightGBM, XGBoost, and Prophet on ts and produce horizon-step forecasts.
+    """Select best model for this CNA and produce forecasts.
 
-    Returns a dict of model_name -> {"YYYY-MM": forecast_value}.
+    Returns a dict with the best model's forecasts and validation info.
     """
     out: Dict[str, Dict[str, float]] = {}
-
-    # Prophet
+    
+    # Calculate dynamic horizon: remaining months in current year + all of next year
+    now = pd.Timestamp.now()
+    current_year = now.year
+    current_month = now.month
+    next_year = current_year + 1
+    
+    # Count remaining months in current year (after current month)
+    remaining_current_year = 12 - current_month
+    # All months of next year
+    next_year_months = 12
+    # Total horizon
+    horizon = remaining_current_year + next_year_months
+    
+    # Select best model for this CNA
+    logger.info("Validating models for CNA...")
+    model_selection = select_best_models_for_cna(ts, config)
+    best_model_name = model_selection['best_model']
+    
+    logger.info(f"Best model: {best_model_name} (MAPE: {model_selection['mape_score']:.2f}%)")
+    
+    # Train and forecast with best model
     try:
-        prophet_params = get_model_hyperparameters(config, "Prophet")
-        prophet = DartsProphet(
-            yearly_seasonality=prophet_params.get("yearly_seasonality", True),
-            weekly_seasonality=prophet_params.get("weekly_seasonality", False),
-            daily_seasonality=prophet_params.get("daily_seasonality", False),
-            seasonality_mode=prophet_params.get("seasonality_mode", "additive"),
-            growth=prophet_params.get("growth", "linear"),
-            changepoint_prior_scale=prophet_params.get("changepoint_prior_scale", 0.05),
-            seasonality_prior_scale=prophet_params.get("seasonality_prior_scale", 0.1),
-            n_changepoints=prophet_params.get("n_changepoints", 25),
-            mcmc_samples=prophet_params.get("mcmc_samples", 0),
-            interval_width=prophet_params.get("interval_width", 0.8),
-        )
-        prophet.fit(ts)
-        f_prophet = prophet.predict(horizon)
-        out["Prophet"] = {idx.strftime("%Y-%m"): float(val) for idx, val in zip(f_prophet.time_index, f_prophet.values().flatten())}
+        if best_model_name == 'Prophet':
+            prophet_params = get_model_hyperparameters(config, "Prophet")
+            prophet = DartsProphet(
+                yearly_seasonality=prophet_params.get("yearly_seasonality", True),
+                weekly_seasonality=prophet_params.get("weekly_seasonality", False),
+                daily_seasonality=prophet_params.get("daily_seasonality", False),
+                seasonality_mode=prophet_params.get("seasonality_mode", "additive"),
+                growth=prophet_params.get("growth", "linear"),
+                changepoint_prior_scale=prophet_params.get("changepoint_prior_scale", 0.05),
+                seasonality_prior_scale=prophet_params.get("seasonality_prior_scale", 0.1),
+                n_changepoints=prophet_params.get("n_changepoints", 25),
+                mcmc_samples=prophet_params.get("mcmc_samples", 0),
+                interval_width=prophet_params.get("interval_width", 0.8),
+            )
+            prophet.fit(ts)
+            forecast = prophet.predict(horizon)
+            out[best_model_name] = {idx.strftime("%Y-%m"): max(0, round(float(val))) 
+                                   for idx, val in zip(forecast.time_index, forecast.values().flatten())}
+        
+        elif best_model_name == 'LightGBM':
+            lgb_params = get_model_hyperparameters(config, "LightGBM")
+            lags = int(lgb_params.pop("lags", 12) or 12)
+            if len(ts) <= lags:
+                lags = max(1, min(lags, len(ts) - 1))
+            if len(ts) - lags < 2:
+                raise ValueError("Insufficient samples for LightGBM after applying lags")
+            
+            lgbm_specific = {k: v for k, v in lgb_params.items() 
+                           if k not in {"lags", "random_state", "feature_pre_filter"} and v is not None}
+            
+            model_lgb = LightGBMModel(
+                lags=lags,
+                random_state=lgb_params.get("random_state", 42),
+                **lgbm_specific,
+            )
+            model_lgb.fit(ts)
+            forecast = model_lgb.predict(horizon)
+            out[best_model_name] = {idx.strftime("%Y-%m"): max(0, round(float(val))) 
+                                   for idx, val in zip(forecast.time_index, forecast.values().flatten())}
+        
+        elif best_model_name == 'XGBoost':
+            xgb_params = get_model_hyperparameters(config, "XGBoost")
+            lags = int(xgb_params.pop("lags", 12) or 12)
+            if len(ts) <= lags:
+                lags = max(1, min(lags, len(ts) - 1))
+            if len(ts) - lags < 2:
+                raise ValueError("Insufficient samples for XGBoost after applying lags")
+            
+            xgb_specific = {k: v for k, v in xgb_params.items() 
+                          if k not in {"lags", "random_state", "early_stopping_rounds"} and v is not None}
+            
+            model_xgb = XGBModel(
+                lags=lags,
+                random_state=xgb_params.get("random_state", 42),
+                **xgb_specific,
+            )
+            model_xgb.fit(ts)
+            forecast = model_xgb.predict(horizon)
+            out[best_model_name] = {idx.strftime("%Y-%m"): max(0, round(float(val))) 
+                                   for idx, val in zip(forecast.time_index, forecast.values().flatten())}
+        
+        elif best_model_name == 'ExponentialSmoothing':
+            from darts.models import ExponentialSmoothing
+            model = ExponentialSmoothing()
+            model.fit(ts)
+            forecast = model.predict(horizon)
+            out[best_model_name] = {idx.strftime("%Y-%m"): max(0, round(float(val))) 
+                                   for idx, val in zip(forecast.time_index, forecast.values().flatten())}
+        
+        elif best_model_name == 'LinearRegression':
+            lr_params = get_model_hyperparameters(config, "LinearRegression")
+            lags = int(lr_params.pop("lags", 30) or 30)
+            if len(ts) <= lags:
+                lags = max(1, min(lags, len(ts) - 1))
+            if len(ts) - lags < 2:
+                raise ValueError("Insufficient samples for LinearRegression after applying lags")
+            
+            lr_specific = {k: v for k, v in lr_params.items() 
+                          if k not in {"lags", "likelihood", "quantiles"} and v is not None}
+            
+            model_lr = LinearRegressionModel(
+                lags=lags,
+                **lr_specific,
+            )
+            model_lr.fit(ts)
+            forecast = model_lr.predict(horizon)
+            out[best_model_name] = {idx.strftime("%Y-%m"): max(0, round(float(val))) 
+                                   for idx, val in zip(forecast.time_index, forecast.values().flatten())}
+        
+        elif best_model_name == 'ExponentialSmoothing':
+            es_params = get_model_hyperparameters(config, "ExponentialSmoothing")
+            
+            # Clean ExponentialSmoothing parameters
+            clean_params = {k: v for k, v in es_params.items() 
+                          if k not in ['random_state'] and v is not None}
+            
+            model_es = ExponentialSmoothing(**clean_params)
+            model_es.fit(ts)
+            forecast = model_es.predict(horizon)
+            out[best_model_name] = {idx.strftime("%Y-%m"): max(0, round(float(val))) 
+                                   for idx, val in zip(forecast.time_index, forecast.values().flatten())}
+        
+    
     except Exception as e:
-        logger.warning("Prophet failed: %s", e)
-
-    # LightGBM
-    try:
-        lgb_params = get_model_hyperparameters(config, "LightGBM")
-        lags = int(lgb_params.pop("lags", 12) or 12)
-        # Ensure enough history for lags
-        if len(ts) <= lags:
-            lags = max(1, min(lags, len(ts) - 1))
-        # Require at least two effective samples after lagging
-        if len(ts) - lags < 2:
-            raise ValueError("Insufficient samples for LightGBM after applying lags")
-        # Map config to LightGBM params
-        lgbm_specific = {}
-        for k, v in lgb_params.items():
-            if k in {"lags", "random_state", "feature_pre_filter"}:
-                continue
-            if v is None:
-                continue
-            lgbm_specific[k] = v
-        model_lgb = LightGBMModel(
-            lags=lags,
-            random_state=lgb_params.get("random_state", 42),
-            **lgbm_specific,
-        )
-        model_lgb.fit(ts)
-        f_lgb = model_lgb.predict(horizon)
-        out["LightGBM"] = {idx.strftime("%Y-%m"): float(val) for idx, val in zip(f_lgb.time_index, f_lgb.values().flatten())}
-    except Exception as e:
-        logger.warning("LightGBM failed (org may have too little data): %s", e)
-
-    # XGBoost
-    try:
-        xgb_params = get_model_hyperparameters(config, "XGBoost")
-        lags = int(xgb_params.pop("lags", 12) or 12)
-        if len(ts) <= lags:
-            lags = max(1, min(lags, len(ts) - 1))
-        if len(ts) - lags < 2:
-            raise ValueError("Insufficient samples for XGBoost after applying lags")
-        xgb_specific = {}
-        for k, v in xgb_params.items():
-            if k in {"lags", "random_state", "early_stopping_rounds"}:
-                continue
-            if v is None:
-                continue
-            xgb_specific[k] = v
-        model_xgb = XGBModel(
-            lags=lags,
-            random_state=xgb_params.get("random_state", 42),
-            **xgb_specific,
-        )
-        model_xgb.fit(ts)
-        f_xgb = model_xgb.predict(horizon)
-        out["XGBoost"] = {idx.strftime("%Y-%m"): float(val) for idx, val in zip(f_xgb.time_index, f_xgb.values().flatten())}
-    except Exception as e:
-        logger.warning("XGBoost failed (org may have too little data): %s", e)
-
+        logger.warning(f"{best_model_name} forecasting failed: {e}")
+        # Fallback to simple exponential smoothing
+        try:
+            from darts.models import ExponentialSmoothing
+            model = ExponentialSmoothing()
+            model.fit(ts)
+            forecast = model.predict(horizon)
+            out['ExponentialSmoothing'] = {idx.strftime("%Y-%m"): max(0, round(float(val))) 
+                                         for idx, val in zip(forecast.time_index, forecast.values().flatten())}
+            best_model_name = 'ExponentialSmoothing'
+        except Exception:
+            logger.error("All models failed for this CNA")
+            return {}
+    
+    # Add model selection metadata
+    out['_metadata'] = {
+        'selected_model': best_model_name,
+        'validation_mape': model_selection['mape_score'],
+        'all_model_scores': model_selection['all_scores']
+    }
+    
     return out
 
 
-def run(cvelist_dir: str, output_path: str, min_cves: int, horizon: int) -> None:
-    logger.info("Starting CNA forecast generation | min_cves=%s horizon=%s", min_cves, horizon)
+def run(cvelist_dir: str, output_path: str, min_cves: int) -> None:
+    logger.info("Starting CNA forecast generation | min_cves=%s", min_cves)
 
-    config = load_config(os.path.join("code", "config.json"))
+    config = load_config(os.path.join("code", "cna_config.json"))
 
     df, cna_names = scan_cvelist_for_cna_counts(cvelist_dir)
     if df.empty:
@@ -325,19 +548,126 @@ def run(cvelist_dir: str, output_path: str, min_cves: int, horizon: int) -> None
                 continue
 
             ts = series_to_darts(counts)
-            forecasts = forecast_with_models(ts, horizon, config)
+            forecasts = forecast_with_models(ts, config)
 
             # Format historical dict as YYYY-MM -> int
             hist = {idx.strftime("%Y-%m"): int(v) for idx, v in counts.items()}
             
+            # Generate cumulative data for chart (matching main.py structure)
+            historical_cumulative = []
+            cumulative_timelines = {}
+            
             # Add current month partial data
-            current_month_key = pd.Timestamp.now().strftime("%Y-%m")
+            now = pd.Timestamp.now()
+            current_month = now.month
+            current_year = now.year
+            next_year = current_year + 1
+            current_month_key = now.strftime("%Y-%m")
 
+            # Extract metadata and clean forecasts
+            metadata = forecasts.pop('_metadata', {})
+            selected_model = metadata.get('selected_model', 'Unknown')
+            
+            # Generate historical cumulative data for current year (starting at 0 on Jan 1)
+            cumulative_current_year = 0
+            historical_cumulative.append({
+                "date": f"{current_year}-01-01T12:00:00Z",
+                "cumulative_total": 0
+            })
+            
+            for month in range(1, current_month + 1):  # Jan through current month
+                month_key = f"{current_year}-{month:02d}"
+                if month_key in hist:
+                    cumulative_current_year += hist[month_key]
+                
+                # Add data point at beginning of next month showing cumulative total up to current month
+                if month < 12:  # Don't go beyond December
+                    next_month = month + 1
+                    if next_month <= current_month:  # Only add if next month is not in future
+                        historical_cumulative.append({
+                            "date": f"{current_year}-{next_month:02d}-01T12:00:00Z",
+                            "cumulative_total": cumulative_current_year
+                        })
+            
+            # Generate forecast cumulative data (matching main.py cumulative_timelines structure)
+            if selected_model in forecasts:
+                model_key = f"{selected_model}_cumulative"
+                cumulative_timelines[model_key] = []
+                
+                # Start cumulative from current year total
+                cumulative_forecast = cumulative_current_year
+                
+                # Add remaining months of current year (2025)
+                for month in range(current_month + 1, 13):  # From next month through Dec
+                    month_key = f"{current_year}-{month:02d}"
+                    if month_key in forecasts[selected_model]:
+                        # Add data point at beginning of month BEFORE adding this month's CVEs
+                        # This shows cumulative total through previous month
+                        cumulative_timelines[model_key].append({
+                            "date": f"{current_year}-{month:02d}-01T12:00:00Z",
+                            "cumulative_total": cumulative_forecast
+                        })
+                        
+                        # Now add this month's CVEs to cumulative total
+                        cumulative_forecast += forecasts[selected_model][month_key]
+                
+                # Add dedicated end-of-year total point (December 31st)
+                # This shows the complete year-end total including all December CVEs
+                if cumulative_forecast > 0:
+                    cumulative_timelines[model_key].append({
+                        "date": f"{current_year}-12-31T23:59:59Z",
+                        "cumulative_total": cumulative_forecast
+                    })
+                
+                # Add January 1st of next year starting at 0
+                cumulative_timelines[model_key].append({
+                    "date": f"{next_year}-01-01T12:00:00Z", 
+                    "cumulative_total": 0
+                })
+                
+                # Add all months of next year
+                cumulative_next_year = 0
+                for month in range(1, 13):  # Jan through Dec of next year
+                    month_key = f"{next_year}-{month:02d}"
+                    if month_key in forecasts[selected_model]:
+                        # Add data point at beginning of month BEFORE adding this month's CVEs
+                        # This shows cumulative total through previous month
+                        cumulative_timelines[model_key].append({
+                            "date": f"{next_year}-{month:02d}-01T12:00:00Z",
+                            "cumulative_total": cumulative_next_year
+                        })
+                        
+                        # Now add this month's CVEs to cumulative total
+                        cumulative_next_year += forecasts[selected_model][month_key]
+                
+                # Add dedicated end-of-year total point for next year (December 31st)
+                # This shows the complete year-end total including all December CVEs
+                if cumulative_next_year > 0:
+                    cumulative_timelines[model_key].append({
+                        "date": f"{next_year}-12-31T23:59:59Z",
+                        "cumulative_total": cumulative_next_year
+                    })
+            
+            # Clean up Infinity values for JSON serialization
+            validation_mape = metadata.get('validation_mape', float('inf'))
+            if not np.isfinite(validation_mape):
+                validation_mape = 999.99  # Use high but finite value
+            
+            all_model_scores = metadata.get('all_model_scores', {})
+            cleaned_scores = {}
+            for model, score in all_model_scores.items():
+                if np.isfinite(score):
+                    cleaned_scores[model] = score
+                else:
+                    cleaned_scores[model] = 999.99  # Use high but finite value for failed models
+            
             results[org_id] = {
                 "id": org_id,
                 "name": cna_names.get(org_id),
                 "scope": None,  # placeholder; can be enriched from a CNA registry later
                 "historical": hist,
+                "historical_cumulative": historical_cumulative,
+                "cumulative_timelines": cumulative_timelines,  # Match main.py structure
                 "current_month": {
                     "month": current_month_key,
                     "partial_count": current_month_partial,
@@ -345,6 +675,11 @@ def run(cvelist_dir: str, output_path: str, min_cves: int, horizon: int) -> None
                     "days_in_month": pd.Timestamp.now().days_in_month
                 },
                 "forecasts": forecasts,
+                "model_selection": {
+                    "selected_model": metadata.get('selected_model', 'LightGBM'),  # Fallback to LightGBM instead of Unknown
+                    "validation_mape": validation_mape,
+                    "all_model_scores": cleaned_scores
+                }
             }
             if i % 25 == 0:
                 logger.info("Processed %d / %d CNAs", i, len(eligible_orgs))
@@ -360,14 +695,12 @@ def run(cvelist_dir: str, output_path: str, min_cves: int, horizon: int) -> None
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate CNA-specific CVE forecasts")
-    parser.add_argument("--cvelist_dir", type=str, default="cvelistV5", help="Path to cvelistV5 clone")
-    parser.add_argument("--output", type=str, default=os.path.join("web", "cna_data.json"), help="Output JSON path")
-    parser.add_argument("--min_cves", type=int, default=100, help="Minimum total CVEs per CNA to include")
-    parser.add_argument("--horizon", type=int, default=12, help="Forecast horizon in months")
-
-    args = parser.parse_args()
-    run(args.cvelist_dir, args.output, args.min_cves, args.horizon)
+    # Fixed parameters for GitHub Actions - no command line arguments needed
+    cvelist_dir = "cvelistV5"
+    output_path = os.path.join("web", "cna_data.json")
+    min_cves = 50  # Lower threshold to include more CNAs
+    
+    run(cvelist_dir, output_path, min_cves)
 
 
 if __name__ == "__main__":

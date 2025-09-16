@@ -39,14 +39,18 @@ async function loadCnaData() {
         // Initialize table
         initializeTable();
         
-        // Set up table sorting event listeners
-        setupTableSorting();
-        
         // Update dynamic table headers
         updateDynamicHeaders();
         
         // Auto-select top CNA and display chart
         autoSelectTopCna();
+        
+        // Update model statistics after data is loaded with comprehensive logging
+        console.log('loadCnaData: Data loaded successfully, scheduling updateModelStatistics');
+        setTimeout(() => {
+          console.log('loadCnaData: Timeout fired, calling updateModelStatistics');
+          updateModelStatistics();
+        }, 150);
       } catch (parseError) {
         // Handle JSON parsing errors silently in production
       }
@@ -241,12 +245,10 @@ function initializeTable() {
     renderTable();
     updatePagination();
     
-    // Auto-load MITRE's chart by default
-    const mitreId = '8254265b-2729-46b6-b9e3-3dfca2d5bfca';
-    const mitreRecord = cnaData[mitreId];
-    if (mitreRecord) {
-      selectCnaFromTable(mitreId);
-    }
+    // Set up table sorting event listeners after table is initialized
+    setupTableSorting();
+    
+    // Chart will be auto-selected by autoSelectTopCna() after table initialization
     
   } catch (error) {
     // Handle table initialization errors silently
@@ -366,39 +368,46 @@ function selectCnaFromTable(cnaId) {
   }
 }
 
+// Handle sort click events
+function handleSort(event) {
+  const header = event.currentTarget;
+  const column = header.getAttribute('data-sort');
+  
+  // Toggle sort direction
+  if (sortColumn === column) {
+    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortColumn = column;
+    sortDirection = 'asc';
+  }
+  
+  // Update sort indicators
+  const headers = document.querySelectorAll('#cnaTable th[data-sort]');
+  headers.forEach(h => {
+    const indicator = h.querySelector('.sort-indicator');
+    if (h === header) {
+      indicator.textContent = sortDirection === 'asc' ? '↑' : '↓';
+    } else {
+      indicator.textContent = '↕';
+    }
+  });
+  
+  // Reset to page 1 when sorting
+  currentPage = 1;
+  
+  // Sort and re-render table
+  sortTable();
+  renderTable();
+  updatePagination();
+}
+
 // Set up table sorting functionality
 function setupTableSorting() {
   const headers = document.querySelectorAll('#cnaTable th[data-sort]');
   headers.forEach(header => {
-    header.addEventListener('click', () => {
-      const column = header.getAttribute('data-sort');
-      
-      // Toggle sort direction
-      if (sortColumn === column) {
-        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-      } else {
-        sortColumn = column;
-        sortDirection = 'asc';
-      }
-      
-      // Update sort indicators
-      headers.forEach(h => {
-        const indicator = h.querySelector('.sort-indicator');
-        if (h === header) {
-          indicator.textContent = sortDirection === 'asc' ? '↑' : '↓';
-        } else {
-          indicator.textContent = '↕';
-        }
-      });
-      
-      // Reset to page 1 when sorting
-      currentPage = 1;
-      
-      // Sort and re-render table
-      sortTable();
-      renderTable();
-      updatePagination();
-    });
+    // Remove existing listeners to prevent duplicates
+    header.removeEventListener('click', handleSort);
+    header.addEventListener('click', handleSort);
   });
   
   // Set up search functionality
@@ -445,14 +454,21 @@ function updateDynamicHeaders() {
 
 // Auto-select top CNA and display its chart
 function autoSelectTopCna() {
+  console.log('autoSelectTopCna: Starting...');
   if (filteredData && filteredData.length > 0) {
     const topCna = filteredData[0];
+    console.log('autoSelectTopCna: Top CNA:', topCna.name, 'ID:', topCna.id);
     const rec = cnaData[topCna.id];
     if (rec) {
+      console.log('autoSelectTopCna: Found CNA record, updating summary and chart');
       currentCnaData = rec;
       updateSummary(rec);
       renderChart(rec);
+    } else {
+      console.log('autoSelectTopCna: CNA record not found for ID:', topCna.id);
     }
+  } else {
+    console.log('autoSelectTopCna: No filtered data available');
   }
 }
 
@@ -461,11 +477,11 @@ function autoSelectTopCna() {
 
 function getModelColor(modelName, alpha = 1) {
   const colors = {
-    'Prophet': `rgba(34, 197, 94, ${alpha})`,
-    'XGBoost': `rgba(239, 68, 68, ${alpha})`,
-    'LightGBM': `rgba(168, 85, 247, ${alpha})`,
+    'Prophet': `rgba(168, 85, 247, ${alpha})`,
+    'XGBoost': `rgba(34, 197, 94, ${alpha})`,
+    'LightGBM': `rgba(251, 146, 60, ${alpha})`,
     'AutoARIMA': `rgba(59, 130, 246, ${alpha})`,
-    'ExponentialSmoothing': `rgba(245, 158, 11, ${alpha})`,
+    'ExponentialSmoothing': `rgba(107, 114, 128, ${alpha})`,
     'CatBoost': `rgba(236, 72, 153, ${alpha})`,
     'RandomForest': `rgba(16, 185, 129, ${alpha})`,
     'LinearRegression': `rgba(99, 102, 241, ${alpha})`,
@@ -477,7 +493,7 @@ function getModelColor(modelName, alpha = 1) {
     'TCN': `rgba(124, 58, 237, ${alpha})`,
     'NBEATS': `rgba(217, 70, 239, ${alpha})`,
     'NHiTS': `rgba(34, 197, 94, ${alpha})`,
-    'TiDE': `rgba(245, 101, 101, ${alpha})`,
+    'TiDE': `rgba(245, 158, 11, ${alpha})`,
     'DLinear': `rgba(52, 211, 153, ${alpha})`
   };
   
@@ -485,7 +501,7 @@ function getModelColor(modelName, alpha = 1) {
 }
 
 function buildCumulativeDatasets(rec, year) {
-  
+  console.log('buildCumulativeDatasets: Starting for CNA:', rec.name || rec.id, 'Year:', year);
   const datasets = [];
   
   // Historical data (actual CVEs published)
@@ -542,9 +558,13 @@ function buildCumulativeDatasets(rec, year) {
   }
   
   // Forecast data - use cumulative_timelines structure (matching main.py)
+  console.log('buildCumulativeDatasets: Checking forecast data...');
+  console.log('buildCumulativeDatasets: rec.cumulative_timelines exists:', !!rec.cumulative_timelines);
   
   if (rec.cumulative_timelines) {
+    console.log('buildCumulativeDatasets: Found cumulative_timelines with keys:', Object.keys(rec.cumulative_timelines));
     Object.entries(rec.cumulative_timelines).forEach(([modelKey, modelData]) => {
+      console.log('buildCumulativeDatasets: Processing model:', modelKey, 'Data length:', Array.isArray(modelData) ? modelData.length : 'not array');
       
       if (Array.isArray(modelData) && modelData.length > 0) {
         const forecastData = modelData
@@ -570,17 +590,21 @@ function buildCumulativeDatasets(rec, year) {
           // Extract model name from key (remove _cumulative suffix)
           const modelName = modelKey.replace('_cumulative', '');
           
+          // Get model-specific color
+          const modelColor = getModelColor(modelName, 1);
+          const modelColorLight = getModelColor(modelName, 0.1);
+          
           const forecastDataset = {
             label: `${modelName} Forecast`,
             data: forecastData,
-            borderColor: '#dc2626', // Red color for all forecast lines
-            backgroundColor: 'rgba(220, 38, 38, 0.1)', // Light red background
+            borderColor: modelColor,
+            backgroundColor: modelColorLight,
             borderWidth: 2,
             pointBackgroundColor: forecastData.map(point => {
-              return '#dc2626'; // Red for all forecast points including year-end
+              return modelColor;
             }),
             pointBorderColor: forecastData.map(point => {
-              return '#dc2626'; // Red for all forecast points including year-end
+              return modelColor;
             }),
             pointRadius: 3, // Same size for all forecast points
             borderDash: [5, 5],
@@ -655,8 +679,10 @@ function generateCumulativeData(rec, year) {
 }
 
 function renderChart(rec) {
+  console.log('renderChart: Starting for CNA:', rec.name || rec.id);
   const chartSection = document.getElementById('chartSection');
   if (!chartSection) {
+    console.log('renderChart: chartSection not found');
     return;
   }
   
@@ -687,9 +713,12 @@ function renderChart(rec) {
   }
   
   const ctx = canvas.getContext('2d');
+  console.log('renderChart: Building datasets for:', rec.name || rec.id, 'Year:', currentYear);
   const datasets = buildCumulativeDatasets(rec, currentYear);
+  console.log('renderChart: Built', datasets.length, 'datasets');
   
   if (datasets.length === 0) {
+    console.log('renderChart: No datasets available, showing no data message');
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.font = '16px Inter';
     ctx.fillStyle = '#6b7280';
@@ -931,3 +960,225 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize the application
   loadCnaData();
 });
+
+// =============================================================================
+// MODEL STATISTICS
+// =============================================================================
+
+function updateModelStatistics() {
+  console.log('=== updateModelStatistics: STARTING ===');
+  console.log('updateModelStatistics: Current time:', new Date().toISOString());
+  
+  // Check cnaData availability
+  if (!cnaData) {
+    console.log('updateModelStatistics: cnaData is null/undefined');
+    return;
+  }
+  
+  const cnaKeys = Object.keys(cnaData);
+  if (cnaKeys.length === 0) {
+    console.log('updateModelStatistics: cnaData is empty object');
+    return;
+  }
+  
+  console.log('updateModelStatistics: Processing', cnaKeys.length, 'CNAs');
+  console.log('updateModelStatistics: First CNA ID:', cnaKeys[0]);
+  console.log('updateModelStatistics: Sample CNA has model_selection:', !!cnaData[cnaKeys[0]].model_selection);
+
+  // Check if DOM elements exist with detailed logging
+  console.log('updateModelStatistics: Checking DOM elements...');
+  const totalCnasEl = document.getElementById('totalCnas');
+  const modelsUsedEl = document.getElementById('modelsUsed');
+  const averageMapeEl = document.getElementById('averageMape');
+  const bestMapeEl = document.getElementById('bestMape');
+  const distributionEl = document.getElementById('modelDistribution');
+
+  console.log('updateModelStatistics: DOM element check results:');
+  console.log('  - totalCnas:', !!totalCnasEl, totalCnasEl ? 'FOUND' : 'NOT FOUND');
+  console.log('  - modelsUsed:', !!modelsUsedEl, modelsUsedEl ? 'FOUND' : 'NOT FOUND');
+  console.log('  - averageMape:', !!averageMapeEl, averageMapeEl ? 'FOUND' : 'NOT FOUND');
+  console.log('  - bestMape:', !!bestMapeEl, bestMapeEl ? 'FOUND' : 'NOT FOUND');
+  console.log('  - modelDistribution:', !!distributionEl, distributionEl ? 'FOUND' : 'NOT FOUND');
+
+  if (!totalCnasEl || !modelsUsedEl || !averageMapeEl || !bestMapeEl || !distributionEl) {
+    console.log('updateModelStatistics: Some DOM elements missing, implementing robust retry...');
+    retryUpdateModelStatistics(1);
+    return;
+  }
+  
+  console.log('updateModelStatistics: All DOM elements found, proceeding with data processing...');
+
+  // Calculate model statistics with detailed logging
+  console.log('updateModelStatistics: Starting data processing...');
+  const modelCounts = {};
+  const mapeScores = [];
+  let totalCnas = 0;
+  let cnasWithModelSelection = 0;
+
+  Object.values(cnaData).forEach((cna, index) => {
+    if (cna.model_selection) {
+      cnasWithModelSelection++;
+      const model = cna.model_selection.selected_model;
+      const mape = cna.model_selection.validation_mape;
+      
+      if (index < 3) { // Log first 3 for debugging
+        console.log(`updateModelStatistics: CNA ${index + 1} - Model: ${model}, MAPE: ${mape}`);
+      }
+      
+      modelCounts[model] = (modelCounts[model] || 0) + 1;
+      if (mape && mape < 999) { // Filter out fallback high MAPE values
+        mapeScores.push(mape);
+      }
+      totalCnas++;
+    }
+  });
+  
+  console.log('updateModelStatistics: Data processing complete:');
+  console.log('  - Total CNAs processed:', totalCnas);
+  console.log('  - CNAs with model_selection:', cnasWithModelSelection);
+  console.log('  - Model counts:', modelCounts);
+  console.log('  - Valid MAPE scores:', mapeScores.length);
+
+  // Update performance metrics with logging
+  console.log('updateModelStatistics: Updating DOM elements...');
+  
+  totalCnasEl.textContent = totalCnas;
+  console.log('updateModelStatistics: Set totalCnas to:', totalCnas);
+  
+  modelsUsedEl.textContent = Object.keys(modelCounts).length;
+  console.log('updateModelStatistics: Set modelsUsed to:', Object.keys(modelCounts).length);
+  
+  if (mapeScores.length > 0) {
+    const avgMape = mapeScores.reduce((a, b) => a + b, 0) / mapeScores.length;
+    const bestMape = Math.min(...mapeScores);
+    
+    averageMapeEl.textContent = `${avgMape.toFixed(1)}%`;
+    bestMapeEl.textContent = `${bestMape.toFixed(1)}%`;
+    
+    console.log('updateModelStatistics: Set averageMape to:', `${avgMape.toFixed(1)}%`);
+    console.log('updateModelStatistics: Set bestMape to:', `${bestMape.toFixed(1)}%`);
+  } else {
+    console.log('updateModelStatistics: No valid MAPE scores found');
+  }
+
+  // Update model distribution bars
+  distributionEl.innerHTML = '';
+  console.log('updateModelStatistics: Cleared distribution container');
+
+  // Sort models by count (descending)
+  const sortedModels = Object.entries(modelCounts)
+    .sort(([,a], [,b]) => b - a);
+
+  // Define colors for each model - using Tailwind v2.2.19 compatible classes
+  const modelColors = {
+    'Prophet': 'bg-purple-500',
+    'XGBoost': 'bg-green-500',
+    'LightGBM': 'bg-yellow-500',
+    'ExponentialSmoothing': 'bg-red-500',
+    'LinearRegression': 'bg-indigo-500',
+    'AutoARIMA': 'bg-gray-500'
+  };
+
+  sortedModels.forEach(([model, count]) => {
+    const percentage = ((count / totalCnas) * 100).toFixed(1);
+    const color = modelColors[model] || 'bg-gray-500';
+    
+    const modelBar = document.createElement('div');
+    modelBar.className = 'flex items-center justify-between';
+    modelBar.innerHTML = `
+      <div class="flex items-center space-x-3 flex-1">
+        <div class="w-3 h-3 rounded-full ${color}"></div>
+        <span class="text-sm font-medium text-gray-700">${model}</span>
+      </div>
+      <div class="flex items-center space-x-2">
+        <div class="w-24 bg-gray-200 rounded-full h-2">
+          <div class="${color} h-2 rounded-full" style="width: ${percentage}%"></div>
+        </div>
+        <span class="text-sm text-gray-600 w-12 text-right">${count}</span>
+        <span class="text-xs text-gray-500 w-10 text-right">(${percentage}%)</span>
+      </div>
+    `;
+    
+    distributionEl.appendChild(modelBar);
+    console.log(`updateModelStatistics: Added bar for ${model}: ${count} (${percentage}%)`);
+  });
+  
+  console.log('updateModelStatistics: Successfully completed all updates');
+  
+  // Debug: Check if the card is actually visible
+  const cardContainer = document.querySelector('.bg-white.rounded-lg.card-shadow');
+  if (cardContainer) {
+    const rect = cardContainer.getBoundingClientRect();
+    console.log('updateModelStatistics: Model card position:', {
+      top: rect.top,
+      left: rect.left,
+      width: rect.width,
+      height: rect.height,
+      visible: rect.top < window.innerHeight && rect.bottom > 0
+    });
+    console.log('updateModelStatistics: Card display style:', window.getComputedStyle(cardContainer).display);
+    console.log('updateModelStatistics: Card visibility:', window.getComputedStyle(cardContainer).visibility);
+  } else {
+    console.log('updateModelStatistics: ERROR - Model statistics card container not found in DOM!');
+  }
+  
+  console.log('=== updateModelStatistics: FINISHED ===');
+}
+
+// Robust retry mechanism with exponential backoff
+function retryUpdateModelStatistics(attempt) {
+  const maxAttempts = 10;
+  const baseDelay = 100;
+  
+  if (attempt > maxAttempts) {
+    console.error('updateModelStatistics: Max retry attempts reached, giving up');
+    return;
+  }
+  
+  const delay = baseDelay * Math.pow(1.5, attempt - 1);
+  console.log(`updateModelStatistics: Retry attempt ${attempt}/${maxAttempts} in ${delay}ms`);
+  
+  setTimeout(() => {
+    console.log(`updateModelStatistics: Retry ${attempt} executing...`);
+    
+    // Check DOM readiness using multiple methods
+    if (document.readyState !== 'complete') {
+      console.log('updateModelStatistics: Document not ready, waiting...');
+      retryUpdateModelStatistics(attempt + 1);
+      return;
+    }
+    
+    // Use requestAnimationFrame to ensure DOM is painted
+    requestAnimationFrame(() => {
+      console.log('updateModelStatistics: requestAnimationFrame fired, checking elements...');
+      updateModelStatistics();
+    });
+  }, delay);
+}
+
+// Enhanced DOM ready detection
+function ensureDOMReady(callback) {
+  if (document.readyState === 'complete') {
+    console.log('ensureDOMReady: Document already complete');
+    requestAnimationFrame(callback);
+    return;
+  }
+  
+  if (document.readyState === 'interactive') {
+    console.log('ensureDOMReady: Document interactive, waiting for complete');
+    window.addEventListener('load', () => {
+      console.log('ensureDOMReady: Window load event fired');
+      requestAnimationFrame(callback);
+    });
+    return;
+  }
+  
+  console.log('ensureDOMReady: Document loading, waiting for DOMContentLoaded');
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('ensureDOMReady: DOMContentLoaded fired');
+    window.addEventListener('load', () => {
+      console.log('ensureDOMReady: Window load event fired after DOMContentLoaded');
+      requestAnimationFrame(callback);
+    });
+  });
+}
