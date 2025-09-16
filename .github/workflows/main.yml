@@ -1,4 +1,4 @@
-name: CVE Forecast Daily Update
+name: CVE & CNA Forecast Daily Update
 
 
 on:
@@ -74,6 +74,12 @@ jobs:
       env:
         PYTHONUNBUFFERED: 1
     
+    - name: Run CNA forecast generation
+      run: |
+        python code/cna_main.py
+      env:
+        PYTHONUNBUFFERED: 1
+    
     - name: Check for changes
       id: verify-changed-files
       run: |
@@ -89,9 +95,10 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git add web/data.json
+        git add web/cna_data.json
         git add code/config.json
         git add code/tuner/tuner_config.json
-        git commit -m "Update CVE forecast data and optimized configurations - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        git commit -m "Update CVE and CNA forecast data and optimized configurations - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
         git push
     
     - name: Upload artifacts
@@ -99,7 +106,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: forecast-data
-        path: web/data.json
+        path: |
+          web/data.json
+          web/cna_data.json
     
     - name: Setup Pages
       uses: actions/configure-pages@v4

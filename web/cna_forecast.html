@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CNA Forecasts - CVEForecast</title>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .gradient-bg {
+      background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #111827 100%);
+    }
+    .rogo-blue {
+      color: #60a5fa;
+    }
+    .rogo-dark {
+      color: #1f2937;
+    }
+    .card-shadow {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .chart-container {
+      position: relative;
+      height: 400px;
+    }
+    .summary-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .summary-item:last-child {
+      border-bottom: none;
+    }
+    .summary-label {
+      font-weight: 500;
+      color: #374151;
+    }
+    .summary-value {
+      font-weight: 600;
+      color: #111827;
+    }
+    .forecast-value {
+      color: #dc2626;
+    }
+    .growth-positive {
+      color: #dc2626;
+    }
+    .growth-negative {
+      color: #059669;
+    }
+    .growth-neutral {
+      color: #6b7280;
+    }
+    .metric-highlight {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border-left: 4px solid #1e40af;
+    }
+    .custom-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.9rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    .custom-table th,
+    .custom-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+    }
+    .custom-table thead {
+      background-color: #f8fafc;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .custom-table th {
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.75rem;
+    }
+    .custom-table tbody tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .custom-table tbody tr:hover {
+      background-color: #f1f5f9;
+    }
+    .custom-table td {
+      color: #334155;
+    }
+  </style>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="cna.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- Header -->
+  <header class="gradient-bg text-white shadow-lg">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex justify-between items-end">
+        <div>
+          <h1 class="text-3xl font-bold">CVE<span class="rogo-blue">Forecast</span></h1>
+          <p class="text-blue-100 mt-1">Predictive Analytics for CVE Publications</p>
+        </div>
+        <nav>
+          <a href="index.html" class="text-gray-300 hover:text-white transition-colors mr-6">Home</a>
+          <a href="technical_details.html" class="text-gray-300 hover:text-white transition-colors">Technical Details</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-6 py-8">
+    <!-- CNA Table Section -->
+    <div class="bg-white rounded-lg card-shadow p-6 mb-6">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800">CNA Overview Table</h2>
+          <p class="text-gray-600 mt-1">Comprehensive view of all CNAs with current and predicted CVE counts</p>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-2">
+            <label class="text-sm font-medium text-gray-700">Show:</label>
+            <select id="tablePageSize" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+          <div>
+            <input id="tableSearch" type="text" placeholder="Search CNAs..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-48" />
+          </div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table id="cnaTable" class="w-full text-sm text-left text-gray-500">
+          <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+            <tr>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="name">
+                CNA Name <span class="sort-indicator">↕</span>
+              </th>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="total2024">
+                2024 Published <span class="sort-indicator">↕</span>
+              </th>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="forecasted2025">
+                2025 Forecasted <span class="sort-indicator">↕</span>
+              </th>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="forecasted2026">
+                2026 Forecasted <span class="sort-indicator">↕</span>
+              </th>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="growthRate">
+                2024→2025 Growth <span class="sort-indicator">↕</span>
+              </th>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="model">
+                Model <span class="sort-indicator">↕</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="cnaTableBody">
+            <!-- Table rows will be populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex items-center justify-between mt-6">
+        <div class="text-sm text-gray-700">
+          Showing <span id="tableShowingStart">1</span> to <span id="tableShowingEnd">10</span> of <span id="tableTotal">0</span> CNAs
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="tablePrevBtn" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            Previous
+          </button>
+          <div id="tablePaginationNumbers" class="flex items-center space-x-1">
+            <!-- Page numbers will be populated by JavaScript -->
+          </div>
+          <button id="tableNextBtn" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="bg-white rounded-lg card-shadow p-6 mb-6">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h2 class="text-xl font-bold text-gray-800" id="panelTitle">CNA Forecast Chart</h2>
+          <p class="text-gray-600 mt-1">Historical monthly CVE publications and forecast per model</p>
+        </div>
+        <div id="yearToggleContainer" class="hidden">
+          <div class="flex items-center space-x-2">
+            <span class="text-sm font-medium text-gray-700">Year:</span>
+            <button id="year2025Btn" class="px-3 py-1 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">2025</button>
+            <button id="year2026Btn" class="px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">2026</button>
+          </div>
+        </div>
+      </div>
+      
+      
+      <div id="loadingState" class="text-center">
+        <div id="errorState" class="hidden text-center">
+          <p class="text-red-600">Failed to load CNA data. Please try refreshing the page.</p>
+        </div>
+        <div class="loading-spinner"></div>
+        <p class="text-gray-600 mt-4">Loading CNA forecast data...</p>
+      </div>
+      <div id="chartSection" class="hidden">
+        <div class="chart-container" style="height: 300px;">
+          <canvas id="cnaChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg card-shadow p-6 border-l-4 border-blue-500">
+        <div class="mb-2">
+          <h3 class="text-lg font-semibold text-blue-900">Selected CNA</h3>
+        </div>
+        <div class="text-2xl font-bold text-blue-900" id="summaryPanelTitle">Select a CNA</div>
+        <div class="text-sm text-blue-600 mt-1" id="summaryId">Choose from table below</div>
+      </div>
+
+      <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg card-shadow p-6 border-l-4 border-gray-500">
+        <div class="mb-2">
+          <h3 class="text-lg font-semibold text-gray-900">2024 Published</h3>
+        </div>
+        <div class="text-2xl font-bold text-gray-900" id="summary2024">-</div>
+        <div class="text-sm text-gray-600 mt-1">Historical baseline</div>
+      </div>
+
+      <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg card-shadow p-6 border-l-4 border-green-500">
+        <div class="mb-2">
+          <h3 class="text-lg font-semibold text-green-900">2025 Forecasted</h3>
+        </div>
+        <div class="text-2xl font-bold text-green-900" id="summary2025">-</div>
+        <div class="text-sm text-green-600 mt-1" id="summaryModelInfo">Select CNA to see model</div>
+      </div>
+
+      <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg card-shadow p-6 border-l-4 border-purple-500">
+        <div class="mb-2">
+          <h3 class="text-lg font-semibold text-purple-900">Growth Rate</h3>
+        </div>
+        <div class="text-2xl font-bold" id="summaryGrowthRate">-</div>
+        <div class="text-sm text-purple-600 mt-1">2024 → 2025 change</div>
+      </div>
+    </div>
+
+    <!-- Model Usage Statistics Card -->
+    <div class="bg-white rounded-lg card-shadow p-6 mt-8">
+      <h2 class="text-xl font-bold text-gray-800 mb-6">Model Performance Overview</h2>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Model Distribution -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-700 mb-4">Model Usage Distribution</h3>
+          <div id="modelDistribution" class="space-y-3">
+            <!-- Model bars will be populated by JavaScript -->
+          </div>
+        </div>
+        
+        <!-- Performance Metrics -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-700 mb-4">Performance Metrics</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+              <div class="text-sm text-blue-600 font-medium">Total CNAs</div>
+              <div class="text-2xl font-bold text-blue-900" id="totalCnas">-</div>
+            </div>
+            <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+              <div class="text-sm text-green-600 font-medium">Average MAPE</div>
+              <div class="text-2xl font-bold text-green-900" id="averageMape">-</div>
+            </div>
+            <div class="bg-yellow-50 rounded-lg p-4 border-l-4 border-yellow-500">
+              <div class="text-sm text-yellow-600 font-medium">Best MAPE</div>
+              <div class="text-2xl font-bold text-yellow-900" id="bestMape">-</div>
+            </div>
+            <div class="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-500">
+              <div class="text-sm text-purple-600 font-medium">Models Used</div>
+              <div class="text-2xl font-bold text-purple-900" id="modelsUsed">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white py-8 mt-12">
+    <div class="container mx-auto px-6 text-center">
+      <p class="mb-2">CVEForecast - Part of <a href="https://rogolabs.net" class="text-blue-400 hover:text-blue-300 transition-colors">RogoLabs</a> Open-Source Security Tools</p>
+      <p class="text-gray-300 text-sm">Data source: <a href="https://github.com/CVEProject/cvelistV5" class="text-blue-400 hover:text-blue-300 transition-colors">CVE Project Official Repository</a></p>
+      <p class="text-gray-300 text-sm mt-2">Powered by time series forecasting models using the <a href="https://unit8co.github.io/darts/" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">Darts library</a></p>
+      <div class="mt-4 pt-4 border-t border-gray-600">
+        <div class="mt-2">
+          <span class="inline-block bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-mono">v.08 Opening Drive 🏈</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Initialize everything
+    async function init() {
+      await loadCnaNameMapping();
+      await loadCnaData();
+    }
+
+    init();
+  </script>
+</body>
+</html>
