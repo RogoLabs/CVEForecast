@@ -68,13 +68,13 @@
         "trend": "add",
         "damped": false,
         "seasonal": "add",
-        "seasonal_periods": 12,
-        "use_boxcox": null,
+        "seasonal_periods": null,
+        "use_boxcox": false,
         "remove_bias": true,
         "use_brute": true,
         "damping_trend": 0.2,
         "damped_trend": false,
-        "initialization_method": "heuristic",
+        "initialization_method": "estimated",
         "missing": "none"
       },
       "best_results": {
@@ -100,14 +100,14 @@
     "XGBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 24,
-        "n_estimators": 200,
-        "max_depth": 6,
-        "learning_rate": 0.01,
-        "subsample": 1.0,
-        "colsample_bytree": 1.0,
+        "lags": 48,
+        "n_estimators": 300,
+        "max_depth": 8,
+        "learning_rate": 0.1,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
         "reg_alpha": 0,
-        "reg_lambda": 0.1,
+        "reg_lambda": 0,
         "random_state": 42,
         "n_jobs": -1,
         "tree_method": "hist",
@@ -127,16 +127,16 @@
     "LightGBM": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 48,
+        "lags": 24,
         "n_estimators": 200,
         "max_depth": 6,
         "num_leaves": 100,
-        "min_child_samples": 10,
+        "min_child_samples": 5,
         "learning_rate": 0.2,
-        "subsample": 1.0,
-        "colsample_bytree": 0.9,
-        "reg_alpha": 0.1,
-        "reg_lambda": 0.1,
+        "subsample": 0.9,
+        "colsample_bytree": 1.0,
+        "reg_alpha": 0,
+        "reg_lambda": 0,
         "min_split_gain": 0.1,
         "random_state": 42,
         "force_row_wise": true,
@@ -162,11 +162,11 @@
     "CatBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 48,
-        "iterations": 100,
+        "lags": 24,
+        "iterations": 300,
         "depth": 8,
-        "learning_rate": 0.05,
-        "l2_leaf_reg": 3,
+        "learning_rate": 0.01,
+        "l2_leaf_reg": 10,
         "subsample": 0.8,
         "random_state": 42,
         "verbose": false,
@@ -186,7 +186,7 @@
       "enabled": true,
       "hyperparameters": {
         "input_chunk_length": 24,
-        "output_chunk_length": 6,
+        "output_chunk_length": 1,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -194,12 +194,12 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "kernel_size": 3,
-        "num_filters": 32,
-        "dropout": 0.2,
+        "kernel_size": 5,
+        "num_filters": 16,
+        "dropout": 0.1,
         "weight_norm": true,
         "optimizer_kwargs": {
-          "lr": 0.001
+          "lr": 0.01
         },
         "model_name": "tcn_forecaster",
         "dilation_base": 2
@@ -272,8 +272,8 @@
     "TiDE": {
       "enabled": true,
       "hyperparameters": {
-        "input_chunk_length": 12,
-        "output_chunk_length": 1,
+        "input_chunk_length": 18,
+        "output_chunk_length": 6,
         "n_epochs": 50,
         "batch_size": 32,
         "random_state": 42,
@@ -284,8 +284,8 @@
         "num_encoder_layers": 1,
         "num_decoder_layers": 1,
         "decoder_output_dim": 16,
-        "hidden_size": 64,
-        "temporal_width_past": 4,
+        "hidden_size": 128,
+        "temporal_width_past": 8,
         "temporal_width_future": 4,
         "dropout": 0.1,
         "optimizer_kwargs": {
@@ -338,7 +338,7 @@
       "enabled": true,
       "hyperparameters": {
         "lags": 18,
-        "n_estimators": 300,
+        "n_estimators": 500,
         "max_depth": 15,
         "min_samples_split": 2,
         "min_samples_leaf": 1,
@@ -360,16 +360,20 @@
     "LinearRegression": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 6,
+        "lags": 18,
         "lags_past_covariates": null,
-        "output_chunk_length": 1,
-        "fit_intercept": true,
+        "output_chunk_length": 3,
+        "fit_intercept": false,
         "multi_models": true,
         "n_jobs": 1,
         "output_chunk_shift": 1,
-        "positive": true,
-        "likelihood": null,
-        "quantiles": null
+        "positive": false,
+        "likelihood": "quantile",
+        "quantiles": [
+          0.1,
+          0.5,
+          0.9
+        ]
       },
       "best_results": {
         "mape": 0.9261984169810139,
@@ -397,13 +401,13 @@
         "season_length": 12
       },
       "best_results": {
-        "mape": 8.603677823502863,
-        "mae": 333.5375549707718,
+        "mape": 8.547125619857512,
+        "mae": 331.99210042531723,
         "mase": 0,
         "rmsse": 0,
         "split_ratio": 0.92,
-        "training_time": 9.13903522491455,
-        "found_at": "2025-09-21T02:42:13.519707"
+        "training_time": 9.062079191207886,
+        "found_at": "2025-09-22T02:42:06.764875"
       }
     },
     "AutoETS": {
@@ -464,15 +468,11 @@
     "Croston": {
       "enabled": true,
       "hyperparameters": {
-        "alpha_d": 0.2,
-        "alpha_p": 0.2,
+        "alpha_d": null,
+        "alpha_p": 0.1,
         "version": "classic",
-        "quantiles": [
-          0.1,
-          0.5,
-          0.9
-        ],
-        "random_state": null
+        "quantiles": null,
+        "random_state": 42
       },
       "best_results": {
         "mape": 3.2798151754549676,
@@ -740,6 +740,13 @@
       "timestamp": "2025-09-21T02:42:13.519749",
       "best_model": "KalmanFilter",
       "best_mape": 4.7113026922309045,
+      "models_improved": 1,
+      "total_models_tested": 15
+    },
+    {
+      "timestamp": "2025-09-22T02:42:06.764914",
+      "best_model": "KalmanFilter",
+      "best_mape": 4.601090473628172,
       "models_improved": 1,
       "total_models_tested": 15
     }
