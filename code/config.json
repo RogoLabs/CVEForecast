@@ -382,29 +382,29 @@
     "LinearRegression": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 30,
+        "lags": 24,
         "lags_past_covariates": null,
-        "output_chunk_length": 6,
-        "fit_intercept": false,
-        "multi_models": false,
-        "n_jobs": -1,
+        "output_chunk_length": 3,
+        "fit_intercept": true,
+        "multi_models": true,
+        "n_jobs": 1,
         "output_chunk_shift": 1,
         "positive": true,
         "likelihood": null,
         "quantiles": null
       },
-      "optimal_split_ratio": 0.98,
+      "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 0.9261984169810139,
-        "mae": 34.87379120293235,
+        "mape": 0.054024331351799716,
+        "mae": 2.1728586069693847,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.00408625602722168,
-        "trial_number": 92,
-        "tuned_at": "2025-08-01T04:10:53.306341",
+        "training_time": 0.004676103591918945,
+        "trial_number": 1413,
+        "tuned_at": "2025-09-27T02:40:51.158896",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 2.419108184050902,
-        "improvement": 1.492909767069888
+        "previous_mape": 0.9261984169810139,
+        "improvement": 0.8721740856292142
       }
     },
     "AutoARIMA": {
