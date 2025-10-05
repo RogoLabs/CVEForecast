@@ -480,11 +480,17 @@ class CVEForecastEngine:
     def _get_summary(self):
         """Build the summary object matching the v.02 file_io.py logic exactly."""
         full_df = self.full_series.to_dataframe()
-        cves_2024 = full_df[full_df.index.year == 2024]['cve_count'].sum()
+        
+        # Dynamically calculate previous year total (e.g., 2024 when running in 2025, 2025 when running in 2026)
+        previous_year = self.current_datetime.year - 1
+        previous_year_total = full_df[full_df.index.year == previous_year]['cve_count'].sum()
 
         return {
             'total_historical_cves': int(full_df['cve_count'].sum()),
-            'cumulative_cves_2024': int(cves_2024),
+            'previous_year_total': int(previous_year_total),
+            'previous_year': previous_year,
+            # Legacy field for backward compatibility (will be removed in future version)
+            'cumulative_cves_2024': int(previous_year_total) if previous_year == 2024 else 0,
             'data_period': {
                 'start': full_df.index.min().strftime('%Y-%m-%d'),
                 'end': full_df.index.max().strftime('%Y-%m-%d')

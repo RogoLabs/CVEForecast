@@ -102,12 +102,19 @@ function updateSummaryCards() {
 
     document.getElementById('totalCVEs').textContent = (forecastData.summary?.total_historical_cves || 0).toLocaleString();
 
-    const lastYearTotal = forecastData.summary?.cumulative_cves_2024;
+    // Use dynamic previous_year_total (works for any year) with fallback to legacy cumulative_cves_2024
+    const lastYearTotal = forecastData.summary?.previous_year_total || forecastData.summary?.cumulative_cves_2024;
+    const previousYear = forecastData.summary?.previous_year || 2024;
+    const currentYear = new Date().getFullYear();
+    
     if (bestModelTotal && lastYearTotal) {
         const yoyGrowth = ((bestModelTotal - lastYearTotal) / lastYearTotal) * 100;
-        document.getElementById('yoyGrowth').textContent = `${yoyGrowth.toFixed(2)}%`;
+        const growthText = yoyGrowth >= 0 ? `+${yoyGrowth.toFixed(1)}%` : `${yoyGrowth.toFixed(1)}%`;
+        document.getElementById('yoyGrowth').textContent = growthText;
+        document.getElementById('yoyGrowthDetail').textContent = `${bestModelTotal.toLocaleString()} vs ${lastYearTotal.toLocaleString()} (${currentYear} vs ${previousYear})`;
     } else {
         document.getElementById('yoyGrowth').textContent = '-';
+        document.getElementById('yoyGrowthDetail').textContent = 'Data unavailable';
     }
 }
 
