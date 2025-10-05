@@ -2,7 +2,7 @@
 
 **CVE Forecast** is a sophisticated, self-improving automated platform that leverages advanced hyperparameter optimization and multiple time series forecasting models to predict the number of Common Vulnerabilities and Exposures (CVEs). It provides a comprehensive, data-driven view of future trends in vulnerability disclosures, all accessible through a sleek, interactive web dashboard.
 
-> **Version 0.8 "Opening Drive" 🏈 (September 2025)**: Launch of Individual CNA Forecasts - Revolutionary organization-specific vulnerability prediction system with dedicated forecasting pipeline for 166+ CVE Numbering Authorities (CNAs). Features advanced model ensemble including LightGBM, XGBoost, Prophet, and ExponentialSmoothing with intelligent model selection based on validation performance for each CNA's unique patterns.
+> **Version 0.9 "Edinburgh" 🏴󠁧󠁢󠁳󠁣󠁴󠁿 (October 2025)**: Year Rollover Automation & Enhanced Forecasting - Complete year rollover readiness for 2026 with fully dynamic YoY growth calculations, automatic chart axis updates, and intelligent forecast period management. Main forecast page now seamlessly transitions across year boundaries with zero manual intervention.
 
 ## 🚀 Key Features
 
@@ -63,6 +63,52 @@ For a comprehensive understanding of the project's architecture, data processing
 
 4.  **View the dashboard locally:**
     Open `web/index.html` in your browser.
+
+## 📅 Annual Maintenance
+
+### Year Rollover (Dec 31, 2025)
+
+The **main forecast system is fully dynamic** and will automatically roll over on January 1, 2026. The following components update automatically:
+- ✅ Chart axis limits (Jan 2026 → Jan 2027)
+- ✅ YoY growth calculations (compares 2026 vs 2025)
+- ✅ Chart descriptions and labels
+- ✅ Forecast generation periods
+- ✅ Backend data processing
+
+However, the **CNA forecast page** requires minor label updates (5 minutes):
+
+```bash
+# 1. Update CNA page labels
+# Edit web/cna_forecast.html:
+#   Lines 160-170 (table headers):
+#     "2024 Published" → "2025 Published"
+#     "2025 Forecasted" → "2026 Forecasted"
+#     "2026 Forecasted" → "2027 Forecasted"
+#     "2024→2025 Growth" → "2025→2026 Growth"
+#
+#   Lines 245-264 (summary cards):
+#     "2024 Published" → "2025 Published"
+#     "2025 Forecasted" → "2026 Forecasted"
+#     "2024 → 2025 change" → "2025 → 2026 change"
+
+# 2. Optional: Update forecast_end_year in code/config.json
+#    (Not required - system auto-detects and uses next year if config is outdated)
+
+# 3. Test the main forecast page
+python code/main.py
+# Verify web/data.json contains 2026 forecast data
+
+# 4. Commit and deploy
+git add web/cna_forecast.html
+git commit -m "Update CNA labels for 2026"
+git push
+```
+
+**Why CNA page needs manual updates**: The CNA page uses a 3-year rolling window design with year-specific logic. A full refactor to make it dynamic would require significant changes to data processing, chart rendering, and table sorting (4-6 hours work). The annual 5-minute label update is safer and more maintainable.
+
+**Expected behavior on Jan 1, 2026**:
+- Main page: Automatically shows 2026 forecasts vs 2025 actuals ✅
+- CNA page: Data calculations work correctly, labels will be off by one year until updated ⚠️
 
 ## 🤝 Contributing
 

@@ -71,12 +71,22 @@ function initializeDashboard() {
     populateModelRankings();
     populateForecastVsPublishedTable(); // Initially populate with the best model
     updateDataPeriodInfo();
+    updateChartDescription();
     createOrUpdateChart();
 
     const validationModelSelector = document.getElementById('validationModelSelector');
     if (validationModelSelector) {
         validationModelSelector.addEventListener('change', populateForecastVsPublishedTable);
     }
+}
+
+/**
+ * Updates the chart description with the current year.
+ */
+function updateChartDescription() {
+    const currentYear = new Date().getFullYear();
+    document.getElementById('chartDescription').textContent = 
+        `Cumulative growth showing actual CVE publications and ML model predictions for ${currentYear}`;
 }
 
 /**
@@ -102,12 +112,19 @@ function updateSummaryCards() {
 
     document.getElementById('totalCVEs').textContent = (forecastData.summary?.total_historical_cves || 0).toLocaleString();
 
-    const lastYearTotal = forecastData.summary?.cumulative_cves_2024;
+    // Use dynamic previous_year_total (works for any year) with fallback to legacy cumulative_cves_2024
+    const lastYearTotal = forecastData.summary?.previous_year_total || forecastData.summary?.cumulative_cves_2024;
+    const previousYear = forecastData.summary?.previous_year || 2024;
+    const currentYear = new Date().getFullYear();
+    
     if (bestModelTotal && lastYearTotal) {
         const yoyGrowth = ((bestModelTotal - lastYearTotal) / lastYearTotal) * 100;
-        document.getElementById('yoyGrowth').textContent = `${yoyGrowth.toFixed(2)}%`;
+        const growthText = yoyGrowth >= 0 ? `+${yoyGrowth.toFixed(1)}%` : `${yoyGrowth.toFixed(1)}%`;
+        document.getElementById('yoyGrowth').textContent = growthText;
+        document.getElementById('yoyGrowthDetail').textContent = `${bestModelTotal.toLocaleString()} vs ${lastYearTotal.toLocaleString()} (${currentYear} vs ${previousYear})`;
     } else {
         document.getElementById('yoyGrowth').textContent = '-';
+        document.getElementById('yoyGrowthDetail').textContent = 'Data unavailable';
     }
 }
 
@@ -492,8 +509,8 @@ function getChartOptions() {
                 type: 'time',
                 time: { unit: 'month', tooltipFormat: 'MMM yyyy' },
                 title: { display: true, text: 'Month' },
-                min: '2025-01-01',
-                max: '2026-01-05',
+                min: `${new Date().getFullYear()}-01-01`,
+                max: `${new Date().getFullYear() + 1}-01-05`,
             },
             y: {
                 beginAtZero: true,
