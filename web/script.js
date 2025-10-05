@@ -71,12 +71,22 @@ function initializeDashboard() {
     populateModelRankings();
     populateForecastVsPublishedTable(); // Initially populate with the best model
     updateDataPeriodInfo();
+    updateChartDescription();
     createOrUpdateChart();
 
     const validationModelSelector = document.getElementById('validationModelSelector');
     if (validationModelSelector) {
         validationModelSelector.addEventListener('change', populateForecastVsPublishedTable);
     }
+}
+
+/**
+ * Updates the chart description with the current year.
+ */
+function updateChartDescription() {
+    const currentYear = new Date().getFullYear();
+    document.getElementById('chartDescription').textContent = 
+        `Cumulative growth showing actual CVE publications and ML model predictions for ${currentYear}`;
 }
 
 /**
@@ -499,8 +509,8 @@ function getChartOptions() {
                 type: 'time',
                 time: { unit: 'month', tooltipFormat: 'MMM yyyy' },
                 title: { display: true, text: 'Month' },
-                min: '2025-01-01',
-                max: '2026-01-05',
+                min: `${new Date().getFullYear()}-01-01`,
+                max: `${new Date().getFullYear() + 1}-01-05`,
             },
             y: {
                 beginAtZero: true,

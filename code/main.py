@@ -254,10 +254,21 @@ class CVEForecastEngine:
         top_models = sorted([self.model_results[r] for r in self.model_results], key=lambda x: x['metrics'].get('mape', float('inf')))[:ensemble_size]
 
         last_historical_month = self.historical_series.end_time().to_pydatetime().date()
-        months_to_forecast = ( (self.config['model_evaluation']['forecast_end_year'] - last_historical_month.year) * 12
-                               + self.config['model_evaluation']['forecast_end_month'] - last_historical_month.month )
+        
+        # Dynamic forecast end calculation: Use config if provided, otherwise default to Jan of next year
+        # This allows config to remain static while code adapts dynamically
+        forecast_end_year = self.config['model_evaluation'].get('forecast_end_year', self.current_datetime.year + 1)
+        forecast_end_month = self.config['model_evaluation'].get('forecast_end_month', 1)
+        
+        # If config year is in the past (e.g., 2026 when it's now 2027), use next year instead
+        if forecast_end_year < self.current_datetime.year:
+            forecast_end_year = self.current_datetime.year + 1
+            self.logger.warning(f"Config forecast_end_year ({self.config['model_evaluation'].get('forecast_end_year')}) is in the past. Using {forecast_end_year} instead.")
+        
+        months_to_forecast = ((forecast_end_year - last_historical_month.year) * 12
+                               + forecast_end_month - last_historical_month.month)
 
-        self.logger.info(f"Generating forecasts for {len(top_models)} top-performing optimized models")
+        self.logger.info(f"Generating forecasts for {len(top_models)} top-performing optimized models through {forecast_end_year}-{forecast_end_month:02d}")
         total_final_models = len(top_models)
         
         for i, result in enumerate(top_models):
