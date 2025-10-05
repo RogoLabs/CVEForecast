@@ -2,7 +2,7 @@
 
 **CVE Forecast** is a sophisticated, self-improving automated platform that leverages advanced hyperparameter optimization and multiple time series forecasting models to predict the number of Common Vulnerabilities and Exposures (CVEs). It provides a comprehensive, data-driven view of future trends in vulnerability disclosures, all accessible through a sleek, interactive web dashboard.
 
-> **Version 0.8 "Opening Drive" 🏈 (September 2025)**: Launch of Individual CNA Forecasts - Revolutionary organization-specific vulnerability prediction system with dedicated forecasting pipeline for 166+ CVE Numbering Authorities (CNAs). Features advanced model ensemble including LightGBM, XGBoost, Prophet, and ExponentialSmoothing with intelligent model selection based on validation performance for each CNA's unique patterns.
+> **Version 0.9 "Edinburgh" 🏴󠁧󠁢󠁳󠁣󠁴󠁿 (October 2025)**: Year Rollover Automation & Enhanced Forecasting - Complete year rollover readiness for 2026 with fully dynamic YoY growth calculations, automatic chart axis updates, and intelligent forecast period management. Main forecast page now seamlessly transitions across year boundaries with zero manual intervention.
 
 ## 🚀 Key Features
 
