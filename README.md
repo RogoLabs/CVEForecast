@@ -64,6 +64,39 @@ For a comprehensive understanding of the project's architecture, data processing
 4.  **View the dashboard locally:**
     Open `web/index.html` in your browser.
 
+## 📅 Annual Maintenance
+
+### 📝 December 31, 2025 Checklist
+
+The main forecast system is fully dynamic and will automatically roll over on January 1, 2026. However, the CNA forecast page requires minor label updates:
+
+```bash
+# 1. Update CNA page labels (5 minutes)
+# Edit web/cna_forecast.html:
+#   Lines 160-170 (table headers):
+#     Change: "2024 Published" → "2025 Published"
+#     Change: "2025 Forecasted" → "2026 Forecasted"
+#     Change: "2026 Forecasted" → "2027 Forecasted"
+#     Change: "2024→2025 Growth" → "2025→2026 Growth"
+#
+#   Lines 245-264 (summary cards):
+#     Change: "2024 Published" → "2025 Published"
+#     Change: "2025 Forecasted" → "2026 Forecasted"
+#     Change: "2024 → 2025 change" → "2025 → 2026 change"
+
+# 2. Optional: Update config (not required, system auto-detects)
+# Edit code/config.json:
+#   "forecast_end_year": 2027  # Change from 2026
+
+# 3. Test main page
+python code/main.py
+# Verify web/data.json contains 2026 data
+
+# 4. Done! Main forecast page works automatically.
+```
+
+**Note**: See `ROLLOVER_STATUS.md` for complete technical details on year rollover behavior.
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a pull request or open an issue to discuss your ideas.
