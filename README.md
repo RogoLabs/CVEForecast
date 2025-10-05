@@ -66,36 +66,49 @@ For a comprehensive understanding of the project's architecture, data processing
 
 ## 📅 Annual Maintenance
 
-### 📝 December 31, 2025 Checklist
+### Year Rollover (Dec 31, 2025)
 
-The main forecast system is fully dynamic and will automatically roll over on January 1, 2026. However, the CNA forecast page requires minor label updates:
+The **main forecast system is fully dynamic** and will automatically roll over on January 1, 2026. The following components update automatically:
+- ✅ Chart axis limits (Jan 2026 → Jan 2027)
+- ✅ YoY growth calculations (compares 2026 vs 2025)
+- ✅ Chart descriptions and labels
+- ✅ Forecast generation periods
+- ✅ Backend data processing
+
+However, the **CNA forecast page** requires minor label updates (5 minutes):
 
 ```bash
-# 1. Update CNA page labels (5 minutes)
+# 1. Update CNA page labels
 # Edit web/cna_forecast.html:
 #   Lines 160-170 (table headers):
-#     Change: "2024 Published" → "2025 Published"
-#     Change: "2025 Forecasted" → "2026 Forecasted"
-#     Change: "2026 Forecasted" → "2027 Forecasted"
-#     Change: "2024→2025 Growth" → "2025→2026 Growth"
+#     "2024 Published" → "2025 Published"
+#     "2025 Forecasted" → "2026 Forecasted"
+#     "2026 Forecasted" → "2027 Forecasted"
+#     "2024→2025 Growth" → "2025→2026 Growth"
 #
 #   Lines 245-264 (summary cards):
-#     Change: "2024 Published" → "2025 Published"
-#     Change: "2025 Forecasted" → "2026 Forecasted"
-#     Change: "2024 → 2025 change" → "2025 → 2026 change"
+#     "2024 Published" → "2025 Published"
+#     "2025 Forecasted" → "2026 Forecasted"
+#     "2024 → 2025 change" → "2025 → 2026 change"
 
-# 2. Optional: Update config (not required, system auto-detects)
-# Edit code/config.json:
-#   "forecast_end_year": 2027  # Change from 2026
+# 2. Optional: Update forecast_end_year in code/config.json
+#    (Not required - system auto-detects and uses next year if config is outdated)
 
-# 3. Test main page
+# 3. Test the main forecast page
 python code/main.py
-# Verify web/data.json contains 2026 data
+# Verify web/data.json contains 2026 forecast data
 
-# 4. Done! Main forecast page works automatically.
+# 4. Commit and deploy
+git add web/cna_forecast.html
+git commit -m "Update CNA labels for 2026"
+git push
 ```
 
-**Note**: See `ROLLOVER_STATUS.md` for complete technical details on year rollover behavior.
+**Why CNA page needs manual updates**: The CNA page uses a 3-year rolling window design with year-specific logic. A full refactor to make it dynamic would require significant changes to data processing, chart rendering, and table sorting (4-6 hours work). The annual 5-minute label update is safer and more maintainable.
+
+**Expected behavior on Jan 1, 2026**:
+- Main page: Automatically shows 2026 forecasts vs 2025 actuals ✅
+- CNA page: Data calculations work correctly, labels will be off by one year until updated ⚠️
 
 ## 🤝 Contributing
 
