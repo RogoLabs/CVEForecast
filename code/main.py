@@ -15,6 +15,7 @@ warnings.filterwarnings('ignore', category=UserWarning, module='lightgbm')
 
 from utils import setup_logging
 from data_loader import load_cve_data
+from forecast_tracker import ForecastTracker
 from darts.metrics import mae, mape, mase, rmsse
 # Removed model_trainer import - now using pre-trained models from comprehensive tuner
 
@@ -57,6 +58,14 @@ class CVEForecastEngine:
         self.model_results = {}
         self.final_forecasts = {}
         self.all_models_validation = {}
+        
+        # Initialize forecast tracker for temporal prediction tracking
+        self.forecast_tracker = ForecastTracker(
+            history_path=self.config['file_paths'].get(
+                'forecast_history',
+                'web/forecast_history.json'
+            )
+        )
 
     def _setup_time_variables(self):
         """Set up dynamic time variables based on current UTC time."""
@@ -716,6 +725,75 @@ class CVEForecastEngine:
 
         return table_data, summary_stats
 
+    def _save_forecast_snapshot(self):
+        """Save current forecasts to temporal tracking system."""
+        try:
+            # Prepare forecasts: {month: {model: value}}
+            forecasts_by_month = {}
+            
+            for model_name, forecast_series in self.final_forecasts.items():
+                for ts, val in zip(forecast_series.time_index, forecast_series.values()):
+                    month = ts.strftime('%Y-%m')
+                    if month not in forecasts_by_month:
+                        forecasts_by_month[month] = {}
+                    forecasts_by_month[month][model_name] = float(val[0])
+            
+            # Add ensemble average
+            for month in forecasts_by_month:
+                values = list(forecasts_by_month[month].values())
+                if values:
+                    forecasts_by_month[month]['all_models_avg'] = float(np.mean(values))
+            
+            # Prepare actuals: {month: value}
+            actuals_dict = {}
+            historical_data = self._get_historical_data()
+            for record in historical_data:
+                actuals_dict[record['date']] = record['cve_count']
+            
+            # Add current month if available
+            current_month_actual = self._get_current_month_actual()
+            if current_month_actual['cve_count'] > 0:
+                current_month_key = current_month_actual['date'][:7]  # YYYY-MM
+                actuals_dict[current_month_key] = current_month_actual['cve_count']
+            
+            # Prepare model performance
+            model_performance = {}
+            for name, result in self.model_results.items():
+                model_performance[name] = {
+                    'mape': result['metrics'].get('mape', 0),
+                    'mae': result['metrics'].get('mae', 0)
+                }
+            
+            # Prepare metadata
+            metadata = {
+                'models_used': len(self.final_forecasts),
+                'dataset_size': len(self.series),
+                'forecast_horizon': len(forecasts_by_month)
+            }
+            
+            # Save snapshot
+            self.forecast_tracker.add_snapshot(
+                forecasts=forecasts_by_month,
+                actuals=actuals_dict,
+                model_performance=model_performance,
+                snapshot_date=self.current_datetime,
+                metadata=metadata
+            )
+            
+            # Log summary
+            stats = self.forecast_tracker.get_summary_stats()
+            self.logger.info(f"Forecast snapshot saved. Total snapshots: {stats['total_snapshots']}")
+            
+            # Log accuracy summary if available
+            accuracy = self.forecast_tracker.get_accuracy_summary()
+            if 'months_completed' in accuracy:
+                self.logger.info(f"Accuracy tracking: {accuracy['months_completed']} months completed, "
+                               f"Mean error: {accuracy.get('mean_absolute_error_pct', 'N/A')}%")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to save forecast snapshot: {e}")
+            # Don't fail the whole run if tracking fails
+
     def run(self):
         """Execute the full CVE forecasting workflow with pre-trained models."""
         self.logger.info('CVE Forecast Engine Initialized (Inference Mode)')
@@ -734,6 +812,10 @@ class CVEForecastEngine:
 
         self.logger.info('Saving Results...')
         self.save_results()
+        
+        self.logger.info('Saving Forecast Snapshot for Temporal Tracking...')
+        self._save_forecast_snapshot()
+        
         self.logger.info('CVE Forecast Engine finished successfully.')
 
         # Final Summary
