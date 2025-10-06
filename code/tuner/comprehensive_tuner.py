@@ -423,7 +423,7 @@ class ComprehensiveHyperparameterTuner:
         """
         return {
             "Prophet": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
                 "hyperparameters": {
                     "changepoint_prior_scale": [0.01, 0.05, 0.1, 0.5],
                     "seasonality_prior_scale": [0.1, 1.0, 10.0],
@@ -438,7 +438,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "XGBoost": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core high-impact parameters optimized for 30-minute constraint
                     "lags": [12, 18, 24, 36, 48],  # Reduced from 14 to 5 key values
@@ -452,7 +452,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "LightGBM": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core high-impact parameters optimized for 30-minute constraint
                     "lags": [12, 18, 24, 36, 48],  # Reduced from 14 to 5 key values
@@ -468,7 +468,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "CatBoost": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core high-impact parameters optimized for 30-minute constraint
                     "lags": [12, 18, 24, 36, 48],  # Reduced from 14 to 5 key values
@@ -480,7 +480,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "RandomForest": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core high-impact parameters
                     "lags": [12, 18, 24, 36, 48],  # Reduced from 14 to 5 key values
@@ -495,7 +495,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "LinearRegression": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Simplified split ratios
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Simplified split ratios
                 "hyperparameters": {
                     "lags": [6, 12, 18, 24, 30],  # Simplified lag values
                     "output_chunk_length": [1, 3, 6],  # Simplified output chunk lengths
@@ -509,7 +509,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "AutoARIMA": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
                 "hyperparameters": {
                     "season_length": [12, 24],  # Use specific values instead of None
                     "quantiles": [None, [0.1, 0.5, 0.9]],  # Valid quantiles
@@ -518,7 +518,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "ExponentialSmoothing": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
                 "hyperparameters": {
                     "trend": [None, "add"],  # Removed "mul" to avoid convergence issues
                     "seasonal": [None, "add"],  # Removed "mul" to avoid convergence issues
@@ -530,7 +530,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "TBATS": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
                 "hyperparameters": {
                     "season_length": [12, 24],  # Required parameter - must be integer, not None
                     "quantiles": [None, [0.1, 0.5, 0.9]],  # Valid quantiles
@@ -539,27 +539,27 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "Theta": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
                 "hyperparameters": {
                     "season_mode": ["ADDITIVE", "MULTIPLICATIVE", "NONE"],
                     "theta": [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8]
                 }
             },
             "FourTheta": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
                 "hyperparameters": {
                     "season_mode": ["ADDITIVE", "MULTIPLICATIVE", "NONE"],
                     "theta": [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8]
                 }
             },
             "KalmanFilter": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
                 "hyperparameters": {
                     "dim_x": [2, 3, 4, 5, 6, 7, 8]
                 }
             },
             "Croston": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
                 "hyperparameters": {
                     "version": ["classic", "optimized"],  # Valid versions
                     "alpha_d": [None, 0.1, 0.2, 0.3],  # Valid alpha_d values
@@ -570,7 +570,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "NaiveDrift": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
                 "hyperparameters": {
                     # NaiveDrift is a simple baseline model with minimal hyperparameters
                     "random_state": [None, 42],
@@ -578,7 +578,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "TCN": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core architecture parameters optimized for 30-minute constraint
                     "input_chunk_length": [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -595,7 +595,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "NBEATS": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core architecture parameters optimized for 30-minute constraint
                     "input_chunk_length": [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -614,7 +614,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "NHiTS": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core architecture parameters optimized for 30-minute constraint
                     "input_chunk_length": [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -634,7 +634,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "TiDE": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core architecture parameters optimized for 30-minute constraint
                     "input_chunk_length": [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -654,7 +654,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "DLinear": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core architecture parameters optimized for 30-minute constraint
                     "input_chunk_length": [12, 18, 24],  # Reduced from 5 to 3 key values
