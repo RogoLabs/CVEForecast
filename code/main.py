@@ -347,18 +347,18 @@ class CVEForecastEngine:
 
         last_historical_month = self.historical_series.end_time().to_pydatetime().date()
         
-        # Dynamic forecast end calculation: Use config if provided, otherwise default to Jan of next year
-        # This allows config to remain static while code adapts dynamically
-        forecast_end_year = self.config['model_evaluation'].get('forecast_end_year', self.current_datetime.year + 1)
-        forecast_end_month = self.config['model_evaluation'].get('forecast_end_month', 1)
+        # Dynamic forecast end calculation: Always forecast through December of next year
+        # This matches the CNA forecast behavior and provides full year visibility
+        # Example: If current date is Oct 2025, forecast through Dec 2026
+        next_year = self.current_datetime.year + 1
+        forecast_end_year = next_year
+        forecast_end_month = 12  # Always December of next year
         
-        # If config year is in the past (e.g., 2026 when it's now 2027), use next year instead
-        if forecast_end_year < self.current_datetime.year:
-            forecast_end_year = self.current_datetime.year + 1
-            self.logger.warning(f"Config forecast_end_year ({self.config['model_evaluation'].get('forecast_end_year')}) is in the past. Using {forecast_end_year} instead.")
-        
+        # Calculate months to forecast from last historical month to target end
         months_to_forecast = ((forecast_end_year - last_historical_month.year) * 12
                                + forecast_end_month - last_historical_month.month)
+        
+        self.logger.info(f"Dynamic forecast horizon: {last_historical_month.strftime('%Y-%m')} → {forecast_end_year}-{forecast_end_month:02d} ({months_to_forecast} months)")
 
         self.logger.info(f"Generating forecasts for {len(top_models)} top-performing optimized models through {forecast_end_year}-{forecast_end_month:02d}")
         total_final_models = len(top_models)
@@ -562,12 +562,50 @@ class CVEForecastEngine:
 
             timeline = []
             running_total = base_value
+            current_year = self.current_datetime.year
+            
             for forecast_item in future_forecasts:
+                forecast_date = pd.to_datetime(forecast_item['date'])
+                forecast_year = forecast_date.year
+                forecast_month = forecast_date.month
+                
+                # Check if we crossed into a new year
+                if forecast_year > current_year:
+                    # Add Dec 31st at 23:59:59 with full year total
+                    timeline.append({
+                        "date": f"{current_year}-12-31T23:59:59Z",
+                        "cumulative_total": int(round(running_total))
+                    })
+                    # Reset for new year on Jan 1st at 00:00:00
+                    running_total = 0
+                    timeline.append({
+                        "date": f"{forecast_year}-01-01T00:00:00Z",
+                        "cumulative_total": 0
+                    })
+                    current_year = forecast_year
+                
+                # Add this month's CVEs
                 running_total += forecast_item['cve_count']
-                timeline.append({
-                    "date": pd.to_datetime(forecast_item['date']).strftime('%Y-%m-%dT%H:%M:%SZ'),
-                    "cumulative_total": int(round(running_total))
-                })
+                
+                # Add entry at beginning of NEXT month showing cumulative including this month
+                # Example: Feb 1 shows total AFTER January CVEs
+                # Skip if this is December (we'll add Jan 1 reset when processing January)
+                if forecast_month != 12:
+                    next_month = forecast_month + 1
+                    timeline.append({
+                        "date": f"{forecast_year}-{next_month:02d}-01T00:00:00Z",
+                        "cumulative_total": int(round(running_total))
+                    })
+            
+            # Add final Dec 31st for last year in forecast if last entry is December
+            if future_forecasts:
+                last_date = pd.to_datetime(future_forecasts[-1]['date'])
+                if last_date.month == 12 and last_date.year == current_year:
+                    # Dec 31 shows full year total including December
+                    timeline.append({
+                        "date": f"{current_year}-12-31T23:59:59Z",
+                        "cumulative_total": int(round(running_total))
+                    })
             
             cumulative_timelines[f"{model_name}_cumulative"] = timeline
 
