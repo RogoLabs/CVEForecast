@@ -688,6 +688,11 @@ class CVEForecastEngine:
                 **r['metrics']
             }
             
+            # Add enhanced metrics (Issue #5: bias, directional accuracy)
+            enhanced_metrics = self._calculate_enhanced_metrics(model_name)
+            if enhanced_metrics:
+                ranking_entry.update(enhanced_metrics)
+            
             # Add hyperparameters if they exist and are meaningful
             if hyperparameters and any(v for v in hyperparameters.values() if v is not None):
                 ranking_entry['hyperparameters'] = hyperparameters
@@ -711,6 +716,8 @@ class CVEForecastEngine:
         current_month_date = current_month_actual['date']
         current_month_count = current_month_actual['cve_count']
 
+        # Build forecasts_by_month for weighted ensemble
+        forecasts_by_month = {}
         for name, forecast in self.final_forecasts.items():
             forecast_list = []
             for ts, val in zip(forecast.time_index, forecast.values()):
@@ -721,7 +728,24 @@ class CVEForecastEngine:
                     cve_count = current_month_count
                     
                 forecast_list.append({"date": date_str, "cve_count": cve_count})
+                
+                # Track for ensemble calculation
+                if date_str not in forecasts_by_month:
+                    forecasts_by_month[date_str] = {}
+                forecasts_by_month[date_str][name] = cve_count
+            
             forecasts_out[name] = forecast_list
+        
+        # Add weighted ensemble forecast (Issue #4 enhancement)
+        ensemble_forecasts = self._calculate_weighted_ensemble(forecasts_by_month)
+        ensemble_list = []
+        for date_str in sorted(ensemble_forecasts.keys()):
+            cve_count = int(round(ensemble_forecasts[date_str]))
+            if date_str == current_month_date and cve_count < current_month_count:
+                cve_count = current_month_count
+            ensemble_list.append({"date": date_str, "cve_count": cve_count})
+        if ensemble_list:
+            forecasts_out['all_models_avg'] = ensemble_list
 
         self.summary = self._get_summary()
 
@@ -853,6 +877,128 @@ class CVEForecastEngine:
 
         return table_data, summary_stats
 
+    def _calculate_weighted_ensemble(self, forecasts_by_month):
+        """
+        Calculate weighted ensemble forecast based on model performance.
+        
+        Uses inverse MAPE weighting so better models (lower MAPE) get higher weight.
+        
+        Args:
+            forecasts_by_month: Dict of {month: {model: value}}
+        
+        Returns:
+            Dict of {month: weighted_average}
+        """
+        ensemble_method = self.config.get('model_evaluation', {}).get('ensemble_method', 'simple')
+        
+        if ensemble_method == 'simple':
+            # Simple average (original behavior)
+            result = {}
+            for month in forecasts_by_month:
+                values = list(forecasts_by_month[month].values())
+                if values:
+                    result[month] = float(np.mean(values))
+            return result
+        
+        elif ensemble_method == 'weighted_mape':
+            # Weighted by inverse MAPE
+            result = {}
+            
+            # Get model MAPEs
+            model_mapes = {}
+            for name, model_result in self.model_results.items():
+                if name in self.final_forecasts:
+                    mape = model_result['metrics'].get('mape', float('inf'))
+                    if mape > 0 and mape < float('inf'):
+                        model_mapes[name] = mape
+            
+            if not model_mapes:
+                # Fallback to simple average if no valid MAPEs
+                self.logger.warning("No valid MAPEs for weighted ensemble, using simple average")
+                return {month: float(np.mean(list(forecasts_by_month[month].values()))) 
+                       for month in forecasts_by_month if forecasts_by_month[month]}
+            
+            # Calculate inverse MAPE weights
+            inverse_mapes = {model: 1/mape for model, mape in model_mapes.items()}
+            total_inverse = sum(inverse_mapes.values())
+            weights = {model: inv/total_inverse for model, inv in inverse_mapes.items()}
+            
+            self.logger.info(f"Weighted ensemble weights: {', '.join([f'{m}: {w:.3f}' for m, w in sorted(weights.items(), key=lambda x: -x[1])[:3]])}")
+            
+            # Calculate weighted forecasts
+            for month in forecasts_by_month:
+                weighted_sum = 0
+                weight_sum = 0
+                for model, forecast in forecasts_by_month[month].items():
+                    if model in weights:
+                        weighted_sum += forecast * weights[model]
+                        weight_sum += weights[model]
+                
+                if weight_sum > 0:
+                    result[month] = float(weighted_sum / weight_sum)
+                else:
+                    # Fallback to simple average
+                    values = list(forecasts_by_month[month].values())
+                    result[month] = float(np.mean(values)) if values else 0
+            
+            return result
+        
+        else:
+            self.logger.warning(f"Unknown ensemble method '{ensemble_method}', using simple average")
+            return {month: float(np.mean(list(forecasts_by_month[month].values()))) 
+                   for month in forecasts_by_month if forecasts_by_month[month]}
+    
+    def _calculate_enhanced_metrics(self, model_name):
+        """
+        Calculate additional validation metrics beyond MAPE/MAE.
+        
+        Metrics:
+        - Forecast bias (systematic over/under prediction)
+        - Directional accuracy (correct prediction of increases/decreases)
+        - Confidence interval calibration (if intervals available)
+        
+        Args:
+            model_name: Name of the model to evaluate
+        
+        Returns:
+            Dict of additional metrics
+        """
+        metrics = {}
+        
+        if model_name not in self.all_models_validation or not self.all_models_validation[model_name]:
+            return metrics
+        
+        validation_data = self.all_models_validation[model_name]
+        
+        if len(validation_data) < 2:
+            return metrics
+        
+        # Extract actuals and forecasts
+        actuals = np.array([v['actual'] for v in validation_data])
+        forecasts = np.array([v['forecast'] for v in validation_data])
+        
+        # 1. Forecast Bias (mean error)
+        bias = float(np.mean(forecasts - actuals))
+        bias_pct = float((bias / np.mean(actuals)) * 100) if np.mean(actuals) != 0 else 0
+        metrics['bias'] = bias
+        metrics['bias_pct'] = bias_pct
+        
+        # 2. Directional Accuracy (for sequences of 2+)
+        if len(actuals) >= 3:
+            actual_directions = np.sign(np.diff(actuals))
+            forecast_directions = np.sign(np.diff(forecasts))
+            correct_directions = np.sum(actual_directions == forecast_directions)
+            directional_accuracy = float(correct_directions / len(actual_directions) * 100)
+            metrics['directional_accuracy'] = directional_accuracy
+        
+        # 3. Confidence Interval Calibration (if intervals available)
+        if model_name in self.forecast_intervals:
+            # This would require historical intervals, which we don't store yet
+            # Placeholder for future enhancement
+            metrics['interval_calibration'] = None
+        
+        return metrics
+    
     def _save_forecast_snapshot(self):
         """Save current forecasts to temporal tracking system."""
         try:
@@ -866,11 +1012,11 @@ class CVEForecastEngine:
                         forecasts_by_month[month] = {}
                     forecasts_by_month[month][model_name] = float(val[0])
             
-            # Add ensemble average
-            for month in forecasts_by_month:
-                values = list(forecasts_by_month[month].values())
-                if values:
-                    forecasts_by_month[month]['all_models_avg'] = float(np.mean(values))
+            # Calculate ensemble forecast using configured method (Issue #4 enhancement)
+            ensemble_forecasts = self._calculate_weighted_ensemble(forecasts_by_month)
+            for month, ensemble_value in ensemble_forecasts.items():
+                if month in forecasts_by_month:
+                    forecasts_by_month[month]['all_models_avg'] = ensemble_value
             
             # Prepare actuals: {month: value}
             actuals_dict = {}
