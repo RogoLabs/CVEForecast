@@ -110,6 +110,11 @@ class CVEForecastEngine:
         
         models_dir = Path(self.config['file_paths'].get('models_dir', 'code/tuner/models'))
         
+        # Enforce minimum validation period (Issue #2 fix)
+        min_validation_months = self.config.get('model_evaluation', {}).get('min_validation_months', 12)
+        total_months = len(self.series)
+        max_allowed_split = 1.0 - (min_validation_months / total_months)
+        
         for i, (model_name, model_config) in enumerate(enabled_models.items()):
             if progress_callback:
                 progress_callback(f"Loading Models ({i+1}/{total_models}): {model_name}")
@@ -121,7 +126,20 @@ class CVEForecastEngine:
                 
             # Use optimal split ratio from tuning results
             optimal_split_ratio = model_config.get('optimal_split_ratio', 0.8)
-            self.logger.info(f"Using optimal split ratio {optimal_split_ratio:.2f} for {model_name}")
+            
+            # Enforce minimum validation months (fix for Issue #2)
+            if optimal_split_ratio > max_allowed_split:
+                original_split = optimal_split_ratio
+                optimal_split_ratio = max_allowed_split
+                val_months_original = int((1 - original_split) * total_months)
+                val_months_adjusted = int((1 - optimal_split_ratio) * total_months)
+                self.logger.warning(
+                    f"{model_name}: Adjusted split ratio from {original_split:.2f} to {optimal_split_ratio:.2f} "
+                    f"(validation: {val_months_original} → {val_months_adjusted} months, min required: {min_validation_months})"
+                )
+            else:
+                val_months = int((1 - optimal_split_ratio) * total_months)
+                self.logger.info(f"Using optimal split ratio {optimal_split_ratio:.2f} for {model_name} ({val_months} validation months)")
             
             # Load performance metrics from tuning results
             tuning_results = model_config['tuning_results']

@@ -16,10 +16,12 @@
   },
   "model_evaluation": {
     "split_ratio": 0.99,
+    "min_validation_months": 12,
     "forecast_horizon_months": 12,
     "forecast_end_year": 2026,
     "forecast_end_month": 1,
-    "ensemble_size": 5
+    "ensemble_size": 5,
+    "metrics": ["mae", "mape", "mase", "rmsse"]
   },
   "models": {
     "NaiveDrift": {
