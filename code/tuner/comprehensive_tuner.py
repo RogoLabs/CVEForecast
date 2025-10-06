@@ -484,19 +484,19 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 3×3×2×2 = 36 configurations
             },
             "RandomForest": {
-                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    # Core high-impact parameters
-                    "lags": [12, 18, 24, 36, 48],  # Reduced from 14 to 5 key values
-                    "n_estimators": [100, 200, 300, 500],  # Reduced from 13 to 4 key values
-                    "max_depth": [5, 10, 15, None],  # Reduced from 10 to 4 key values
-                    "min_samples_split": [2, 5, 10],  # Reduced from 9 to 3 key values
-                    "min_samples_leaf": [1, 2, 5],  # Reduced from 9 to 3 key values
-                    "max_features": ["sqrt", "log2", 0.5],  # Reduced from 7 to 3 key values
-                    "bootstrap": [True],  # Fixed to True (standard practice)
-                    "random_state": [42],  # Fixed for reproducibility
-                    # Removed low-impact parameters for 30-minute constraint
+                    # Smart grid: high-impact parameters only
+                    "lags": [24, 36],  # 2 best values
+                    "n_estimators": [200, 300],  # 2 best values
+                    "max_depth": [10, None],  # 2 values (depth limit vs unlimited)
+                    "min_samples_split": [5],  # FIXED: standard
+                    "min_samples_leaf": [2],  # FIXED: standard
+                    "max_features": ["sqrt"],  # FIXED: standard best practice
+                    "bootstrap": [True],  # FIXED
+                    "random_state": [42]  # FIXED
                 }
+                # Total: 1 × 2×2×2 = 8 configurations
             },
             "LinearRegression": {
                 "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
@@ -514,65 +514,69 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 3 = 3 configurations
             },
             "AutoARIMA": {
-                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "season_length": [12, 24],  # Use specific values instead of None
-                    "quantiles": [None, [0.1, 0.5, 0.9]],  # Valid quantiles
-                    "random_state": [None, 42]  # Valid random states
-                    # Only valid AutoARIMA parameters based on Darts documentation
+                    "season_length": [12],  # FIXED: monthly seasonality
+                    "quantiles": [None],  # FIXED: not needed
+                    "random_state": [42]  # FIXED
                 }
+                # Total: 1 × 1 = 1 configuration
             },
             "ExponentialSmoothing": {
-                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "trend": [None, "add"],  # Removed "mul" to avoid convergence issues
-                    "seasonal": [None, "add"],  # Removed "mul" to avoid convergence issues
-                    "damped_trend": [True, False],
-                    "seasonal_periods": [None, 12],  # Simplified - only monthly seasonality
-                    "initialization_method": ["estimated", "heuristic"],  # Removed legacy method
-                    "use_boxcox": [None, False],  # Removed True to avoid transformation issues
-                    "missing": ["none"]  # Simplified - only default handling
+                    "trend": [None, "add"],  # 2 values (no trend vs additive)
+                    "seasonal": [None, "add"],  # 2 values (no seasonality vs additive)
+                    "damped_trend": [False],  # FIXED: standard
+                    "seasonal_periods": [12],  # FIXED: monthly only
+                    "initialization_method": ["estimated"],  # FIXED: best practice
+                    "use_boxcox": [None],  # FIXED: avoid transformation
+                    "missing": ["none"]  # FIXED
                 }
+                # Total: 1 × 2×2 = 4 configurations
             },
             "TBATS": {
-                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "season_length": [12, 24],  # Required parameter - must be integer, not None
-                    "quantiles": [None, [0.1, 0.5, 0.9]],  # Valid quantiles
-                    "random_state": [None, 42]  # Valid random states
-                    # Only valid TBATS parameters based on Darts documentation
+                    "season_length": [12],  # FIXED: monthly seasonality
+                    "quantiles": [None],  # FIXED: not needed
+                    "random_state": [42]  # FIXED
                 }
+                # Total: 1 × 1 = 1 configuration
             },
             "Theta": {
-                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "season_mode": ["ADDITIVE", "MULTIPLICATIVE", "NONE"],
-                    "theta": [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8]
+                    "season_mode": ["ADDITIVE"],  # FIXED: best for CVE data
+                    "theta": [1, 2, 3]  # 3 key values
                 }
+                # Total: 1 × 3 = 3 configurations
             },
             "FourTheta": {
-                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "season_mode": ["ADDITIVE", "MULTIPLICATIVE", "NONE"],
-                    "theta": [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8]
+                    "season_mode": ["ADDITIVE"],  # FIXED: best for CVE data
+                    "theta": [1, 2, 3]  # 3 key values
                 }
+                # Total: 1 × 3 = 3 configurations
             },
             "KalmanFilter": {
-                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "dim_x": [2, 3, 4, 5, 6, 7, 8]
+                    "dim_x": [3, 5]  # 2 key values (low vs medium complexity)
                 }
+                # Total: 1 × 2 = 2 configurations
             },
             "Croston": {
-                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "version": ["classic", "optimized"],  # Valid versions
-                    "alpha_d": [None, 0.1, 0.2, 0.3],  # Valid alpha_d values
-                    "alpha_p": [None, 0.1, 0.2, 0.3],  # Valid alpha_p values
-                    "quantiles": [None, [0.1, 0.5, 0.9]],  # Valid quantiles
-                    "random_state": [None, 42]  # Valid random states
-                    # Only valid Croston parameters: version, alpha_d, alpha_p, quantiles, random_state
+                    "version": ["optimized"],  # FIXED: best version
+                    "alpha_d": [0.1],  # FIXED: standard
+                    "alpha_p": [0.1],  # FIXED: standard
+                    "quantiles": [None],  # FIXED: not needed
+                    "random_state": [42]  # FIXED
                 }
+                # Total: 1 × 1 = 1 configuration
             },
             "NaiveDrift": {
                 "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
