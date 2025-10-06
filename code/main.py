@@ -57,6 +57,7 @@ class CVEForecastEngine:
         self.forecasts = {}
         self.model_results = {}
         self.final_forecasts = {}
+        self.forecast_intervals = {}  # Store confidence intervals
         self.all_models_validation = {}
         
         # Initialize forecast tracker for temporal prediction tracking
@@ -275,6 +276,70 @@ class CVEForecastEngine:
                 self.logger.error(f"Failed to generate validation data for {model_name}: {e}")
                 self.all_models_validation[model_name] = []
     
+    def _calculate_prediction_intervals(self, model, model_name, train_data, forecast_horizon, confidence_levels=[0.80, 0.95]):
+        """
+        Calculate prediction intervals using conformal prediction.
+        
+        This method provides statistically valid uncertainty quantification for any model
+        by using the distribution of calibration errors to build prediction intervals.
+        
+        Args:
+            model: Trained Darts model instance
+            model_name: Name of the model (for logging)
+            train_data: Full historical time series
+            forecast_horizon: Number of periods to forecast
+            confidence_levels: List of confidence levels (e.g., [0.80, 0.95])
+        
+        Returns:
+            tuple: (forecast TimeSeries, dict of intervals by confidence level)
+                   Returns (forecast, None) if interval calculation fails
+        """
+        try:
+            # Use 20% of data for calibration, minimum 12 months
+            cal_size = max(12, int(len(train_data) * 0.20))
+            
+            if cal_size >= len(train_data):
+                self.logger.warning(f"{model_name}: Insufficient data for calibration ({len(train_data)} months)")
+                return None, None
+            
+            proper_train = train_data[:-cal_size]
+            calibration = train_data[-cal_size:]
+            
+            self.logger.debug(f"{model_name}: Using {len(proper_train)} months for training, {cal_size} for calibration")
+            
+            # Fit on training portion and predict calibration period
+            model.fit(proper_train)
+            cal_predictions = model.predict(len(calibration))
+            
+            # Calculate absolute errors on calibration set
+            errors = np.abs(calibration.values() - cal_predictions.values()).flatten()
+            
+            # Refit on full training data for final forecast
+            model.fit(train_data)
+            forecast = model.predict(forecast_horizon)
+            
+            # Calculate intervals for each confidence level
+            intervals = {}
+            for confidence in confidence_levels:
+                alpha = 1 - confidence
+                # Use (1-alpha) quantile of errors for coverage
+                quantile_value = np.quantile(errors, 1 - alpha)
+                
+                conf_key = f'{int(confidence * 100)}'
+                intervals[conf_key] = {
+                    'lower': (forecast.values() - quantile_value).flatten(),
+                    'upper': (forecast.values() + quantile_value).flatten(),
+                    'quantile': float(quantile_value)
+                }
+                
+                self.logger.debug(f"{model_name}: {conf_key}% interval width: ±{quantile_value:.2f}")
+            
+            return forecast, intervals
+            
+        except Exception as e:
+            self.logger.warning(f"{model_name}: Failed to calculate prediction intervals: {e}")
+            return None, None
+    
     def generate_final_forecasts(self, progress_callback=None):
         """Generate forecasts using optimized models from comprehensive tuner."""
         ensemble_size = self.config['model_evaluation']['ensemble_size']
@@ -316,12 +381,26 @@ class CVEForecastEngine:
                 if model_name in ["TCN", "NBEATS", "NHiTS", "TiDE", "DLinear", "TSMixer"]:
                     series_to_fit = series_to_fit.astype(np.float32)
                 
-                # Fit and predict with optimized model
-                model.fit(series_to_fit)
-                forecast = model.predict(months_to_forecast)
-                self.final_forecasts[model_name] = forecast
+                # Generate forecast WITH confidence intervals using conformal prediction
+                forecast_with_intervals, intervals = self._calculate_prediction_intervals(
+                    model=model,
+                    model_name=model_name,
+                    train_data=series_to_fit,
+                    forecast_horizon=months_to_forecast,
+                    confidence_levels=[0.80, 0.95]
+                )
                 
-                self.logger.info(f"Generated forecast for {model_name} using optimized hyperparameters")
+                if forecast_with_intervals is not None:
+                    self.final_forecasts[model_name] = forecast_with_intervals
+                    if intervals is not None:
+                        self.forecast_intervals[model_name] = intervals
+                    self.logger.info(f"Generated forecast for {model_name} with prediction intervals")
+                else:
+                    # Fallback: generate forecast without intervals
+                    model.fit(series_to_fit)
+                    forecast = model.predict(months_to_forecast)
+                    self.final_forecasts[model_name] = forecast
+                    self.logger.info(f"Generated forecast for {model_name} (intervals unavailable)")
                 
             except Exception as e:
                 self.logger.error(f"Failed to generate final forecast for {model_name}: {e}")
@@ -665,6 +744,36 @@ class CVEForecastEngine:
                 'summary_stats': summary_stats
             }
 
+        # Build forecast_intervals structure for output (Issue #4)
+        forecast_intervals_out = {}
+        for model_name, intervals_dict in self.forecast_intervals.items():
+            if model_name in self.final_forecasts:
+                forecast = self.final_forecasts[model_name]
+                model_intervals = {}
+                
+                for idx, ts in enumerate(forecast.time_index):
+                    month_str = ts.strftime('%Y-%m')
+                    point_forecast = int(round(forecast.values()[idx, 0]))
+                    
+                    month_intervals = {
+                        'point_forecast': point_forecast
+                    }
+                    
+                    # Add each confidence level
+                    for conf_level, conf_data in intervals_dict.items():
+                        lower_val = int(round(conf_data['lower'][idx]))
+                        upper_val = int(round(conf_data['upper'][idx]))
+                        
+                        # Ensure intervals are non-negative (CVE counts can't be negative)
+                        lower_val = max(0, lower_val)
+                        
+                        month_intervals[f'lower_{conf_level}'] = lower_val
+                        month_intervals[f'upper_{conf_level}'] = upper_val
+                    
+                    model_intervals[month_str] = month_intervals
+                
+                forecast_intervals_out[model_name] = model_intervals
+
         final_json = {
             "generated_at": self.current_datetime.isoformat(),
             "model_rankings": model_rankings,
@@ -673,6 +782,7 @@ class CVEForecastEngine:
             "actuals_cumulative": actuals_cumulative,
             "cumulative_timelines": cumulative_timelines,
             "forecasts": forecasts_out,
+            "forecast_intervals": forecast_intervals_out,  # NEW: Confidence intervals (Issue #4)
             "summary": self.summary,
             "forecast_vs_published": forecast_vs_published_data
         }
