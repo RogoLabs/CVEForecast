@@ -61,22 +61,9 @@ jobs:
         echo "CVE data cloned successfully"
         ls -la cvelistV5/
     
-    - name: Run Comprehensive Hyperparameter Tuning
+    - name: Run Production Forecast Pipeline
       run: |
-        python code/tuner/comprehensive_tuner.py
-      env:
-        PYTHONUNBUFFERED: 1
-
-    
-    - name: Run CVE forecast with optimized models
-      run: |
-        python code/main.py --output ../web/data.json
-      env:
-        PYTHONUNBUFFERED: 1
-    
-    - name: Run CNA forecast generation
-      run: |
-        python code/cna_main.py
+        python code/run_production_forecast.py
       env:
         PYTHONUNBUFFERED: 1
     
@@ -96,9 +83,9 @@ jobs:
       run: |
         git add web/data.json
         git add web/cna_data.json
-        git add code/config.json
-        git add code/tuner/tuner_config.json
-        git commit -m "Update CVE and CNA forecast data and optimized configurations - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        git add web/forecast_history.json
+        git add web/pipeline_results.json
+        git commit -m "Update CVE and CNA forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
         git push
     
     - name: Upload artifacts
@@ -109,6 +96,8 @@ jobs:
         path: |
           web/data.json
           web/cna_data.json
+          web/forecast_history.json
+          web/pipeline_results.json
     
     - name: Setup Pages
       uses: actions/configure-pages@v4

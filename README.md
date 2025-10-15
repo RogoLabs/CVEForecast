@@ -1,35 +1,38 @@
 # CVE Forecast
 
-**CVE Forecast** is a sophisticated, self-improving automated platform that leverages advanced hyperparameter optimization and multiple time series forecasting models to predict the number of Common Vulnerabilities and Exposures (CVEs). It provides a comprehensive, data-driven view of future trends in vulnerability disclosures, all accessible through a sleek, interactive web dashboard.
+**CVE Forecast** is an enterprise-grade, self-improving forecasting platform that predicts Common Vulnerabilities and Exposures (CVEs) using advanced machine learning, statistical models, and automated hyperparameter optimization. The system provides actionable insights into future vulnerability disclosure trends through an intelligent, continuously-evolving pipeline with real-time accuracy tracking.
 
-> **Version 0.9 "Edinburgh" 🏴󠁧󠁢󠁳󠁣󠁴󠁿 (October 2025)**: Year Rollover Automation & Enhanced Forecasting - Complete year rollover readiness for 2026 with fully dynamic YoY growth calculations, automatic chart axis updates, and intelligent forecast period management. Main forecast page now seamlessly transitions across year boundaries with zero manual intervention.
+> **Version 0.10 "Phoenix" 🔥🐦 (October 2025)**: Complete architectural rebirth with unified pipeline, historical backtest validation, forecast accuracy tracking, modular codebase, and production-ready automation. The system now features real-world performance metrics, automated monthly tuning, and comprehensive documentation.
 
 ## 🚀 Key Features
 
-### 🧠 **Intelligent Hyperparameter Optimization**
-- **Comprehensive Tuner**: Advanced optimization engine that systematically explores hyperparameter spaces for 19+ models
-- **Self-Improving Workflow**: Tuner learns from previous runs and builds on discoveries, continuously improving over time
-- **Intelligent Search Strategies**: Adaptive grid/random search selection based on model complexity and search space size
-- **Production-Ready Results**: Automatically saves optimal configurations and integrates with main forecasting pipeline
+### 📊 **Production-Ready Forecasting**
+- **13 Optimized Models**: Statistical (Prophet, ARIMA, TBATS), ML (XGBoost, LightGBM, CatBoost), and baseline models
+- **Real-World Validation**: Historical backtest on 2025 data (Jan-Sep) with actual vs. predicted comparisons
+- **Accuracy Metrics**: MAPE ranging from 6.22% (LightGBM) to 21.65% (Croston) on real 2025 data
+- **120+ CNA Forecasts**: Individual predictions for CVE Numbering Authorities with per-organization model selection
+- **Dynamic Forecasting**: Automatically forecasts current incomplete month through end of next year
 
-### 🔄 **Automated Self-Optimization**
-- **Daily GitHub Actions Integration**: Automated hyperparameter tuning runs before each forecast generation
-- **Continuous Learning**: System remembers and compares against previous optimization results
-- **Smart Config Management**: Automatic backup and update of configuration files with improvement tracking
-- **End-to-End Validation**: Complete pipeline from optimization to forecasting with comprehensive testing
+### 🔄 **Intelligent Automation**
+- **Unified Pipeline**: Single command (`run_production_forecast.py`) handles CVE + CNA forecasting
+- **Daily Updates**: Automated GitHub Actions workflow generates fresh forecasts at midnight UTC
+- **Monthly Tuning**: Separate workflow optimizes hyperparameters on the 1st of each month
+- **Forecast Tracking**: Historical snapshot system tracks prediction evolution and accuracy over time
+- **Zero Downtime**: Continuous deployment to GitHub Pages with automatic rollback on failure
 
-### 📊 **Advanced Forecasting Engine**
-- **25+ Models Supported**: Comprehensive suite including statistical (Prophet, ARIMA, Theta), tree-based (XGBoost, LightGBM, CatBoost), and deep learning models (TCN, NBEATS, DLinear)
-- **CNA-Specific Forecasting**: Individual predictions for 166+ CVE Numbering Authorities with organization-specific model selection
-- **Dynamic Forecasting**: Automatically adapts forecast periods based on current date and data availability
-- **Optimized for Production**: CPU-optimized models with robust error handling and numerical stability
-- **Performance Validation**: Rigorous model evaluation with historical backtesting and MAPE-based performance metrics
+### 🎯 **Accuracy & Transparency**
+- **Forecast vs Published Table**: Month-by-month comparison of predictions against actual CVE counts
+- **Model Rankings**: Real-time performance leaderboard based on backtest MAPE
+- **Historical Tracking**: `forecast_history.json` accumulates prediction snapshots for long-term analysis
+- **Performance Badges**: Visual indicators (Excellent < 5%, Good < 10%, Fair < 20%, Poor > 20%)
+- **Detailed Metrics**: MAE, MAPE, error percentages, and performance ratings for every model
 
-### 🛠️ **Enterprise-Grade Infrastructure**
-- **Unified CI/CD Pipeline**: Single automated daily workflow with GitHub Actions for CVE and CNA forecast generation and deployment
-- **Robust Error Handling**: Comprehensive error handling and fallback mechanisms throughout the entire pipeline
-- **Interactive Web Dashboard**: Real-time visualization of historical data, model comparisons, and CNA-specific analytics
-- **Complete Documentation**: In-depth technical documentation covering architecture, optimization strategies, and CNA forecasting workflows
+### 🏗️ **Modern Architecture**
+- **Modular Design**: Clean separation between data loading, training, forecasting, and validation
+- **Base Classes**: `BaseForecaster` and `ValidationMixin` provide extensible framework
+- **Adapters Pattern**: `CVEForecaster` and `CNAForecaster` implement domain-specific logic
+- **Configuration-Driven**: Centralized `config.json` with optimized hyperparameters
+- **Comprehensive Logging**: Detailed execution logs with progress tracking and error reporting
 
 ## 🌐 Live Dashboard
 
@@ -45,75 +48,192 @@ For a comprehensive understanding of the project's architecture, data processing
 
 ## 📦 Quick Start
 
+### Prerequisites
+- Python 3.10+
+- 8GB+ RAM recommended
+- CVE data repository (auto-cloned by pipeline)
+
+### Installation
+
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/gamblin/CVEForecast.git
+    git clone https://github.com/[your-username]/CVEForecast.git
     cd CVEForecast
     ```
 
 2.  **Install dependencies:**
     ```bash
-    pip install -r code/requirements.txt
+    pip install -r requirements.txt
     ```
 
-3.  **Run the forecast:**
+3.  **Clone CVE data** (required for forecasting):
     ```bash
-    python code/main.py
+    git clone --depth 1 https://github.com/CVEProject/cvelistV5.git
     ```
 
-4.  **View the dashboard locally:**
-    Open `web/index.html` in your browser.
+### Running Forecasts
 
-## 📅 Annual Maintenance
-
-### Year Rollover (Dec 31, 2025)
-
-The **main forecast system is fully dynamic** and will automatically roll over on January 1, 2026. The following components update automatically:
-- ✅ Chart axis limits (Jan 2026 → Jan 2027)
-- ✅ YoY growth calculations (compares 2026 vs 2025)
-- ✅ Chart descriptions and labels
-- ✅ Forecast generation periods
-- ✅ Backend data processing
-
-However, the **CNA forecast page** requires minor label updates (5 minutes):
-
+**Option 1: Full Production Pipeline** (Recommended)
 ```bash
-# 1. Update CNA page labels
-# Edit web/cna_forecast.html:
-#   Lines 160-170 (table headers):
-#     "2024 Published" → "2025 Published"
-#     "2025 Forecasted" → "2026 Forecasted"
-#     "2026 Forecasted" → "2027 Forecasted"
-#     "2024→2025 Growth" → "2025→2026 Growth"
-#
-#   Lines 245-264 (summary cards):
-#     "2024 Published" → "2025 Published"
-#     "2025 Forecasted" → "2026 Forecasted"
-#     "2024 → 2025 change" → "2025 → 2026 change"
+python code/run_production_forecast.py
+```
+Generates:
+- `web/data.json` - CVE forecasts and metrics
+- `web/cna_data.json` - CNA forecasts
+- `web/forecast_history.json` - Historical tracking
+- `web/pipeline_results.json` - Execution summary
 
-# 2. Optional: Update forecast_end_year in code/config.json
-#    (Not required - system auto-detects and uses next year if config is outdated)
-
-# 3. Test the main forecast page
-python code/main.py
-# Verify web/data.json contains 2026 forecast data
-
-# 4. Commit and deploy
-git add web/cna_forecast.html
-git commit -m "Update CNA labels for 2026"
-git push
+**Option 2: CVE Forecasts Only**
+```bash
+python code/adapters/cve_adapter.py
 ```
 
-**Why CNA page needs manual updates**: The CNA page uses a 3-year rolling window design with year-specific logic. A full refactor to make it dynamic would require significant changes to data processing, chart rendering, and table sorting (4-6 hours work). The annual 5-minute label update is safer and more maintainable.
+**Option 3: CNA Forecasts Only**
+```bash
+python code/adapters/cna_adapter.py
+```
 
-**Expected behavior on Jan 1, 2026**:
-- Main page: Automatically shows 2026 forecasts vs 2025 actuals ✅
-- CNA page: Data calculations work correctly, labels will be off by one year until updated ⚠️
+### View Results
+
+**Local Dashboard:**
+```bash
+# Simple HTTP server
+python -m http.server 8000 --directory web
+
+# Open browser to http://localhost:8000
+```
+
+**Production:** Visit [cveforecast.org](https://cveforecast.org)
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - System design, components, and data flow
+- **[API Reference](docs/API_REFERENCE.md)** - Classes, methods, and configuration options
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - GitHub Actions, hosting, and CI/CD
+- **[Development Guide](docs/DEVELOPMENT.md)** - Contributing, testing, and best practices
+- **[Tuning Guide](docs/TUNING_GUIDE.md)** - Hyperparameter optimization workflows
+
+## 🎯 Model Performance (2025 Backtest)
+
+Real-world accuracy on Jan-Sep 2025 data:
+
+| Rank | Model | MAPE | MAE | Performance |
+|------|-------|------|-----|-------------|
+| 1 | LightGBM | 6.22% | 257.44 | 🥇 Excellent |
+| 2 | KalmanFilter | 6.26% | 244.33 | 🥈 Excellent |
+| 3 | TBATS | 7.21% | 293.67 | 🥉 Excellent |
+| 4 | RandomForest | 9.16% | 374.11 | Good |
+| 5 | AutoARIMA | 9.70% | 395.78 | Good |
+| 6 | ExponentialSmoothing | 9.83% | 400.00 | Good |
+| 7 | Prophet | 10.13% | 412.78 | Good |
+| 8 | XGBoost | 10.39% | 420.67 | Good |
+
+*Full rankings available in the dashboard's "Model Performance Rankings" section.*
+
+## 🔧 Configuration
+
+### Model Selection
+Edit `code/config.json` to enable/disable models:
+```json
+{
+  "models": {
+    "Prophet": {
+      "enabled": true,
+      "hyperparameters": { ... }
+    }
+  }
+}
+```
+
+### Forecast Horizon
+Automatically forecasts from current month through December of next year. Override in config:
+```json
+{
+  "forecast_end_year": 2026
+}
+```
+
+### GitHub Actions
+- **Daily Forecast**: `.github/workflows/main.yml` (midnight UTC)
+- **Monthly Tuning**: `.github/workflows/monthly_tuning.yml` (1st of month, 2 AM UTC)
+
+See [Deployment Guide](docs/DEPLOYMENT.md) for details.
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**"No CVE data found"**
+```bash
+# Clone CVE data repository
+git clone --depth 1 https://github.com/CVEProject/cvelistV5.git
+```
+
+**"Model training failed"**
+```bash
+# Check logs for specific model errors
+# Disable problematic models in config.json
+```
+
+**"Out of memory"**
+```bash
+# Reduce number of enabled models
+# Use CPU-only models (disable deep learning models)
+```
+
+See [Development Guide](docs/DEVELOPMENT.md) for more troubleshooting tips.
+
+## 🚀 What's New in v0.10 "Phoenix" 🔥🐦
+
+### Major Changes
+- ✨ **Unified Pipeline**: Single command for CVE + CNA forecasting
+- 📊 **Historical Backtest**: Real-world validation on 2025 data
+- 📈 **Forecast Tracking**: Accuracy monitoring over time
+- 🏗️ **Modular Architecture**: Clean, extensible codebase
+- 📝 **Comprehensive Docs**: Complete documentation suite
+- 🔄 **Automated Tuning**: Monthly hyperparameter optimization
+- 🎯 **Performance Metrics**: Transparent accuracy reporting
+
+### Breaking Changes
+- `code/main.py` replaced by `code/run_production_forecast.py`
+- New data structure in `web/data.json` (includes `forecast_vs_published`)
+- Configuration moved to `code/config.json` (from multiple files)
+
+### Migration from v0.9
+```bash
+# Update to v0.10
+git pull origin main
+
+# Install new dependencies
+pip install -r requirements.txt
+
+# Run new pipeline
+python code/run_production_forecast.py
+```
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a pull request or open an issue to discuss your ideas.
+We welcome contributions! Please see our [Development Guide](docs/DEVELOPMENT.md) for:
+- Code style guidelines
+- Testing requirements
+- Pull request process
+- Issue reporting
 
 ## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **CVE Project** for maintaining the cvelistV5 repository
+- **Darts** library for time series forecasting framework
+- **Contributors** who helped shape this release
+
+---
+
+**Version**: 0.10 "Phoenix" 🔥🐦  
+**Release Date**: October 2025  
+**Status**: Production Ready  
+**Website**: [cveforecast.org](https://cveforecast.org)

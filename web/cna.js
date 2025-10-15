@@ -25,7 +25,9 @@ const numberFmt = new Intl.NumberFormat();
 // Load CNA data
 async function loadCnaData() {
   try {
-    const response = await fetch('cna_data.json');
+    // Add cache-busting parameter to force fresh data load
+    const cacheBuster = new Date().getTime();
+    const response = await fetch(`cna_data.json?v=${cacheBuster}`);
     
     if (response.ok) {
       const text = await response.text();
@@ -52,11 +54,11 @@ async function loadCnaData() {
           updateModelStatistics();
         }, 150);
       } catch (parseError) {
-        // Handle JSON parsing errors silently in production
+        console.error('CNA Data Parse Error:', parseError);
       }
     }
   } catch (error) {
-    // Handle network errors silently in production
+    console.error('CNA Data Load Error:', error);
   }
 }
 
@@ -251,7 +253,7 @@ function initializeTable() {
     // Chart will be auto-selected by autoSelectTopCna() after table initialization
     
   } catch (error) {
-    // Handle table initialization errors silently
+    console.error('Table Initialization Error:', error);
   }
 }
 
@@ -504,41 +506,38 @@ function buildCumulativeDatasets(rec, year) {
   console.log('buildCumulativeDatasets: Starting for CNA:', rec.name || rec.id, 'Year:', year);
   const datasets = [];
   
+  // Determine the last fully completed month (first-of-month entry) for the selected year
+  // This is used to filter forecast data to only show points after the last historical month
+  let lastActualMonthDateStr = null;
+  if (rec.historical_cumulative && Array.isArray(rec.historical_cumulative)) {
+    const lastActualMonthEntry = rec.historical_cumulative
+      .filter(d => d.date.startsWith(`${year}-`) && d.date.endsWith('-01T00:00:00Z'))
+      .reduce((latest, current) => {
+        if (!latest) return current;
+        return current.date > latest.date ? current : latest;
+      }, null);
+    lastActualMonthDateStr = lastActualMonthEntry ? lastActualMonthEntry.date : null;
+  }
+  
   // Historical data (actual CVEs published)
+  // Include MTD point to match main CVE page behavior
   if (rec.historical_cumulative && Array.isArray(rec.historical_cumulative)) {
     const historicalData = rec.historical_cumulative
       .filter(item => {
-        const itemDate = new Date(item.date);
-        const itemYear = itemDate.getFullYear();
-        return itemYear === year;
+        const dateStr = item.date.substring(0, 4); // Extract year as string
+        return parseInt(dateStr) === year;
       })
-      .map(item => {
-        const dateObj = new Date(item.date);
-        return {
-          x: dateObj,
-          y: item.cumulative_total
-        };
-      });
+      .map(item => ({
+        x: new Date(item.date),
+        y: item.cumulative_total
+      }));
     
-    // Add current month-to-date data point if we have current month data
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth() + 1; // getMonth() is 0-based
-    const currentMonthKey = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
-    
-    if (year === currentYear && rec.historical && rec.historical[currentMonthKey]) {
-      const lastHistoricalPoint = historicalData[historicalData.length - 1];
-      const currentMonthCVEs = rec.historical[currentMonthKey];
-      const currentMonthCumulative = lastHistoricalPoint ? lastHistoricalPoint.y + currentMonthCVEs : currentMonthCVEs;
-      
-      // Add current month-to-date point (mid-month)
-      const currentMonthDate = new Date(currentYear, currentMonth - 1, 15, 12, 0, 0); // 15th of current month
-      historicalData.push({
-        x: currentMonthDate,
-        y: currentMonthCumulative
-      });
+    console.log(`📊 Historical data for ${year}:`, historicalData.length, 'points');
+    if (historicalData.length > 0) {
+      console.log('  First:', historicalData[0]);
+      console.log('  Last:', historicalData[historicalData.length - 1]);
+      console.log('  Last complete month:', lastActualMonthDateStr);
     }
-    
     
     if (historicalData.length > 0) {
       const historicalDataset = {
@@ -557,7 +556,7 @@ function buildCumulativeDatasets(rec, year) {
     }
   }
   
-  // Forecast data - use cumulative_timelines structure (matching main.py)
+  // Forecast data - use cumulative_timelines structure (matching main CVE page)
   console.log('buildCumulativeDatasets: Checking forecast data...');
   console.log('buildCumulativeDatasets: rec.cumulative_timelines exists:', !!rec.cumulative_timelines);
   
@@ -569,24 +568,26 @@ function buildCumulativeDatasets(rec, year) {
       if (Array.isArray(modelData) && modelData.length > 0) {
         const forecastData = modelData
           .filter(item => {
-            const itemDate = new Date(item.date);
-            const itemYear = itemDate.getFullYear();
-            const itemMonth = itemDate.getMonth();
-            const itemDay = itemDate.getDate();
-            // Include forecast data for the selected year
-            const includeItem = itemYear === year;
-            return includeItem;
+            const dateStr = item.date.substring(0, 4); // Extract year as string
+            const isSelectedYear = parseInt(dateStr) === year;
+            // Exclude year boundary reset markers (Dec 31 with value 0, which belong to next year's view)
+            const isResetMarker = item.date.includes('-12-31T23:59:59Z') && item.cumulative_total === 0;
+            const entryDateStr = item.date;
+            // Only show forecast points AFTER last actual month (matches main CVE page)
+            // This prevents duplicate display of overlap point
+            const isAfterActuals = !lastActualMonthDateStr || entryDateStr > lastActualMonthDateStr;
+            return isSelectedYear && !isResetMarker && isAfterActuals;
           })
-          .map(item => {
-            const dateObj = new Date(item.date);
-            return {
-              x: dateObj,
-              y: item.cumulative_total
-            };
-          });
+          .map(item => ({
+            x: new Date(item.date),
+            y: item.cumulative_total
+          }));
         
-        
+        console.log(`📈 Forecast data for ${modelKey} (${year}):`, forecastData.length, 'points');
         if (forecastData.length > 0) {
+          console.log('  First:', forecastData[0]);
+          console.log('  Last:', forecastData[forecastData.length - 1]);
+          
           // Extract model name from key (remove _cumulative suffix)
           const modelName = modelKey.replace('_cumulative', '');
           
@@ -811,24 +812,36 @@ function renderChart(rec) {
                     const timestamp = context[0].parsed.x;
                     const date = new Date(timestamp);
                     
-                    // Special case for December 31st - show "End of Year 2025"
-                    if (date.getMonth() === 11 && date.getDate() === 31) {
-                      return `End of Year ${date.getFullYear()}`;
+                    // Use UTC methods to avoid timezone issues (match main CVE page)
+                    const month = date.getUTCMonth();
+                    const day = date.getUTCDate();
+                    const hour = date.getUTCHours();
+                    const minute = date.getUTCMinutes();
+                    const second = date.getUTCSeconds();
+                    
+                    // Special case for December 31st 23:59:59 - show "End of Year"
+                    if (month === 11 && day === 31 && hour === 23 && minute === 59 && second === 59) {
+                      return `End of Year ${date.getUTCFullYear()}`;
                     }
                     
-                    // Special case for current month data point (15th of month) - show specific date
-                    if (date.getDate() === 15) {
+                    // Check if it's the last point (MTD) - show full date
+                    const isLastPoint = context[0].datasetIndex === 0 && 
+                                       context[0].dataIndex === context[0].dataset.data.length - 1;
+                    
+                    if (isLastPoint && day > 1 && day < 28) {
                       return date.toLocaleDateString('en-US', { 
-                        year: 'numeric', 
                         month: 'long',
-                        day: 'numeric'
+                        day: 'numeric',
+                        year: 'numeric',
+                        timeZone: 'UTC'
                       });
                     }
                     
                     // For regular cumulative data points, show just the month name
                     return date.toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long'
+                      month: 'long',
+                      year: 'numeric',
+                      timeZone: 'UTC'
                     });
                   }
                   return '';

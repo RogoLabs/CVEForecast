@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVE Forecast - Technical Details</title>
+    <title>CVE Forecast v0.10 "Phoenix" - Technical Details</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
         body {
@@ -32,7 +32,7 @@
                     <h1 class="text-3xl font-bold">
                         <span class="text-white">CVE</span><span class="rogo-blue">Forecast</span>
                     </h1>
-                    <p class="text-gray-300 mt-1">Technical Details</p>
+                    <p class="text-gray-300 mt-1">Technical Details - v0.10 "Phoenix" 🔥🐦</p>
                 </div>
                 <nav class="space-x-4">
                     <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
@@ -45,45 +45,46 @@
     <main class="container mx-auto px-6 py-8">
         <div class="content-section">
             <h2 class="text-2xl font-bold mb-4">Project Overview</h2>
-            <p class="mb-4">CVE Forecast is a self-improving automated platform that leverages advanced hyperparameter optimization and 25+ time series forecasting models to predict Common Vulnerabilities and Exposures (CVEs). The system provides data-driven insights into future vulnerability disclosure trends through an intelligent, continuously-evolving forecasting pipeline.</p>
+            <p class="mb-4">CVE Forecast is a sophisticated, self-improving automated platform that leverages advanced hyperparameter optimization and multiple time series forecasting models to predict the number of Common Vulnerabilities and Exposures (CVEs). It provides a comprehensive, data-driven view of future trends in vulnerability disclosures, all accessible through a sleek, interactive web dashboard.</p>
             
             <div class="grid md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
-                    <h4 class="font-semibold mb-2">🧠 Self-Improving AI</h4>
-                    <p class="text-sm text-gray-700">Comprehensive tuner learns from previous runs and continuously optimizes 25+ models across statistical, ML, and deep learning categories.</p>
+                    <h4 class="font-semibold mb-2">📊 Real-World Validation</h4>
+                    <p class="text-sm text-gray-700">Historical backtest on 2025 data (Jan-Sep) with actual vs. predicted comparisons. MAPE ranging from 6.22% (LightGBM) to 21.65% (Croston).</p>
                 </div>
                 <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
-                    <h4 class="font-semibold mb-2">⚡ Dynamic Optimization</h4>
-                    <p class="text-sm text-gray-700">Intelligent timeout redistribution and adaptive search strategies maximize resource utilization during hyperparameter exploration.</p>
+                    <h4 class="font-semibold mb-2">🔄 Unified Pipeline</h4>
+                    <p class="text-sm text-gray-700">Single command execution for CVE + CNA forecasting. Automated daily updates and monthly hyperparameter tuning via GitHub Actions.</p>
                 </div>
                 <div class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-400">
-                    <h4 class="font-semibold mb-2">🏗️ Production Architecture</h4>
-                    <p class="text-sm text-gray-700">Modular design with 5 core modules ensures maintainability, extensibility, and enterprise-grade reliability.</p>
+                    <h4 class="font-semibold mb-2">📈 Accuracy Tracking</h4>
+                    <p class="text-sm text-gray-700">ForecastTracker accumulates prediction snapshots over time, enabling long-term accuracy analysis and model stability assessment.</p>
                 </div>
                 <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
-                    <h4 class="font-semibold mb-2">🏢 CNA Forecasts</h4>
-                    <p class="text-sm text-gray-700">Dedicated CNA-specific forecasting pipeline with 166+ organizations, optimized models, and interactive visualization dashboard.</p>
+                    <h4 class="font-semibold mb-2">🏗️ Modular Architecture</h4>
+                    <p class="text-sm text-gray-700">Clean separation between data loading, training, forecasting, and validation. BaseForecaster and ValidationMixin provide extensible framework.</p>
                 </div>
             </div>
         </div>
 
         <div class="content-section">
-            <h2 class="text-2xl font-bold mb-4">CVE Forecast</h2>
-            <p class="mb-4">CVE Forecast employs a sophisticated, self-improving architecture that combines 25+ forecasting models with intelligent optimization capabilities.</p>
+            <h2 class="text-2xl font-bold mb-4">CVE Forecasting Pipeline</h2>
+            <p class="mb-4">The CVE forecasting pipeline uses 13 production-ready models with optimized hyperparameters, historical backtest validation, and transparent performance metrics.</p>
             
             <div class="grid md:grid-cols-2 gap-6 mb-6">
                 <div>
                     <h3 class="text-lg font-semibold mb-3">🏗️ Core Components</h3>
                     <ul class="list-disc list-inside space-y-1 text-sm">
-                        <li><strong>main.py:</strong> Orchestrates entire forecasting workflow</li>
-                        <li><strong>data_loader.py:</strong> Processes 300K+ CVE JSON files</li>
-                        <li><strong>model_trainer.py:</strong> Trains and evaluates models</li>
-                        <li><strong>utils.py:</strong> Logging and configuration management</li>
-                        <li><strong>comprehensive_tuner.py:</strong> Hyperparameter optimization</li>
+                        <li><strong>run_production_forecast.py:</strong> Unified pipeline entry point</li>
+                        <li><strong>cve_adapter.py:</strong> CVE forecasting implementation</li>
+                        <li><strong>base_forecaster.py:</strong> Abstract base class</li>
+                        <li><strong>validation_mixin.py:</strong> Backtest validation</li>
+                        <li><strong>forecast_tracker.py:</strong> Accuracy tracking over time</li>
+                        <li><strong>data_loader.py:</strong> Processes 297K+ CVE JSON files</li>
                     </ul>
                 </div>
                 <div>
-                    <h3 class="text-lg font-semibold mb-3">📊 Model Categories (25+ Models)</h3>
+                    <h3 class="text-lg font-semibold mb-3">📊 Production Models (13 Optimized)</h3>
                     <div class="grid grid-cols-2 gap-2 text-sm">
                         <div class="bg-blue-50 p-2 rounded">
                             <strong>Statistical (8):</strong> Prophet, AutoARIMA, TBATS, Theta, FourTheta, ExponentialSmoothing, KalmanFilter, Croston
@@ -91,33 +92,30 @@
                         <div class="bg-green-50 p-2 rounded">
                             <strong>ML/Tree (5):</strong> XGBoost, LightGBM, CatBoost, RandomForest, LinearRegression
                         </div>
-                        <div class="bg-purple-50 p-2 rounded">
-                            <strong>Deep Learning (5):</strong> TCN, NBEATS, NHiTS, TiDE, DLinear
-                        </div>
-                        <div class="bg-orange-50 p-2 rounded">
-                            <strong>Baseline (3):</strong> NaiveDrift, NaiveMean, NaiveSeasonal
-                        </div>
                     </div>
+                    <p class="text-xs text-gray-600 mt-2"><strong>Top Performers (2025 Backtest):</strong> LightGBM (6.22% MAPE), KalmanFilter (6.26%), TBATS (7.21%)</p>
                 </div>
             </div>
             
-            <h3 class="text-lg font-semibold mb-3">🧠 Self-Improving Optimization</h3>
+            <h3 class="text-lg font-semibold mb-3">🎯 Historical Backtest Validation</h3>
             <div class="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-l-4 border-blue-400 mb-4">
-                <p class="text-gray-800 mb-2"><strong>Revolutionary Workflow:</strong> The comprehensive tuner learns from previous runs, only updating configurations when improvements are found, creating an intelligent system that evolves over time.</p>
+                <p class="text-gray-800 mb-2"><strong>Real-World Accuracy Testing:</strong> Each model is backtested by training on data through 2024 and forecasting Jan-Sep 2025, then comparing predictions against actual published CVE counts.</p>
                 <ul class="list-disc list-inside space-y-1 text-sm text-gray-700">
-                    <li><strong>Dynamic Timeout Redistribution:</strong> Unused time from fast models redistributed to slower ones</li>
-                    <li><strong>Adaptive Search Strategies:</strong> Grid/random search selection based on model complexity</li>
-                    <li><strong>Dual-Config Management:</strong> Updates both production and tuner configurations</li>
-                    <li><strong>Performance Tracking:</strong> Maintains optimization history and automatic backups</li>
+                    <li><strong>Forecast vs Published Table:</strong> Month-by-month comparison with error percentages and performance ratings</li>
+                    <li><strong>Model Rankings:</strong> Real-time leaderboard sorted by backtest MAPE</li>
+                    <li><strong>Transparent Metrics:</strong> MAE, MAPE, and performance badges (Excellent < 5%, Good < 10%, Fair < 20%)</li>
+                    <li><strong>Historical Tracking:</strong> ForecastTracker accumulates snapshots for long-term accuracy analysis</li>
                 </ul>
             </div>
             
-            <h3 class="text-lg font-semibold mb-3">📈 Evaluation System</h3>
+            <h3 class="text-lg font-semibold mb-3">🔄 Automated Workflows</h3>
             <div class="bg-gray-50 p-4 rounded-lg">
-                <p class="mb-2"><strong>Dual-Metric Evaluation:</strong></p>
+                <p class="mb-2"><strong>GitHub Actions Integration:</strong></p>
                 <ul class="list-disc list-inside space-y-1 text-sm">
-                    <li><strong>MAPE:</strong> Primary ranking metric for model selection</li>
-                    <li><strong>MAE:</strong> Intuitive error measurement in original CVE units</li>
+                    <li><strong>Daily Forecast:</strong> Runs at midnight UTC, generates fresh forecasts, deploys to GitHub Pages</li>
+                    <li><strong>Monthly Tuning:</strong> Runs 1st of each month, optimizes hyperparameters, updates config.json</li>
+                    <li><strong>Zero Downtime:</strong> Continuous deployment with automatic rollback on failure</li>
+                    <li><strong>Artifact Storage:</strong> 90-day retention of tuning results and execution logs</li>
                 </ul>
             </div>
         </div>
@@ -209,13 +207,55 @@
         </div>
 
         <div class="content-section">
-            <h2 class="text-2xl font-bold mb-4">Change Log</h2>
+            <h2 class="text-2xl font-bold mb-4">Release History</h2>
             <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-300 shadow-md">
-                <h3 class="font-bold text-blue-800 text-lg mb-2">🏴󠁧󠁢󠁳󠁣󠁴󠁿 v.09 - Edinburgh 🏴󠁧󠁢󠁳󠁣󠁴󠁿 (October 2025)</h3>
-                <p class="text-blue-700 font-medium mb-3">🔄 Year Rollover Automation & Enhanced Forecasting - Complete 2026 readiness with zero manual intervention</p>
+                <h3 class="font-bold text-blue-800 text-lg mb-2">🔥🐦 v0.10 - Phoenix 🔥🐦 (October 2025)</h3>
+                <p class="text-blue-700 font-medium mb-3">🎆 Complete Architectural Rebirth - Production-ready unified pipeline with historical validation and accuracy tracking</p>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">📅 Year Rollover Automation</h4>
+                    <h4 class="font-semibold text-blue-800 mb-2">✨ Major Features</h4>
                     <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                        <li><strong>Unified Pipeline:</strong> Single command (run_production_forecast.py) for CVE + CNA forecasting</li>
+                        <li><strong>Historical Backtest:</strong> Real-world validation on 2025 data (Jan-Sep) with actual vs. predicted comparisons</li>
+                        <li><strong>Forecast Tracking:</strong> ForecastTracker accumulates prediction snapshots for long-term accuracy analysis</li>
+                        <li><strong>Model Rankings:</strong> Real-time leaderboard based on backtest MAPE (LightGBM: 6.22%, KalmanFilter: 6.26%)</li>
+                        <li><strong>Forecast vs Published Table:</strong> Month-by-month comparison with error percentages and performance ratings</li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-blue-800 mb-2">🏗️ Architecture Improvements</h4>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                        <li><strong>Modular Design:</strong> BaseForecaster, ValidationMixin, CVEForecaster, CNAForecaster adapters</li>
+                        <li><strong>Clean Separation:</strong> Data loading, training, forecasting, and validation in separate modules</li>
+                        <li><strong>Extensible Framework:</strong> Easy to add new models, data sources, or validation strategies</li>
+                        <li><strong>Production-Ready:</strong> Robust error handling, comprehensive logging, and monitoring</li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-blue-800 mb-2">🔄 Automated Workflows</h4>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                        <li><strong>Daily Forecast:</strong> Midnight UTC execution with automatic deployment to GitHub Pages</li>
+                        <li><strong>Monthly Tuning:</strong> 1st of each month hyperparameter optimization with config updates</li>
+                        <li><strong>Zero Downtime:</strong> Continuous deployment with automatic rollback on failure</li>
+                        <li><strong>Artifact Storage:</strong> 90-day retention of tuning results and execution logs</li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-blue-800 mb-2">📚 Documentation</h4>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                        <li><strong>Architecture Guide:</strong> System design, components, and data flow</li>
+                        <li><strong>API Reference:</strong> Classes, methods, and configuration options</li>
+                        <li><strong>Deployment Guide:</strong> GitHub Actions, hosting, and CI/CD</li>
+                        <li><strong>Development Guide:</strong> Contributing, testing, and best practices</li>
+                        <li><strong>Tuning Guide:</strong> Hyperparameter optimization workflows</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="font-semibold text-gray-800 text-lg mb-2">🏴󠁧󠁢󠁳󠁣󠁴󠁿 v0.09 - Edinburgh 🏴󠁧󠁢󠁳󠁣󠁴󠁿 (October 2025)</h3>
+                <p class="text-gray-700 mb-3">🔄 Year Rollover Automation & Enhanced Forecasting - Complete 2026 readiness with zero manual intervention</p>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-gray-800 mb-2">📅 Year Rollover Automation</h4>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
                         <li>Fully dynamic YoY growth calculations that automatically compare current year vs previous year</li>
                         <li>Automatic chart axis updates - date ranges adapt seamlessly across year boundaries</li>
                         <li>Smart forecast end year detection with automatic rollover when config becomes outdated</li>
@@ -224,8 +264,8 @@
                     </ul>
                 </div>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">📊 Enhanced Dashboard Features</h4>
-                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                    <h4 class="font-semibold text-gray-800 mb-2">📊 Enhanced Dashboard Features</h4>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
                         <li>Improved "Projected Full Year Growth" card with explicit year comparisons (e.g., "2025 vs 2024")</li>
                         <li>Detailed growth metrics showing actual numbers: "45,000 vs 39,970 (Full Year)"</li>
                         <li>Chart x-axis automatically spans from Jan of current year to Jan of next year</li>
@@ -233,8 +273,8 @@
                     </ul>
                 </div>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">🔧 Code Quality & Maintenance</h4>
-                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                    <h4 class="font-semibold text-gray-800 mb-2">🔧 Code Quality & Maintenance</h4>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
                         <li>Comprehensive year rollover audit identifying all hardcoded year references</li>
                         <li>Main forecast page 100% automatic - zero manual intervention needed for 2026</li>
                         <li>CNA forecast page requires minimal annual label updates (5 minute task)</li>
@@ -354,7 +394,7 @@
             <p class="text-gray-300 text-sm mt-2">Powered by time series forecasting models using the <a href="https://unit8co.github.io/darts/" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">Darts library</a></p>
             <div class="mt-4 pt-4 border-t border-gray-600">
                 <div class="mt-2">
-                    <span class="inline-block bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-mono">v.09 Edinburgh 🏴󠁧󠁢󠁳󠁣󠁴󠁿</span>
+                    <span class="inline-block bg-red-600 text-white text-xs px-2 py-1 rounded-full font-mono">v0.10 Phoenix 🔥🐦</span>
                 </div>
             </div>
         </div>

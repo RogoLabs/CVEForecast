@@ -1,0 +1,112 @@
+name: Monthly Hyperparameter Tuning
+
+on:
+  schedule:
+    # Run on the 1st of each month at 2 AM UTC
+    - cron: '0 2 1 * *'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  tune-hyperparameters:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+        cache: 'pip'
+    
+    - name: Install PyTorch (CPU-only)
+      run: |
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+    
+    - name: Clone CVE data repository
+      run: |
+        git clone --depth 1 https://github.com/CVEProject/cvelistV5.git cvelistV5
+        echo "CVE data cloned successfully"
+        ls -la cvelistV5/
+    
+    - name: Run Comprehensive Hyperparameter Tuning
+      run: |
+        python code/tuner/comprehensive_tuner.py
+      env:
+        PYTHONUNBUFFERED: 1
+      timeout-minutes: 300  # 5 hours max
+    
+    - name: Check for config changes
+      id: verify-changed-files
+      run: |
+        if [ -n "$(git status --porcelain code/config.json)" ]; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+          echo "✅ Hyperparameter tuning completed - config.json updated"
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+          echo "ℹ️ No changes to hyperparameters"
+        fi
+    
+    - name: Commit and push optimized configurations
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git add code/config.json
+        git commit -m "🔧 Update optimized hyperparameters - Monthly tuning $(date -u '+%Y-%m-%d')"
+        git push
+    
+    - name: Create tuning summary
+      if: always()
+      run: |
+        echo "# Hyperparameter Tuning Summary" > tuning_summary.md
+        echo "" >> tuning_summary.md
+        echo "**Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> tuning_summary.md
+        echo "**Status:** ${{ job.status }}" >> tuning_summary.md
+        echo "" >> tuning_summary.md
+        if [ -f "code/config.json" ]; then
+          echo "## Optimized Models" >> tuning_summary.md
+          python -c "import json; data=json.load(open('code/config.json')); print('\n'.join([f'- {m}' for m in data.get('models', {}).keys()]))" >> tuning_summary.md
+        fi
+    
+    - name: Upload tuning artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: tuning-results-${{ github.run_number }}
+        path: |
+          code/config.json
+          tuning_summary.md
+        retention-days: 90
+    
+    - name: Create issue on failure
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '⚠️ Monthly Hyperparameter Tuning Failed',
+            body: `The monthly hyperparameter tuning workflow failed on ${new Date().toISOString().split('T')[0]}.\n\nPlease check the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for details.`,
+            labels: ['automation', 'tuning']
+          })

@@ -69,10 +69,91 @@ except (ImportError, OSError) as e:
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from data_loader import load_cve_data
-from model_trainer import train_and_evaluate_model
 from utils import setup_logging
 from darts import TimeSeries
 from darts.metrics import mae, mape, mase, rmsse
+
+# Import model classes for tuning
+from darts.models import (
+    ExponentialSmoothing, Prophet, AutoARIMA, Theta, FourTheta, TBATS, Croston,
+    KalmanForecaster, XGBModel, LightGBMModel, CatBoostModel, RandomForestModel,
+    LinearRegressionModel, TCNModel, NBEATSModel, NHiTSModel, TiDEModel, DLinearModel
+)
+from darts.models.forecasting.baselines import NaiveMean, NaiveDrift, NaiveSeasonal
+
+
+def train_and_evaluate_model(model_name, model_config, series, eval_config):
+    """
+    Train and evaluate a model with given hyperparameters.
+    
+    Replacement for old model_trainer function - now uses adapter-style model creation.
+    
+    Args:
+        model_name: Name of the model
+        model_config: Dictionary with 'hyperparameters' key
+        series: Darts TimeSeries
+        eval_config: Dictionary with 'split_ratio' and other eval settings
+        
+    Returns:
+        Tuple of (model, train_data, val_data, predictions)
+    """
+    # Extract configuration
+    hyperparameters = model_config.get('hyperparameters', {})
+    split_ratio = eval_config.get('split_ratio', 0.8)
+    
+    # Split data
+    split_point = int(split_ratio * len(series))
+    train_data = series[:split_point]
+    val_data = series[split_point:]
+    
+    if len(val_data) == 0:
+        raise ValueError("No validation data available")
+    
+    # Model class mapping (same as adapter)
+    model_classes = {
+        'Prophet': Prophet,
+        'ExponentialSmoothing': ExponentialSmoothing,
+        'AutoARIMA': AutoARIMA,
+        'Theta': Theta,
+        'FourTheta': FourTheta,
+        'TBATS': TBATS,
+        'Croston': Croston,
+        'KalmanForecaster': KalmanForecaster,
+        'XGBoost': XGBModel,
+        'LightGBM': LightGBMModel,
+        'CatBoost': CatBoostModel,
+        'RandomForest': RandomForestModel,
+        'LinearRegression': LinearRegressionModel,
+        'TCN': TCNModel,
+        'NBEATS': NBEATSModel,
+        'NHiTS': NHiTSModel,
+        'TiDE': TiDEModel,
+        'DLinear': DLinearModel,
+        'NaiveMean': NaiveMean,
+        'NaiveDrift': NaiveDrift,
+        'NaiveSeasonal': NaiveSeasonal
+    }
+    
+    if model_name not in model_classes:
+        raise ValueError(f"Unknown model: {model_name}")
+    
+    model_class = model_classes[model_name]
+    
+    # Create model with hyperparameters
+    try:
+        model = model_class(**hyperparameters)
+    except Exception as e:
+        # Try without hyperparameters if they fail
+        model = model_class()
+    
+    # Train model
+    model.fit(train_data)
+    
+    # Generate predictions
+    predictions = model.predict(len(val_data))
+    
+    # Return model and data (tuner calculates metrics itself)
+    return model, train_data, val_data, predictions
 
 
 def cleanup_multiprocessing():

@@ -7,6 +7,7 @@
 let forecastData = null;
 let modelInfoData = null;
 let chartInstance = null;
+let selectedYear = 2025; // Default to current year
 
 // Initialize the dashboard when the DOM is loaded
 document.addEventListener('DOMContentLoaded', loadForecastData);
@@ -81,12 +82,35 @@ function initializeDashboard() {
 }
 
 /**
- * Updates the chart description with the current year.
+ * Switches the chart to display a specific year.
+ * @param {number} year - The year to display (2025 or 2026)
+ */
+function switchYear(year) {
+    selectedYear = year;
+    
+    // Update button styles
+    const btn2025 = document.getElementById('yearBtn2025');
+    const btn2026 = document.getElementById('yearBtn2026');
+    
+    if (year === 2025) {
+        btn2025.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700';
+        btn2026.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
+    } else {
+        btn2025.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
+        btn2026.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700';
+    }
+    
+    updateChartDescription();
+    updateSummaryCards();  // Update cards for selected year
+    createOrUpdateChart();
+}
+
+/**
+ * Updates the chart description with the selected year.
  */
 function updateChartDescription() {
-    const currentYear = new Date().getFullYear();
     document.getElementById('chartDescription').textContent = 
-        `Cumulative growth showing actual CVE publications and ML model predictions for ${currentYear}`;
+        `Cumulative growth showing actual CVE publications and ML model predictions for ${selectedYear}`;
 }
 
 /**
@@ -99,7 +123,8 @@ function updateSummaryCards() {
 
     const bestModelName = forecastData.model_rankings?.[0]?.model_name || 'N/A';
     const yearlyTotals = forecastData.yearly_forecast_totals || {};
-    const bestModelTotal = yearlyTotals[bestModelName] || 0;
+    const yearTotals = yearlyTotals[selectedYear] || {};
+    const bestModelTotal = yearTotals[bestModelName] || 0;
 
     document.getElementById('currentYearForecast').textContent = bestModelTotal.toLocaleString();
     document.getElementById('forecastDescription').textContent = `Total CVEs: Published + Forecasted (${bestModelName} - Best Model)`;
@@ -112,16 +137,21 @@ function updateSummaryCards() {
 
     document.getElementById('totalCVEs').textContent = (forecastData.summary?.total_historical_cves || 0).toLocaleString();
 
-    // Use dynamic previous_year_total (works for any year) with fallback to legacy cumulative_cves_2024
-    const lastYearTotal = forecastData.summary?.previous_year_total || forecastData.summary?.cumulative_cves_2024;
-    const previousYear = forecastData.summary?.previous_year || 2024;
-    const currentYear = new Date().getFullYear();
+    // Calculate year-over-year growth for selected year
+    const previousYear = selectedYear - 1;
+    const previousYearTotals = yearlyTotals[previousYear] || {};
+    let lastYearTotal = previousYearTotals[bestModelName] || 0;
+    
+    // Fallback: For 2025, use actual 2024 total from summary if forecast not available
+    if (!lastYearTotal && selectedYear === 2025) {
+        lastYearTotal = forecastData.summary?.previous_year_total || forecastData.summary?.cumulative_cves_2024 || 0;
+    }
     
     if (bestModelTotal && lastYearTotal) {
         const yoyGrowth = ((bestModelTotal - lastYearTotal) / lastYearTotal) * 100;
         const growthText = yoyGrowth >= 0 ? `+${yoyGrowth.toFixed(1)}%` : `${yoyGrowth.toFixed(1)}%`;
         document.getElementById('yoyGrowth').textContent = growthText;
-        document.getElementById('yoyGrowthDetail').textContent = `${bestModelTotal.toLocaleString()} vs ${lastYearTotal.toLocaleString()} (${currentYear} vs ${previousYear})`;
+        document.getElementById('yoyGrowthDetail').textContent = `${bestModelTotal.toLocaleString()} vs ${lastYearTotal.toLocaleString()} (${selectedYear} vs ${previousYear})`;
     } else {
         document.getElementById('yoyGrowth').textContent = '-';
         document.getElementById('yoyGrowthDetail').textContent = 'Data unavailable';
@@ -253,8 +283,7 @@ function populateForecastVsPublishedTable() {
     const summaryStats = modelData.summary_stats;
 
     maeCard.textContent = (summaryStats.mean_absolute_error || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const bestModel = forecastData.model_rankings[0];
-    mapeCard.textContent = `${(bestModel.mape || 0).toFixed(2)}%`;
+    mapeCard.textContent = `${(summaryStats.mean_absolute_percentage_error || 0).toFixed(2)}%`;
 
     const groupedData = tableData.reduce((acc, row) => {
         const year = row.MONTH.split('-')[0];
@@ -399,12 +428,35 @@ function createOrUpdateChart() {
 
 /**
  * Prepares the datasets for the chart, including actuals and all forecasts.
+ * Filters data based on the selected year.
  */
 function prepareChartData() {
     const { actuals_cumulative, cumulative_timelines } = forecastData;
     const datasets = [];
 
-    const actualsData = actuals_cumulative.map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
+    // Filter actuals data for selected year (Jan 1 through current date or Dec 31)
+    // Use UTC parsing to avoid timezone conversion issues
+    const actualsData = actuals_cumulative
+        .filter(d => {
+            const dateStr = d.date.substring(0, 4); // Extract year as string "2025"
+            return parseInt(dateStr) === selectedYear;
+        })
+        .map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
+
+    // Determine the last fully completed month (first-of-month entry) for the selected year
+    const lastActualMonthEntry = actuals_cumulative
+        .filter(d => d.date.startsWith(`${selectedYear}-`) && d.date.endsWith('-01T00:00:00Z'))
+        .reduce((latest, current) => {
+            if (!latest) return current;
+            return current.date > latest.date ? current : latest;
+        }, null);
+    const lastActualMonthDateStr = lastActualMonthEntry ? lastActualMonthEntry.date : null;
+    
+    console.log(`📊 Actuals data for ${selectedYear}:`, actualsData.length, 'points');
+    if (actualsData.length > 0) {
+        console.log('  First:', actualsData[0]);
+        console.log('  Last:', actualsData[actualsData.length - 1]);
+    }
 
     datasets.push({
         label: 'Actual CVEs',
@@ -432,7 +484,28 @@ function prepareChartData() {
 
     topFiveModels.forEach((model, index) => {
         const modelKey = `${model.model_name}_cumulative`;
-        const modelData = cumulative_timelines[modelKey].map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
+        // Filter forecast data by selected year
+        // Use UTC parsing to avoid timezone conversion issues
+        const modelData = cumulative_timelines[modelKey]
+            .filter(d => {
+                const dateStr = d.date.substring(0, 4); // Extract year as string "2025"
+                const isSelectedYear = parseInt(dateStr) === selectedYear;
+                // Exclude year boundary reset markers (Dec 31 with value 0, which belong to next year's view)
+                const isResetMarker = d.date.includes('-12-31T23:59:59Z') && d.cumulative_total === 0;
+                const entryDateStr = d.date;
+                const isAfterActuals = !lastActualMonthDateStr || entryDateStr > lastActualMonthDateStr;
+                return isSelectedYear && !isResetMarker && isAfterActuals;
+            })
+            .map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
+        
+        if (index === 0) {
+            console.log(`📈 Forecast data for ${model.model_name} (${selectedYear}):`, modelData.length, 'points');
+            if (modelData.length > 0) {
+                console.log('  First:', modelData[0]);
+                console.log('  Last:', modelData[modelData.length - 1]);
+            }
+        }
+        
         const factor = topFiveModels.length > 1 ? index / (topFiveModels.length - 1) : 0;
         const color = interpolateColor(bestColor, worstColor, factor);
 
@@ -450,7 +523,19 @@ function prepareChartData() {
     });
 
     if (cumulative_timelines.all_models_cumulative) {
-        const avgData = cumulative_timelines.all_models_cumulative.map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
+        // Filter average forecast data by selected year
+        // Use UTC parsing to avoid timezone conversion issues
+        const avgData = cumulative_timelines.all_models_cumulative
+            .filter(d => {
+                const dateStr = d.date.substring(0, 4); // Extract year as string "2025"
+                const isSelectedYear = parseInt(dateStr) === selectedYear;
+                // Exclude year boundary reset markers (Dec 31 with value 0, which belong to next year's view)
+                const isResetMarker = d.date.includes('-12-31T23:59:59Z') && d.cumulative_total === 0;
+                const entryDateStr = d.date;
+                const isAfterActuals = !lastActualMonthDateStr || entryDateStr > lastActualMonthDateStr;
+                return isSelectedYear && !isResetMarker && isAfterActuals;
+            })
+            .map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
         datasets.push({
             label: 'Model Average (Forecast)',
             data: avgData,
@@ -485,6 +570,17 @@ function getChartOptions() {
                         if (!tooltipItems.length) return '';
                         const pointDate = new Date(tooltipItems[0].parsed.x);
 
+                        // Check if this is a Dec 31 23:59:59 timestamp (End of Year marker)
+                        const month = pointDate.getUTCMonth();
+                        const day = pointDate.getUTCDate();
+                        const hour = pointDate.getUTCHours();
+                        const minute = pointDate.getUTCMinutes();
+                        const second = pointDate.getUTCSeconds();
+                        
+                        if (month === 11 && day === 31 && hour === 23 && minute === 59 && second === 59) {
+                            return `End of Year ${pointDate.getUTCFullYear()}`;
+                        }
+
                         // Check if it's the last point of the 'Actual CVEs' dataset
                         const isLastActualPoint = 
                             tooltipItems[0].datasetIndex === 0 && 
@@ -509,8 +605,8 @@ function getChartOptions() {
                 type: 'time',
                 time: { unit: 'month', tooltipFormat: 'MMM yyyy' },
                 title: { display: true, text: 'Month' },
-                min: `${new Date().getFullYear()}-01-01`,
-                max: `${new Date().getFullYear() + 1}-01-05`,
+                min: new Date(selectedYear - 1, 11, 25), // Dec 25 of previous year for padding
+                max: new Date(selectedYear, 11, 31, 23, 59, 59), // Dec 31 at end of day
             },
             y: {
                 beginAtZero: true,
