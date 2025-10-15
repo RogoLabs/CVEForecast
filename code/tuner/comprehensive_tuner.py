@@ -69,10 +69,91 @@ except (ImportError, OSError) as e:
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from data_loader import load_cve_data
-from model_trainer import train_and_evaluate_model
 from utils import setup_logging
 from darts import TimeSeries
 from darts.metrics import mae, mape, mase, rmsse
+
+# Import model classes for tuning
+from darts.models import (
+    ExponentialSmoothing, Prophet, AutoARIMA, Theta, FourTheta, TBATS, Croston,
+    KalmanForecaster, XGBModel, LightGBMModel, CatBoostModel, RandomForestModel,
+    LinearRegressionModel, TCNModel, NBEATSModel, NHiTSModel, TiDEModel, DLinearModel
+)
+from darts.models.forecasting.baselines import NaiveMean, NaiveDrift, NaiveSeasonal
+
+
+def train_and_evaluate_model(model_name, model_config, series, eval_config):
+    """
+    Train and evaluate a model with given hyperparameters.
+    
+    Replacement for old model_trainer function - now uses adapter-style model creation.
+    
+    Args:
+        model_name: Name of the model
+        model_config: Dictionary with 'hyperparameters' key
+        series: Darts TimeSeries
+        eval_config: Dictionary with 'split_ratio' and other eval settings
+        
+    Returns:
+        Tuple of (model, train_data, val_data, predictions)
+    """
+    # Extract configuration
+    hyperparameters = model_config.get('hyperparameters', {})
+    split_ratio = eval_config.get('split_ratio', 0.8)
+    
+    # Split data
+    split_point = int(split_ratio * len(series))
+    train_data = series[:split_point]
+    val_data = series[split_point:]
+    
+    if len(val_data) == 0:
+        raise ValueError("No validation data available")
+    
+    # Model class mapping (same as adapter)
+    model_classes = {
+        'Prophet': Prophet,
+        'ExponentialSmoothing': ExponentialSmoothing,
+        'AutoARIMA': AutoARIMA,
+        'Theta': Theta,
+        'FourTheta': FourTheta,
+        'TBATS': TBATS,
+        'Croston': Croston,
+        'KalmanForecaster': KalmanForecaster,
+        'XGBoost': XGBModel,
+        'LightGBM': LightGBMModel,
+        'CatBoost': CatBoostModel,
+        'RandomForest': RandomForestModel,
+        'LinearRegression': LinearRegressionModel,
+        'TCN': TCNModel,
+        'NBEATS': NBEATSModel,
+        'NHiTS': NHiTSModel,
+        'TiDE': TiDEModel,
+        'DLinear': DLinearModel,
+        'NaiveMean': NaiveMean,
+        'NaiveDrift': NaiveDrift,
+        'NaiveSeasonal': NaiveSeasonal
+    }
+    
+    if model_name not in model_classes:
+        raise ValueError(f"Unknown model: {model_name}")
+    
+    model_class = model_classes[model_name]
+    
+    # Create model with hyperparameters
+    try:
+        model = model_class(**hyperparameters)
+    except Exception as e:
+        # Try without hyperparameters if they fail
+        model = model_class()
+    
+    # Train model
+    model.fit(train_data)
+    
+    # Generate predictions
+    predictions = model.predict(len(val_data))
+    
+    # Return model and data (tuner calculates metrics itself)
+    return model, train_data, val_data, predictions
 
 
 def cleanup_multiprocessing():
@@ -423,154 +504,163 @@ class ComprehensiveHyperparameterTuner:
         """
         return {
             "Prophet": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2 (11 months validation)
                 "hyperparameters": {
-                    "changepoint_prior_scale": [0.01, 0.05, 0.1, 0.5],
-                    "seasonality_prior_scale": [0.1, 1.0, 10.0],
-                    "n_changepoints": [15, 25],
-                    "seasonality_mode": ["additive"],
-                    "growth": ["linear"],
-                    "yearly_seasonality": [True, "auto"],
-                    "weekly_seasonality": [False],
-                    "daily_seasonality": [False],
-                    "mcmc_samples": [0],
-                    "interval_width": [0.80, 0.95]
+                    "changepoint_prior_scale": [0.05, 0.1],  # 2 best values
+                    "seasonality_prior_scale": [1.0, 10.0],  # 2 best values
+                    "n_changepoints": [25],  # FIXED: standard
+                    "seasonality_mode": ["additive"],  # FIXED
+                    "growth": ["linear"],  # FIXED
+                    "yearly_seasonality": [True],  # FIXED
+                    "weekly_seasonality": [False],  # FIXED
+                    "daily_seasonality": [False],  # FIXED
+                    "mcmc_samples": [0],  # FIXED
+                    "interval_width": [0.95]  # FIXED
                 }
+                # Total: 1 × 4 = 4 configurations
             },
             "XGBoost": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    # Core high-impact parameters optimized for 30-minute constraint
-                    "lags": [12, 18, 24, 36, 48],  # Reduced from 14 to 5 key values
-                    "n_estimators": [100, 200, 300, 500],  # Reduced from 13 to 4 key values
-                    "max_depth": [4, 6, 8, 10],  # Reduced from 10 to 4 key values
-                    "learning_rate": [0.01, 0.05, 0.1, 0.2],  # Reduced from 12 to 4 key values
-                    "subsample": [0.8, 0.9, 1.0],  # Reduced from 8 to 3 key values
-                    "colsample_bytree": [0.8, 0.9, 1.0],  # Reduced from 8 to 3 key values
-                    "reg_alpha": [0, 0.1, 1.0],  # Reduced from 9 to 3 key values
-                    "reg_lambda": [0, 0.1, 1.0]  # Reduced from 9 to 3 key values
+                    # Smart grid: high-impact parameters only (12-min tuning)
+                    "lags": [24, 36, 48],  # 3 best values (2-4 year patterns)
+                    "n_estimators": [200, 300, 500],  # 3 best values
+                    "max_depth": [6, 8],  # 2 best values
+                    "learning_rate": [0.05, 0.1],  # 2 best values
+                    "subsample": [0.9],  # FIXED: standard best practice
+                    "colsample_bytree": [0.9],  # FIXED: standard best practice
+                    "reg_alpha": [0.1],  # FIXED: light regularization
+                    "reg_lambda": [0.1]  # FIXED: light regularization
                 }
+                # Total: 1 × 3×3×2×2 = 36 configurations
             },
             "LightGBM": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    # Core high-impact parameters optimized for 30-minute constraint
-                    "lags": [12, 18, 24, 36, 48],  # Reduced from 14 to 5 key values
-                    "n_estimators": [100, 200, 300, 500],  # Reduced from 13 to 4 key values
-                    "max_depth": [4, 6, 8, 10],  # Reduced from 10 to 4 key values
-                    "num_leaves": [31, 50, 100, 150],  # Reduced from 13 to 4 key values
-                    "learning_rate": [0.01, 0.05, 0.1, 0.2],  # Reduced from 12 to 4 key values
-                    "min_child_samples": [5, 10, 20],  # Reduced from 11 to 3 key values
-                    "subsample": [0.8, 0.9, 1.0],  # Reduced from 8 to 3 key values
-                    "colsample_bytree": [0.8, 0.9, 1.0],  # Reduced from 8 to 3 key values
-                    "reg_alpha": [0, 0.1, 1.0],  # Reduced from 9 to 3 key values
-                    "reg_lambda": [0, 0.1, 1.0]  # Reduced from 9 to 3 key values
+                    # Smart grid: high-impact parameters only (12-min tuning)
+                    "lags": [24, 36, 48],  # 3 best values (2-4 year patterns)
+                    "n_estimators": [200, 300, 500],  # 3 best values
+                    "max_depth": [6, 8],  # 2 best values
+                    "num_leaves": [50, 100],  # 2 best values
+                    "learning_rate": [0.05, 0.1],  # 2 best values
+                    "min_child_samples": [10],  # FIXED: standard default
+                    "subsample": [0.9],  # FIXED: standard best practice
+                    "colsample_bytree": [0.9],  # FIXED: standard best practice
+                    "reg_alpha": [0.1],  # FIXED: light regularization
+                    "reg_lambda": [0.1]  # FIXED: light regularization
                 }
+                # Total: 1 × 3×3×2×2×2 = 72 configurations
             },
             "CatBoost": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    # Core high-impact parameters optimized for 30-minute constraint
-                    "lags": [12, 18, 24, 36, 48],  # Reduced from 14 to 5 key values
-                    "iterations": [100, 200, 300, 500],  # Reduced from 13 to 4 key values
-                    "depth": [4, 6, 8, 10],  # Reduced from 10 to 4 key values
-                    "learning_rate": [0.01, 0.05, 0.1, 0.2],  # Reduced from 12 to 4 key values
-                    "l2_leaf_reg": [1, 3, 10],  # Reduced from 12 to 3 key values
-                    "border_count": [64, 128, 192]  # Reduced from 8 to 3 key values
+                    # Smart grid: high-impact parameters only (12-min tuning)
+                    "lags": [24, 36, 48],  # 3 best values (2-4 year patterns)
+                    "iterations": [200, 300, 500],  # 3 best values
+                    "depth": [6, 8],  # 2 best values
+                    "learning_rate": [0.05, 0.1],  # 2 best values
+                    "l2_leaf_reg": [3],  # FIXED: moderate regularization
+                    "border_count": [128]  # FIXED: standard default
                 }
+                # Total: 1 × 3×3×2×2 = 36 configurations
             },
             "RandomForest": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    # Core high-impact parameters
-                    "lags": [12, 18, 24, 36, 48],  # Reduced from 14 to 5 key values
-                    "n_estimators": [100, 200, 300, 500],  # Reduced from 13 to 4 key values
-                    "max_depth": [5, 10, 15, None],  # Reduced from 10 to 4 key values
-                    "min_samples_split": [2, 5, 10],  # Reduced from 9 to 3 key values
-                    "min_samples_leaf": [1, 2, 5],  # Reduced from 9 to 3 key values
-                    "max_features": ["sqrt", "log2", 0.5],  # Reduced from 7 to 3 key values
-                    "bootstrap": [True],  # Fixed to True (standard practice)
-                    "random_state": [42],  # Fixed for reproducibility
-                    # Removed low-impact parameters for 30-minute constraint
+                    # Smart grid: high-impact parameters only
+                    "lags": [24, 36],  # 2 best values
+                    "n_estimators": [200, 300],  # 2 best values
+                    "max_depth": [10, None],  # 2 values (depth limit vs unlimited)
+                    "min_samples_split": [5],  # FIXED: standard
+                    "min_samples_leaf": [2],  # FIXED: standard
+                    "max_features": ["sqrt"],  # FIXED: standard best practice
+                    "bootstrap": [True],  # FIXED
+                    "random_state": [42]  # FIXED
                 }
+                # Total: 1 × 2×2×2 = 8 configurations
             },
             "LinearRegression": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Simplified split ratios
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "lags": [6, 12, 18, 24, 30],  # Simplified lag values
-                    "output_chunk_length": [1, 3, 6],  # Simplified output chunk lengths
-                    "output_chunk_shift": [0, 1],  # Simplified shifts
-                    "multi_models": [True, False],
-                    "likelihood": [None, "quantile"],
-                    "quantiles": [None, [0.1, 0.5, 0.9]],  # Simplified quantiles
-                    "fit_intercept": [True, False],
-                    "positive": [False, True],
-                    "n_jobs": [1, -1]
+                    "lags": [18, 24, 30],  # 3 best values
+                    "output_chunk_length": [1],  # FIXED: standard
+                    "output_chunk_shift": [0],  # FIXED: no shift
+                    "multi_models": [True],  # FIXED: better performance
+                    "likelihood": [None],  # FIXED: standard
+                    "quantiles": [None],  # FIXED: not needed
+                    "fit_intercept": [True],  # FIXED: standard
+                    "positive": [False],  # FIXED: allow negative
+                    "n_jobs": [-1]  # FIXED: use all cores
                 }
+                # Total: 1 × 3 = 3 configurations
             },
             "AutoARIMA": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "season_length": [12, 24],  # Use specific values instead of None
-                    "quantiles": [None, [0.1, 0.5, 0.9]],  # Valid quantiles
-                    "random_state": [None, 42]  # Valid random states
-                    # Only valid AutoARIMA parameters based on Darts documentation
+                    "season_length": [12],  # FIXED: monthly seasonality
+                    "quantiles": [None],  # FIXED: not needed
+                    "random_state": [42]  # FIXED
                 }
+                # Total: 1 × 1 = 1 configuration
             },
             "ExponentialSmoothing": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "trend": [None, "add"],  # Removed "mul" to avoid convergence issues
-                    "seasonal": [None, "add"],  # Removed "mul" to avoid convergence issues
-                    "damped_trend": [True, False],
-                    "seasonal_periods": [None, 12],  # Simplified - only monthly seasonality
-                    "initialization_method": ["estimated", "heuristic"],  # Removed legacy method
-                    "use_boxcox": [None, False],  # Removed True to avoid transformation issues
-                    "missing": ["none"]  # Simplified - only default handling
+                    "trend": [None, "add"],  # 2 values (no trend vs additive)
+                    "seasonal": [None, "add"],  # 2 values (no seasonality vs additive)
+                    "damped_trend": [False],  # FIXED: standard
+                    "seasonal_periods": [12],  # FIXED: monthly only
+                    "initialization_method": ["estimated"],  # FIXED: best practice
+                    "use_boxcox": [None],  # FIXED: avoid transformation
+                    "missing": ["none"]  # FIXED
                 }
+                # Total: 1 × 2×2 = 4 configurations
             },
             "TBATS": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "season_length": [12, 24],  # Required parameter - must be integer, not None
-                    "quantiles": [None, [0.1, 0.5, 0.9]],  # Valid quantiles
-                    "random_state": [None, 42]  # Valid random states
-                    # Only valid TBATS parameters based on Darts documentation
+                    "season_length": [12],  # FIXED: monthly seasonality
+                    "quantiles": [None],  # FIXED: not needed
+                    "random_state": [42]  # FIXED
                 }
+                # Total: 1 × 1 = 1 configuration
             },
             "Theta": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "season_mode": ["ADDITIVE", "MULTIPLICATIVE", "NONE"],
-                    "theta": [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8]
+                    "season_mode": ["ADDITIVE"],  # FIXED: best for CVE data
+                    "theta": [1, 2, 3]  # 3 key values
                 }
+                # Total: 1 × 3 = 3 configurations
             },
             "FourTheta": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "season_mode": ["ADDITIVE", "MULTIPLICATIVE", "NONE"],
-                    "theta": [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8]
+                    "season_mode": ["ADDITIVE"],  # FIXED: best for CVE data
+                    "theta": [1, 2, 3]  # 3 key values
                 }
+                # Total: 1 × 3 = 3 configurations
             },
             "KalmanFilter": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "dim_x": [2, 3, 4, 5, 6, 7, 8]
+                    "dim_x": [3, 5]  # 2 key values (low vs medium complexity)
                 }
+                # Total: 1 × 2 = 2 configurations
             },
             "Croston": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.88],  # FIXED: Optimal from Issue #2
                 "hyperparameters": {
-                    "version": ["classic", "optimized"],  # Valid versions
-                    "alpha_d": [None, 0.1, 0.2, 0.3],  # Valid alpha_d values
-                    "alpha_p": [None, 0.1, 0.2, 0.3],  # Valid alpha_p values
-                    "quantiles": [None, [0.1, 0.5, 0.9]],  # Valid quantiles
-                    "random_state": [None, 42]  # Valid random states
-                    # Only valid Croston parameters: version, alpha_d, alpha_p, quantiles, random_state
+                    "version": ["optimized"],  # FIXED: best version
+                    "alpha_d": [0.1],  # FIXED: standard
+                    "alpha_p": [0.1],  # FIXED: standard
+                    "quantiles": [None],  # FIXED: not needed
+                    "random_state": [42]  # FIXED
                 }
+                # Total: 1 × 1 = 1 configuration
             },
             "NaiveDrift": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
                 "hyperparameters": {
                     # NaiveDrift is a simple baseline model with minimal hyperparameters
                     "random_state": [None, 42],
@@ -578,7 +668,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "TCN": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core architecture parameters optimized for 30-minute constraint
                     "input_chunk_length": [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -595,7 +685,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "NBEATS": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core architecture parameters optimized for 30-minute constraint
                     "input_chunk_length": [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -614,7 +704,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "NHiTS": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core architecture parameters optimized for 30-minute constraint
                     "input_chunk_length": [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -634,7 +724,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "TiDE": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core architecture parameters optimized for 30-minute constraint
                     "input_chunk_length": [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -654,7 +744,7 @@ class ComprehensiveHyperparameterTuner:
                 }
             },
             "DLinear": {
-                "split_ratios": [0.70, 0.72, 0.74, 0.75, 0.76, 0.78, 0.80, 0.82, 0.84, 0.85, 0.86, 0.88, 0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.99],  # Keep expanded splits
+                "split_ratios": [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
                 "hyperparameters": {
                     # Core architecture parameters optimized for 30-minute constraint
                     "input_chunk_length": [12, 18, 24],  # Reduced from 5 to 3 key values

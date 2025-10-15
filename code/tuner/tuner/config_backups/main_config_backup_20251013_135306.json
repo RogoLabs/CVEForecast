@@ -23,14 +23,7 @@
     "forecast_strategy": "through_december_next_year",
     "ensemble_size": 5,
     "ensemble_method": "weighted_mape",
-    "metrics": [
-      "mae",
-      "mape",
-      "mase",
-      "rmsse",
-      "bias",
-      "directional_accuracy"
-    ]
+    "metrics": ["mae", "mape", "mase", "rmsse", "bias", "directional_accuracy"]
   },
   "models": {
     "NaiveDrift": {
@@ -367,28 +360,28 @@
     "RandomForest": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 24,
-        "n_estimators": 200,
-        "max_depth": null,
-        "min_samples_split": 5,
-        "min_samples_leaf": 2,
+        "lags": 12,
+        "n_estimators": 100,
+        "max_depth": 15,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
         "n_jobs": -1,
         "random_state": 42,
         "bootstrap": true,
-        "max_features": "sqrt"
+        "max_features": 0.5
       },
-      "optimal_split_ratio": 0.88,
+      "optimal_split_ratio": 0.7,
       "tuning_results": {
-        "mape": 17.565355986671122,
-        "mae": 446.79579250090194,
+        "mape": 26.545263865319793,
+        "mae": 897.79,
         "mase": 0,
         "rmsse": 0,
-        "training_time": 0.2991929054260254,
-        "trial_number": 3,
-        "tuned_at": "2025-10-13T13:53:06.910801",
+        "training_time": 1.007169246673584,
+        "trial_number": 289,
+        "tuned_at": "2025-08-19T03:55:36.355962",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 26.545263865319793,
-        "improvement": 8.979907878648671
+        "previous_mape": 26.625057195168537,
+        "improvement": 0.07979332984874432
       }
     },
     "LinearRegression": {
@@ -582,9 +575,9 @@
   },
   "forecast_constraints": {
     "min_annual_growth_rate": 0.05,
-    "max_annual_growth_rate": 0.4,
+    "max_annual_growth_rate": 0.40,
     "historical_avg_growth": 0.18,
-    "trend_adjustment_confidence": 0.8,
+    "trend_adjustment_confidence": 0.80,
     "trend_adjustment_threshold": 0.75,
     "ytd_minimum_factor": 0.85,
     "enable_growth_floor": true,

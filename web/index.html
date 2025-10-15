@@ -341,9 +341,19 @@
 
             <!-- Chart Section -->
             <div class="bg-white rounded-lg card-shadow p-6 mb-8">
-                <div class="mb-6">
-                    <h2 class="text-xl font-bold text-gray-800">CVE Publications: Monthly Historical Data and Forecasts</h2>
-                    <p class="text-gray-600 mt-1" id="chartDescription">Cumulative growth showing actual CVE publications and ML model predictions</p>
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">CVE Publications: Monthly Historical Data and Forecasts</h2>
+                        <p class="text-gray-600 mt-1" id="chartDescription">Cumulative growth showing actual CVE publications and ML model predictions</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="yearBtn2025" onclick="switchYear(2025)" class="px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700">
+                            2025
+                        </button>
+                        <button id="yearBtn2026" onclick="switchYear(2026)" class="px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300">
+                            2026
+                        </button>
+                    </div>
                 </div>
                 <div class="chart-container">
                     <canvas id="forecastChart"></canvas>
@@ -483,7 +493,7 @@
                 <p class="text-gray-300 text-sm" id="lastUpdated">Loading...</p>
                 <p class="text-gray-300 text-sm">Updated Daily at Midnight UTC</p>
                 <div class="mt-2">
-                    <span class="inline-block bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-mono">v.09 Edinburgh 🏴󠁧󠁢󠁳󠁣󠁴󠁿</span>
+                    <span class="inline-block bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-mono">v0.10 Phoenix 🔥🐦</span>
                 </div>
             </div>
         </div>
