@@ -31,13 +31,10 @@ jobs:
         python-version: '3.13'
         cache: 'pip'
     
-    - name: Install PyTorch (CPU-only)
-      run: |
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
         pip install -r requirements.txt
     
     - name: Configure Git
@@ -45,11 +42,38 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
     
-    - name: Clone CVE data repository
+    - name: Prepare CVE data repository
       run: |
+        if [ -d cvelistV5 ]; then
+          rm -rf cvelistV5
+        fi
         git clone --depth 1 https://github.com/CVEProject/cvelistV5.git cvelistV5
         echo "CVE data cloned successfully"
         ls -la cvelistV5/
+
+    - name: Normalize tuner file paths
+      run: |
+        python - <<'PY'
+        import json
+        import os
+        import pathlib
+
+        cfg_path = pathlib.Path("code/tuner/tuner_config.json")
+        data = json.loads(cfg_path.read_text())
+        workspace = pathlib.Path(os.environ["GITHUB_WORKSPACE"])
+
+        updated = False
+        for key, rel in data.get("file_paths", {}).items():
+            abs_path = (workspace / rel).resolve()
+            if data["file_paths"][key] != str(abs_path):
+                data["file_paths"][key] = str(abs_path)
+                updated = True
+
+        if updated:
+            cfg_path.write_text(json.dumps(data, indent=2))
+        PY
+      env:
+        GITHUB_WORKSPACE: ${{ github.workspace }}
     
     - name: Run Comprehensive Hyperparameter Tuning
       run: |
@@ -78,18 +102,49 @@ jobs:
         git commit -m "🔧 Update optimized hyperparameters - Monthly tuning $(date -u '+%Y-%m-%d')"
         git push
     
-    - name: Create tuning summary
+    - name: Generate tuning report
       if: always()
       run: |
-        echo "# Hyperparameter Tuning Summary" > tuning_summary.md
-        echo "" >> tuning_summary.md
-        echo "**Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> tuning_summary.md
-        echo "**Status:** ${{ job.status }}" >> tuning_summary.md
-        echo "" >> tuning_summary.md
-        if [ -f "code/config.json" ]; then
-          echo "## Optimized Models" >> tuning_summary.md
-          python -c "import json; data=json.load(open('code/config.json')); print('\n'.join([f'- {m}' for m in data.get('models', {}).keys()]))" >> tuning_summary.md
-        fi
+        python - <<'PY'
+        import datetime as dt
+        import json
+        import os
+        import pathlib
+
+        workspace = pathlib.Path(os.environ["GITHUB_WORKSPACE"])
+        logs_dir = workspace / "code" / "tuner" / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+
+        status = os.environ["JOB_STATUS"]
+        now = dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+        summary_lines = [
+            "# Hyperparameter Tuning Summary",
+            "",
+            f"**Date:** {now}",
+            f"**Status:** {status}",
+            ""
+        ]
+
+        config_path = workspace / "code" / "config.json"
+        if config_path.exists():
+            data = json.loads(config_path.read_text())
+            models = sorted(data.get("models", {}).keys())
+            summary_lines.append("## Models in config.json")
+            summary_lines.extend([f"- {model}" for model in models])
+            summary_lines.append("")
+
+        (workspace / "tuning_summary.md").write_text("\n".join(summary_lines))
+
+        status_payload = {
+            "status": status,
+            "generated_at": dt.datetime.utcnow().isoformat() + "Z"
+        }
+        (workspace / "tuning_status.json").write_text(json.dumps(status_payload, indent=2))
+        PY
+      env:
+        GITHUB_WORKSPACE: ${{ github.workspace }}
+        JOB_STATUS: ${{ job.status }}
     
     - name: Upload tuning artifacts
       if: always()
@@ -99,17 +154,6 @@ jobs:
         path: |
           code/config.json
           tuning_summary.md
+          tuning_status.json
+          code/tuner/logs/
         retention-days: 90
-    
-    - name: Create issue on failure
-      if: failure()
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: '⚠️ Monthly Hyperparameter Tuning Failed',
-            body: `The monthly hyperparameter tuning workflow failed on ${new Date().toISOString().split('T')[0]}.\n\nPlease check the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for details.`,
-            labels: ['automation', 'tuning']
-          })
