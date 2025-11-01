@@ -1,5 +1,4 @@
-name: CVE & CNA Forecast Daily Update
-
+name: CVE Forecast Daily Update
 
 on:
   push:
@@ -41,10 +40,6 @@ jobs:
         python-version: '3.13'
         cache: 'pip'
     
-    - name: Install PyTorch (CPU-only)
-      run: |
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -61,9 +56,9 @@ jobs:
         echo "CVE data cloned successfully"
         ls -la cvelistV5/
     
-    - name: Run Production Forecast Pipeline
+    - name: Run CVE forecast
       run: |
-        python code/run_production_forecast.py
+        python cve_forecast.py
       env:
         PYTHONUNBUFFERED: 1
     
@@ -82,10 +77,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git add web/data.json
-        git add web/cna_data.json
-        git add web/forecast_history.json
-        git add web/pipeline_results.json
-        git commit -m "Update CVE and CNA forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        git commit -m "Update CVE forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
         git push
     
     - name: Upload artifacts
@@ -93,11 +85,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: forecast-data
-        path: |
-          web/data.json
-          web/cna_data.json
-          web/forecast_history.json
-          web/pipeline_results.json
+        path: web/data.json
     
     - name: Setup Pages
       uses: actions/configure-pages@v4

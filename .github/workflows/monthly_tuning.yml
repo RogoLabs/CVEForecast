@@ -1,8 +1,10 @@
 name: Monthly Hyperparameter Tuning
 
 on:
-  push:
-    branches: [ main, master ]
+  workflow_run:
+    workflows: ["CVE Forecast Daily Update"]
+    types:
+      - completed
   schedule:
     # Run on the 1st of each month at 2 AM UTC
     - cron: '0 2 1 * *'
@@ -12,10 +14,13 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   tune-hyperparameters:
     runs-on: ubuntu-latest
+    # Only run if the triggering workflow succeeded
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'success' }}
     
     steps:
     - name: Checkout repository
@@ -43,12 +48,6 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-    
-    - name: Clone CVE data repository
-      run: |
-        git clone --depth 1 https://github.com/CVEProject/cvelistV5.git cvelistV5
-        echo "CVE data cloned successfully"
-        ls -la cvelistV5/
     
     - name: Clone CVE data repository
       run: |
