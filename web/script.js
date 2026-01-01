@@ -153,11 +153,15 @@ function updateSummaryCards() {
     if (bestModelTotal && lastYearTotal) {
         const yoyGrowth = ((bestModelTotal - lastYearTotal) / lastYearTotal) * 100;
         const growthText = yoyGrowth >= 0 ? `+${yoyGrowth.toFixed(1)}%` : `${yoyGrowth.toFixed(1)}%`;
-        document.getElementById('yoyGrowth').textContent = growthText;
-        document.getElementById('yoyGrowthDetail').textContent = `${bestModelTotal.toLocaleString()} vs ${lastYearTotal.toLocaleString()} (${selectedYear} vs ${previousYear})`;
+        const yoyGrowthEl = document.getElementById('yoyGrowth');
+        const yoyGrowthDetailEl = document.getElementById('yoyGrowthDetail');
+        if (yoyGrowthEl) yoyGrowthEl.textContent = growthText;
+        if (yoyGrowthDetailEl) yoyGrowthDetailEl.textContent = `${bestModelTotal.toLocaleString()} vs ${lastYearTotal.toLocaleString()} (${selectedYear} vs ${previousYear})`;
     } else {
-        document.getElementById('yoyGrowth').textContent = '-';
-        document.getElementById('yoyGrowthDetail').textContent = 'Data unavailable';
+        const yoyGrowthEl = document.getElementById('yoyGrowth');
+        const yoyGrowthDetailEl = document.getElementById('yoyGrowthDetail');
+        if (yoyGrowthEl) yoyGrowthEl.textContent = '-';
+        if (yoyGrowthDetailEl) yoyGrowthDetailEl.textContent = 'Data unavailable';
     }
 }
 
