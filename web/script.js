@@ -7,7 +7,7 @@
 let forecastData = null;
 let modelInfoData = null;
 let chartInstance = null;
-let selectedYear = 2025; // Default to current year
+let selectedYear = new Date().getFullYear(); // Default to current year
 
 // Initialize the dashboard when the DOM is loaded
 document.addEventListener('DOMContentLoaded', loadForecastData);
@@ -83,21 +83,24 @@ function initializeDashboard() {
 
 /**
  * Switches the chart to display a specific year.
- * @param {number} year - The year to display (2025 or 2026)
+ * @param {number} year - The year to display
  */
 function switchYear(year) {
     selectedYear = year;
     
-    // Update button styles
-    const btn2025 = document.getElementById('yearBtn2025');
-    const btn2026 = document.getElementById('yearBtn2026');
+    // Update button styles (buttons may not exist in all versions)
+    const currentYear = new Date().getFullYear();
+    const btnCurrent = document.getElementById(`yearBtn${currentYear}`);
+    const btnNext = document.getElementById(`yearBtn${currentYear + 1}`);
     
-    if (year === 2025) {
-        btn2025.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700';
-        btn2026.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
-    } else {
-        btn2025.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
-        btn2026.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700';
+    if (btnCurrent && btnNext) {
+        if (year === currentYear) {
+            btnCurrent.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700';
+            btnNext.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
+        } else {
+            btnCurrent.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
+            btnNext.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700';
+        }
     }
     
     updateChartDescription();
@@ -142,9 +145,9 @@ function updateSummaryCards() {
     const previousYearTotals = yearlyTotals[previousYear] || {};
     let lastYearTotal = previousYearTotals[bestModelName] || 0;
     
-    // Fallback: For 2025, use actual 2024 total from summary if forecast not available
-    if (!lastYearTotal && selectedYear === 2025) {
-        lastYearTotal = forecastData.summary?.previous_year_total || forecastData.summary?.cumulative_cves_2024 || 0;
+    // Fallback: use actual previous year total from summary if forecast not available
+    if (!lastYearTotal) {
+        lastYearTotal = forecastData.summary?.previous_year_total || 0;
     }
     
     if (bestModelTotal && lastYearTotal) {
