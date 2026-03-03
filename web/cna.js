@@ -36,6 +36,11 @@
     }
 })();
 
+// Constants
+const TOP_MODELS_COUNT = 5;
+const CHART_ANIMATION_DURATION = 750;
+const CACHE_BUSTER = new Date().getTime();
+
 // Global variables
 let cnaData = {};
 let cnaNameMapping = {};
@@ -63,8 +68,7 @@ const numberFmt = new Intl.NumberFormat();
 async function loadCnaData() {
   try {
     // Add cache-busting parameter to force fresh data load
-    const cacheBuster = new Date().getTime();
-    const response = await fetch(`cna_data.json?v=${cacheBuster}`);
+    const response = await fetch(`cna_data.json?v=${CACHE_BUSTER}`);
     
     if (response.ok) {
       const text = await response.text();
@@ -744,19 +748,17 @@ function renderChart(rec) {
     return;
   }
   
-  // Destroy existing chart if it exists
-  if (chartInstance) {
-    chartInstance.destroy();
-    chartInstance = null;
-  }
-  
   const ctx = canvas.getContext('2d');
   console.log('renderChart: Building datasets for:', rec.name || rec.id, 'Year:', currentYear);
   const datasets = buildCumulativeDatasets(rec, currentYear);
   console.log('renderChart: Built', datasets.length, 'datasets');
-  
+
   if (datasets.length === 0) {
     console.log('renderChart: No datasets available, showing no data message');
+    if (chartInstance) {
+      chartInstance.destroy();
+      chartInstance = null;
+    }
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.font = '16px Inter';
     ctx.fillStyle = '#6b7280';
@@ -764,136 +766,148 @@ function renderChart(rec) {
     ctx.fillText('No data available for this CNA', ctx.canvas.width / 2, ctx.canvas.height / 2);
     return;
   }
-  
-  setTimeout(() => {
-    try {
-      
-      chartInstance = new Chart(ctx, {
-        type: 'line',
-        data: { datasets },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false,
-          },
-          layout: {
-            padding: {
-              left: 10,
-              right: 10,
-              top: 10,
-              bottom: 10
+
+  const chartData = { datasets };
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    layout: {
+      padding: {
+        left: 10,
+        right: 10,
+        top: 10,
+        bottom: 10
+      }
+    },
+    scales: {
+      x: {
+        type: 'time',
+        time: {
+          unit: 'month',
+          tooltipFormat: 'MMM yyyy',
+          displayFormats: {
+            month: 'MMM'
+          }
+        },
+        title: {
+          display: true,
+          text: 'Month'
+        },
+        ticks: {
+          maxTicksLimit: 15,
+          padding: 5,
+          callback: function(value, index, values) {
+            const date = new Date(value);
+            const month = date.toLocaleDateString('en-US', { month: 'short' });
+            const year = date.getFullYear();
+            // Show year for January or if it's a different year
+            if (date.getMonth() === 0 || (index > 0 && new Date(values[index-1].value).getFullYear() !== year)) {
+              return `${month} ${year}`;
             }
-          },
-          scales: {
-            x: {
-              type: 'time',
-              time: {
-                unit: 'month',
-                tooltipFormat: 'MMM yyyy',
-                displayFormats: {
-                  month: 'MMM'
-                }
-              },
-              title: {
-                display: true,
-                text: 'Month'
-              },
-              ticks: {
-                maxTicksLimit: 15,
-                padding: 5,
-                callback: function(value, index, values) {
-                  const date = new Date(value);
-                  const month = date.toLocaleDateString('en-US', { month: 'short' });
-                  const year = date.getFullYear();
-                  // Show year for January or if it's a different year
-                  if (date.getMonth() === 0 || (index > 0 && new Date(values[index-1].value).getFullYear() !== year)) {
-                    return `${month} ${year}`;
-                  }
-                  return month;
-                }
-              },
-              min: `${currentYear}-01-01`,
-              max: `${currentYear + 1}-01-05`
-            },
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Cumulative CVE Count'
-              },
-              ticks: {
-                padding: 5,
-                callback: function(value) {
-                  return numberFmt.format(value);
-                }
-              }
-            }
-          },
-          plugins: {
-            legend: {
-              display: true,
-              position: 'top',
-              labels: {
-                usePointStyle: true,
-                padding: 20
-              }
-            },
-            tooltip: {
-              mode: 'nearest',
-              intersect: false,
-              callbacks: {
-                title: function(context) {
-                  if (context && context.length > 0) {
-                    const timestamp = context[0].parsed.x;
-                    const date = new Date(timestamp);
-                    
-                    // Use UTC methods to avoid timezone issues (match main CVE page)
-                    const month = date.getUTCMonth();
-                    const day = date.getUTCDate();
-                    const hour = date.getUTCHours();
-                    const minute = date.getUTCMinutes();
-                    const second = date.getUTCSeconds();
-                    
-                    // Special case for December 31st 23:59:59 - show "End of Year"
-                    if (month === 11 && day === 31 && hour === 23 && minute === 59 && second === 59) {
-                      return `End of Year ${date.getUTCFullYear()}`;
-                    }
-                    
-                    // Check if it's the last point (MTD) - show full date
-                    const isLastPoint = context[0].datasetIndex === 0 && 
-                                       context[0].dataIndex === context[0].dataset.data.length - 1;
-                    
-                    if (isLastPoint && day > 1 && day < 28) {
-                      return date.toLocaleDateString('en-US', { 
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric',
-                        timeZone: 'UTC'
-                      });
-                    }
-                    
-                    // For regular cumulative data points, show just the month name
-                    return date.toLocaleDateString('en-US', { 
-                      month: 'long',
-                      year: 'numeric',
-                      timeZone: 'UTC'
-                    });
-                  }
-                  return '';
-                },
-                label: function(context) {
-                  const value = numberFmt.format(context.parsed.y);
-                  const datasetLabel = context.dataset.label;
-                  return `${datasetLabel}: ${value}`;
-                }
-              }
-            }
+            return month;
+          }
+        },
+        min: `${currentYear}-01-01`,
+        max: `${currentYear + 1}-01-05`
+      },
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Cumulative CVE Count'
+        },
+        ticks: {
+          padding: 5,
+          callback: function(value) {
+            return numberFmt.format(value);
           }
         }
-      });
+      }
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 20
+        }
+      },
+      tooltip: {
+        mode: 'nearest',
+        intersect: false,
+        callbacks: {
+          title: function(context) {
+            if (context && context.length > 0) {
+              const timestamp = context[0].parsed.x;
+              const date = new Date(timestamp);
+
+              // Use UTC methods to avoid timezone issues (match main CVE page)
+              const month = date.getUTCMonth();
+              const day = date.getUTCDate();
+              const hour = date.getUTCHours();
+              const minute = date.getUTCMinutes();
+              const second = date.getUTCSeconds();
+
+              // Special case for December 31st 23:59:59 - show "End of Year"
+              if (month === 11 && day === 31 && hour === 23 && minute === 59 && second === 59) {
+                return `End of Year ${date.getUTCFullYear()}`;
+              }
+
+              // Check if it's the last point (MTD) - show full date
+              const isLastPoint = context[0].datasetIndex === 0 &&
+                                 context[0].dataIndex === context[0].dataset.data.length - 1;
+
+              if (isLastPoint && day > 1 && day < 28) {
+                return date.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                  timeZone: 'UTC'
+                });
+              }
+
+              // For regular cumulative data points, show just the month name
+              return date.toLocaleDateString('en-US', {
+                month: 'long',
+                year: 'numeric',
+                timeZone: 'UTC'
+              });
+            }
+            return '';
+          },
+          label: function(context) {
+            const value = numberFmt.format(context.parsed.y);
+            const datasetLabel = context.dataset.label;
+            return `${datasetLabel}: ${value}`;
+          }
+        }
+      }
+    }
+  };
+
+  setTimeout(() => {
+    try {
+      if (chartInstance) {
+        chartInstance.data = chartData;
+        chartInstance.options = chartOptions;
+        chartInstance.update('none'); // 'none' = no animation on update
+      } else {
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: chartData,
+          options: chartOptions,
+        });
+      }
     } catch (error) {
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+      }
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       ctx.font = '16px Inter';
       ctx.fillStyle = '#ef4444';
