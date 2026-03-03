@@ -13,110 +13,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CNA Forecasts - CVEForecast</title>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-    .gradient-bg {
-      background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #111827 100%);
-    }
-    .rogo-blue {
-      color: #60a5fa;
-    }
-    .rogo-dark {
-      color: #1f2937;
-    }
-    .card-shadow {
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-    .chart-container {
-      position: relative;
-      height: 400px;
-    }
-    .summary-card {
-      background: white;
-      border-radius: 8px;
-      padding: 1.5rem;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-    .summary-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    .summary-item:last-child {
-      border-bottom: none;
-    }
-    .summary-label {
-      font-weight: 500;
-      color: #374151;
-    }
-    .summary-value {
-      font-weight: 600;
-      color: #111827;
-    }
-    .forecast-value {
-      color: #dc2626;
-    }
-    .growth-positive {
-      color: #dc2626;
-    }
-    .growth-negative {
-      color: #059669;
-    }
-    .growth-neutral {
-      color: #6b7280;
-    }
-    .metric-highlight {
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      border-left: 4px solid #1e40af;
-    }
-    .custom-table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 0.9rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
-      overflow: hidden;
-    }
-    .custom-table th,
-    .custom-table td {
-      padding: 0.75rem 1rem;
-      text-align: left;
-    }
-    .custom-table thead {
-      background-color: #f8fafc;
-      border-bottom: 2px solid #e2e8f0;
-    }
-    .custom-table th {
-      font-weight: 600;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      font-size: 0.75rem;
-    }
-    .custom-table tbody tr:nth-child(even) {
-      background-color: #f8fafc;
-    }
-    .custom-table tbody tr:hover {
-      background-color: #f1f5f9;
-    }
-    .custom-table td {
-      color: #334155;
-    }
-  </style>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <script src="cna.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen">
   <!-- Header -->

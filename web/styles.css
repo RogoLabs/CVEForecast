@@ -1,0 +1,287 @@
+/* ==========================================================================
+   CVEForecast - Shared Styles
+   Extracted from index.html, cna_forecast.html, and technical_details.html
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   CSS Custom Properties (Design Tokens)
+   -------------------------------------------------------------------------- */
+:root {
+    --color-bg: #f3f4f6;
+    --color-surface: #ffffff;
+    --color-text: #1f2937;
+    --color-text-secondary: #475569;
+    --color-text-muted: #9ca3af;
+    --color-text-table: #334155;
+    --color-border: #e2e8f0;
+    --color-border-light: #e5e7eb;
+    --color-primary: #2563eb;
+    --color-primary-light: #dbeafe;
+    --color-primary-dark: #1e40af;
+    --color-accent: #60a5fa;
+    --color-row-even: #f8fafc;
+    --color-row-hover: #f1f5f9;
+    --color-collapsible-hover: #eff6ff;
+    --color-spinner-track: #f3f3f3;
+    --color-spinner-active: #3498db;
+    --color-tooltip-bg: #1f2937;
+    --color-tooltip-text: #ffffff;
+    --color-forecast: #dc2626;
+    --color-growth-positive: #dc2626;
+    --color-growth-negative: #059669;
+    --color-growth-neutral: #6b7280;
+    --color-summary-label: #374151;
+    --color-summary-value: #111827;
+    --gradient-start: #1f2937;
+    --gradient-mid: #374151;
+    --gradient-end: #111827;
+    --gradient-highlight-start: #f8fafc;
+    --gradient-highlight-end: #e2e8f0;
+    --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-content: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   Base Styles
+   -------------------------------------------------------------------------- */
+body {
+    font-family: var(--font-family);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+}
+
+/* --------------------------------------------------------------------------
+   Layout & Utility Classes
+   -------------------------------------------------------------------------- */
+.hidden-row {
+    display: none !important;
+}
+
+.gradient-bg {
+    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-mid) 50%, var(--gradient-end) 100%);
+}
+
+.rogo-blue {
+    color: var(--color-accent);
+}
+
+.rogo-dark {
+    color: var(--color-text);
+}
+
+.card-shadow {
+    box-shadow: var(--shadow-card);
+}
+
+.chart-container {
+    position: relative;
+    height: 400px;
+}
+
+/* --------------------------------------------------------------------------
+   Loading Spinner
+   -------------------------------------------------------------------------- */
+.loading-spinner {
+    border: 4px solid var(--color-spinner-track);
+    border-top: 4px solid var(--color-spinner-active);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 2s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------------------------
+   Metric Highlight
+   -------------------------------------------------------------------------- */
+.metric-highlight {
+    background: linear-gradient(135deg, var(--gradient-highlight-start) 0%, var(--gradient-highlight-end) 100%);
+    border-left: 4px solid var(--color-primary-dark);
+}
+
+/* --------------------------------------------------------------------------
+   Validation Row
+   -------------------------------------------------------------------------- */
+.validation-row:hover {
+    background-color: #f9fafb;
+}
+
+/* --------------------------------------------------------------------------
+   Tooltip
+   -------------------------------------------------------------------------- */
+.tooltip {
+    position: relative;
+}
+
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-tooltip-bg);
+    color: var(--color-tooltip-text);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+}
+
+/* --------------------------------------------------------------------------
+   Metric Link
+   -------------------------------------------------------------------------- */
+.metric-link {
+    transition: color 0.2s ease-in-out;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+}
+
+.metric-link:hover {
+    color: var(--color-primary) !important;
+    text-decoration-style: solid;
+}
+
+/* --------------------------------------------------------------------------
+   Custom Table
+   -------------------------------------------------------------------------- */
+.custom-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.custom-table th,
+.custom-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+
+.custom-table thead {
+    background-color: var(--color-row-even);
+    border-bottom: 2px solid var(--color-border);
+}
+
+.custom-table th {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+}
+
+.custom-table tbody tr:nth-child(even) {
+    background-color: var(--color-row-even);
+}
+
+.custom-table tbody tr:hover {
+    background-color: var(--color-row-hover);
+}
+
+.custom-table td {
+    color: var(--color-text-table);
+}
+
+/* --------------------------------------------------------------------------
+   Collapsible Row
+   -------------------------------------------------------------------------- */
+.collapsible-row {
+    cursor: pointer;
+}
+
+.collapsible-row:hover {
+    background-color: var(--color-collapsible-hover);
+}
+
+/* --------------------------------------------------------------------------
+   Year Header & Nested Tables
+   -------------------------------------------------------------------------- */
+.year-header {
+    background-color: var(--color-row-even);
+}
+
+.nested-table-container {
+    padding: 0;
+    background-color: var(--color-row-even);
+}
+
+.nested-table {
+    width: 100%;
+    border-top: 1px solid var(--color-border);
+}
+
+.nested-table td {
+    padding-left: 2.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Content Section (technical_details.html)
+   -------------------------------------------------------------------------- */
+.content-section {
+    background-color: var(--color-surface);
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-content);
+    margin-bottom: 2rem;
+}
+
+/* --------------------------------------------------------------------------
+   Summary Card (cna_forecast.html)
+   -------------------------------------------------------------------------- */
+.summary-card {
+    background: var(--color-surface);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-card);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-label {
+    font-weight: 500;
+    color: var(--color-summary-label);
+}
+
+.summary-value {
+    font-weight: 600;
+    color: var(--color-summary-value);
+}
+
+/* --------------------------------------------------------------------------
+   Forecast & Growth Colors (cna_forecast.html)
+   -------------------------------------------------------------------------- */
+.forecast-value {
+    color: var(--color-forecast);
+}
+
+.growth-positive {
+    color: var(--color-growth-positive);
+}
+
+.growth-negative {
+    color: var(--color-growth-negative);
+}
+
+.growth-neutral {
+    color: var(--color-growth-neutral);
+}
