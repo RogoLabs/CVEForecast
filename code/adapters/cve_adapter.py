@@ -194,7 +194,7 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         """Get actual yearly CVE totals from historical data."""
         if self.series is None:
             return {}
-        df = self.series.pd_dataframe()
+        df = self.series.to_dataframe()
         yearly = {}
         for idx, row in df.iterrows():
             year = idx.year
@@ -294,7 +294,7 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         actuals_cumulative = [{'date': f'{current_year}-01-01T00:00:00Z', 'cumulative_total': 0}]
 
         # Get historical data for current year
-        df = self.series.pd_dataframe() if hasattr(self.series, 'pd_dataframe') else self.series.to_dataframe()
+        df = self.series.to_dataframe()
         df['year'] = df.index.year
         current_year_df = df[df['year'] == current_year].copy()
 
@@ -524,8 +524,7 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         """
         self.logger.info('Generating summary statistics')
 
-        df = self.series.pd_dataframe() if hasattr(self.series, 'pd_dataframe') else self.series.to_dataframe()
-
+        df = self.series.to_dataframe()
         summary = {
             'data_period': {'start': df.index.min().strftime('%Y-%m-%d'), 'end': df.index.max().strftime('%Y-%m-%d')},
             'forecast_period': {
@@ -633,7 +632,7 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
 
         try:
             # Get full dataset
-            df = self.series.pd_dataframe() if hasattr(self.series, 'pd_dataframe') else self.series.to_dataframe()
+            df = self.series.to_dataframe()
             current_year = self.current_datetime.year
 
             # Split: train on data through end of previous year
@@ -826,7 +825,7 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
 
         # 8. Generate current month actual data
         current_year = self.current_datetime.year
-        df = self.series.pd_dataframe() if hasattr(self.series, 'pd_dataframe') else self.series.to_dataframe()
+        df = self.series.to_dataframe()
         df['year'] = df.index.year
         current_year_df = df[df['year'] == current_year]
 

@@ -658,7 +658,7 @@ class CNAForecaster(BaseForecaster):
                 from darts import TimeSeries
 
                 current_month_start = pd.Timestamp.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-                series_df = ts.pd_dataframe() if hasattr(ts, 'pd_dataframe') else ts.to_dataframe()
+                series_df = ts.to_dataframe()
                 complete_months_df = series_df[series_df.index < current_month_start]
 
                 if len(complete_months_df) < len(series_df):

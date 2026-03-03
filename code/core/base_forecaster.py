@@ -208,11 +208,7 @@ class BaseForecaster(ABC):
         current_month_start = pd.Timestamp.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
         # Filter out any data points from the current month
-        series_df = (
-            training_series.pd_dataframe()
-            if hasattr(training_series, 'pd_dataframe')
-            else training_series.to_dataframe()
-        )
+        series_df = training_series.to_dataframe()
         complete_months_df = series_df[series_df.index < current_month_start]
 
         if len(complete_months_df) < len(series_df):
