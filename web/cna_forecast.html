@@ -23,6 +23,8 @@
   <script src="cna.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50">Skip to main content</a>
+
   <!-- Header -->
   <header class="gradient-bg text-white shadow-lg">
     <div class="container mx-auto px-6 py-4">
@@ -31,7 +33,7 @@
           <h1 class="text-3xl font-bold">CVE<span class="rogo-blue">Forecast</span></h1>
           <p class="text-blue-100 mt-1">Predictive Analytics for CVE Publications</p>
         </div>
-        <nav>
+        <nav aria-label="Main navigation">
           <a href="index.html" class="text-gray-300 hover:text-white transition-colors mr-6">Home</a>
           <a href="technical_details.html" class="text-gray-300 hover:text-white transition-colors">Technical Details</a>
         </nav>
@@ -39,7 +41,7 @@
     </div>
   </header>
 
-  <main class="container mx-auto px-6 py-8">
+  <main id="main-content" class="container mx-auto px-6 py-8">
     <!-- CNA Table Section -->
     <div class="bg-white rounded-lg card-shadow p-6 mb-6">
       <div class="flex justify-between items-center mb-6">
@@ -49,8 +51,8 @@
         </div>
         <div class="flex items-center space-x-4">
           <div class="flex items-center space-x-2">
-            <label class="text-sm font-medium text-gray-700">Show:</label>
-            <select id="tablePageSize" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
+            <label for="tablePageSize" class="text-sm font-medium text-gray-700">Show:</label>
+            <select id="tablePageSize" aria-label="Rows per page" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
               <option value="10" selected>10</option>
               <option value="25">25</option>
               <option value="50">50</option>
@@ -58,7 +60,8 @@
             </select>
           </div>
           <div>
-            <input id="tableSearch" type="text" placeholder="Search CNAs..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-48" />
+            <label for="tableSearch" class="sr-only">Search CNAs</label>
+            <input id="tableSearch" type="text" aria-label="Search CNAs" placeholder="Search CNAs..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-48" />
           </div>
         </div>
       </div>

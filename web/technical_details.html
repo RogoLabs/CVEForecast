@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="font-sans text-gray-800">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50">Skip to main content</a>
+
     <header class="gradient-bg text-white shadow-lg">
         <div class="container mx-auto px-6 py-4">
             <div class="flex justify-between items-end">
@@ -26,7 +28,7 @@
                     </h1>
                     <p class="text-gray-300 mt-1">Technical Details - v0.10 "Phoenix" 🔥🐦</p>
                 </div>
-                <nav class="space-x-4">
+                <nav aria-label="Main navigation" class="space-x-4">
                     <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
                     <a href="cna_forecast.html" class="text-gray-300 hover:text-white transition-colors">CNA Forecasts</a>
                 </nav>
@@ -34,7 +36,7 @@
         </div>
     </header>
 
-    <main class="container mx-auto px-6 py-8">
+    <main id="main-content" class="container mx-auto px-6 py-8">
         <div class="content-section">
             <h2 class="text-2xl font-bold mb-4">Project Overview</h2>
             <p class="mb-4">CVE Forecast is a sophisticated, self-improving automated platform that leverages advanced hyperparameter optimization and multiple time series forecasting models to predict the number of Common Vulnerabilities and Exposures (CVEs). It provides a comprehensive, data-driven view of future trends in vulnerability disclosures, all accessible through a sleek, interactive web dashboard.</p>

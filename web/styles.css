@@ -285,3 +285,45 @@ body {
 .growth-neutral {
     color: var(--color-growth-neutral);
 }
+
+/* --------------------------------------------------------------------------
+   Accessibility: Visible Focus Indicators (WCAG AA)
+   -------------------------------------------------------------------------- */
+*:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: Screen Reader Only Utility
+   -------------------------------------------------------------------------- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: Tooltip focus styles
+   -------------------------------------------------------------------------- */
+.tooltip:focus::after,
+.tooltip:focus-within::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-tooltip-bg);
+    color: var(--color-tooltip-text);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+}
