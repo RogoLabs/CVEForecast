@@ -1,7 +1,7 @@
 # CVE Forecast Development Guide
 
-**Version**: 0.10 "Phoenix" 🔥🐦  
-**Last Updated**: October 2025
+**Version**: 0.11 "Phoenix" 🔥🐦
+**Last Updated**: March 2026
 
 ## Table of Contents
 - [Development Setup](#development-setup)
@@ -34,13 +34,13 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # 4. Install development dependencies
-pip install pytest pytest-cov black flake8 mypy
+pip install ruff pytest pytest-cov
 
 # 5. Clone CVE data (for testing)
 git clone --depth 1 https://github.com/CVEProject/cvelistV5.git
 
 # 6. Run tests
-pytest tests/
+python -m pytest tests/ -v
 
 # 7. Verify installation
 python code/run_production_forecast.py --help
@@ -51,19 +51,23 @@ python code/run_production_forecast.py --help
 **VS Code** (`.vscode/settings.json`):
 ```json
 {
-    "python.linting.enabled": true,
-    "python.linting.flake8Enabled": true,
-    "python.formatting.provider": "black",
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+        }
+    },
     "python.testing.pytestEnabled": true,
-    "python.testing.pytestArgs": ["tests"],
-    "editor.formatOnSave": true
+    "python.testing.pytestArgs": ["tests"]
 }
 ```
 
 **PyCharm**:
 - File → Settings → Tools → Python Integrated Tools
 - Default test runner: pytest
-- Code Style → Python → Use Black formatter
+- Install the Ruff plugin for linting/formatting
 
 ## Project Structure
 
@@ -75,10 +79,16 @@ CVEForecast/
 │   │   └── cna_adapter.py       # CNA forecasting implementation
 │   ├── core/
 │   │   ├── base_forecaster.py   # Abstract base class
-│   │   └── validation_mixin.py  # Validation functionality
+│   │   ├── validation_mixin.py  # Validation functionality
+│   │   └── model_utils.py       # Shared parameter fixing & safe model creation
+│   ├── scripts/
+│   │   ├── validate_forecast_data.py   # Output data validation
+│   │   ├── normalize_tuner_paths.py    # Tuner path normalization
+│   │   └── generate_tuning_report.py   # Tuning report generation
 │   ├── tuner/
 │   │   └── comprehensive_tuner.py  # Hyperparameter optimization
 │   ├── data_loader.py           # CVE data loading
+│   ├── forecast_constraints.py  # Forecast constraint enforcement
 │   ├── forecast_tracker.py      # Accuracy tracking
 │   ├── unified_pipeline.py      # Pipeline orchestration
 │   ├── run_production_forecast.py  # Main entry point
@@ -86,6 +96,7 @@ CVEForecast/
 ├── web/
 │   ├── index.html               # Main dashboard
 │   ├── script.js                # Dashboard JavaScript
+│   ├── styles.css               # Shared CSS (dark mode, accessibility)
 │   ├── cna_forecast.html        # CNA dashboard
 │   └── technical_details.html   # Documentation
 ├── docs/
@@ -97,11 +108,17 @@ CVEForecast/
 ├── tests/
 │   ├── test_data_loader.py
 │   ├── test_forecasters.py
+│   ├── test_model_utils.py
+│   ├── test_forecast_constraints.py
 │   └── test_pipeline.py
 ├── .github/
-│   └── workflows/
-│       ├── main.yml             # Daily forecast workflow
-│       └── monthly_tuning.yml   # Monthly tuning workflow
+│   ├── workflows/
+│   │   ├── main.yml             # Daily forecast workflow
+│   │   ├── monthly_tuning.yml   # Monthly tuning workflow
+│   │   ├── test.yml             # PR test workflow (pytest)
+│   │   └── lint.yml             # PR lint workflow (ruff)
+│   └── dependabot.yml           # Weekly dependency updates
+├── pyproject.toml               # Ruff and pytest configuration
 ├── requirements.txt             # Python dependencies
 └── README.md                    # Project overview
 ```
@@ -112,13 +129,25 @@ CVEForecast/
 
 Follow PEP 8 with these specifics:
 
-**Formatting**:
-```python
-# Use Black formatter (line length: 100)
-black code/ --line-length 100
+**Linting and Formatting** (using [ruff](https://docs.astral.sh/ruff/)):
 
-# Check with flake8
-flake8 code/ --max-line-length=100
+Configuration is in `pyproject.toml`. To lint and format:
+
+```bash
+# Install ruff
+pip install ruff
+
+# Lint code
+ruff check code/ tests/
+
+# Auto-fix lint issues
+ruff check code/ tests/ --fix
+
+# Format code
+ruff format code/ tests/
+
+# Check formatting without changes
+ruff format --check code/ tests/
 ```
 
 **Type Hints**:
@@ -262,27 +291,26 @@ class TestCVEForecaster:
 
 ### Running Tests
 
+Test configuration is defined in `pyproject.toml` (markers, paths, options).
+
 ```bash
 # Run all tests
-pytest
+python -m pytest tests/ -v
+
+# Run only fast tests (skip slow integration tests)
+python -m pytest tests/ -v -m "not slow"
 
 # Run specific test file
-pytest tests/test_forecasters.py
+python -m pytest tests/test_forecasters.py -v
 
 # Run specific test
-pytest tests/test_forecasters.py::TestCVEForecaster::test_load_data
+python -m pytest tests/test_forecasters.py::TestCVEForecaster::test_load_data -v
 
 # Run with coverage
-pytest --cov=code --cov-report=html
-
-# Run only fast tests
-pytest -m "not slow"
-
-# Run with verbose output
-pytest -v
+python -m pytest tests/ --cov=code --cov-report=html
 
 # Run with debug output
-pytest -s
+python -m pytest tests/ -v -s
 ```
 
 ### Test Categories
@@ -345,15 +373,14 @@ def test_with_mock():
 4. **Test Locally**
    ```bash
    # Run tests
-   pytest
-   
+   python -m pytest tests/ -v
+
+   # Check linting
+   ruff check code/ tests/
+
    # Check formatting
-   black code/ --check
-   flake8 code/
-   
-   # Type checking
-   mypy code/
-   
+   ruff format --check code/ tests/
+
    # Run full pipeline
    python code/run_production_forecast.py
    ```

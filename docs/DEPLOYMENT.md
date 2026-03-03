@@ -1,7 +1,7 @@
 # CVE Forecast Deployment Guide
 
-**Version**: 0.10 "Phoenix" 🔥🐦  
-**Last Updated**: October 2025
+**Version**: 0.11 "Phoenix" 🔥🐦
+**Last Updated**: March 2026
 
 ## Table of Contents
 - [GitHub Actions Deployment](#github-actions-deployment)
@@ -14,9 +14,12 @@
 
 ### Overview
 
-CVE Forecast uses two automated workflows:
+CVE Forecast uses the following automated workflows:
 1. **Daily Forecast** - Generates forecasts every midnight UTC
 2. **Monthly Tuning** - Optimizes hyperparameters on the 1st of each month
+3. **PR Tests** - Runs pytest on pull requests
+4. **PR Linting** - Runs ruff on pull requests
+5. **Dependabot** - Weekly dependency update checks
 
 ### Daily Forecast Workflow
 
@@ -74,6 +77,55 @@ Actions → "Monthly Hyperparameter Tuning" → Run workflow
 
 # Via GitHub CLI
 gh workflow run monthly_tuning.yml
+```
+
+### PR Test Workflow
+
+**File**: `.github/workflows/test.yml`
+
+**Triggers**: Pull requests to `main` branch
+
+**Steps**:
+1. Check out code
+2. Set up Python environment
+3. Install dependencies
+4. Run `python -m pytest tests/ -v`
+
+**Purpose**: Ensures all tests pass before code is merged.
+
+### PR Lint Workflow
+
+**File**: `.github/workflows/lint.yml`
+
+**Triggers**: Pull requests to `main` branch
+
+**Steps**:
+1. Check out code
+2. Install ruff
+3. Run `ruff check code/ tests/`
+4. Run `ruff format --check code/ tests/`
+
+**Purpose**: Enforces consistent code style and catches common issues.
+
+### Dependabot
+
+**File**: `.github/dependabot.yml`
+
+**Schedule**: Weekly
+
+**Purpose**: Automatically creates pull requests when Python dependencies (pip) have updates available.
+
+### Data Validation
+
+The daily forecast workflow includes a validation step using `code/scripts/validate_forecast_data.py`. This script checks:
+- Output JSON files exist and are valid JSON
+- Required keys are present in `data.json` and `cna_data.json`
+- Forecast values are within reasonable ranges
+- Data integrity between forecast and historical values
+
+To run validation manually:
+```bash
+python code/scripts/validate_forecast_data.py
 ```
 
 ### GitHub Pages Setup

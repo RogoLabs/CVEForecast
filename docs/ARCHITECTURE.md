@@ -1,7 +1,7 @@
 # CVE Forecast Architecture Guide
 
-**Version**: 0.10 "Phoenix" 🔥🐦  
-**Last Updated**: October 2025
+**Version**: 0.11 "Phoenix" 🔥🐦
+**Last Updated**: March 2026
 
 ## Table of Contents
 - [Overview](#overview)
@@ -39,8 +39,17 @@ CVE Forecast is built on a modular, extensible architecture that separates conce
         │                     │                     │
         ├─ data_loader.py     ├─ base_forecaster.py├─ index.html
         ├─ cve_adapter.py     ├─ validation_mixin  ├─ script.js
-        └─ cna_adapter.py     ├─ unified_pipeline  ├─ cna_forecast.html
-                              └─ forecast_tracker  └─ technical_details.html
+        └─ cna_adapter.py     ├─ model_utils       ├─ cna_forecast.html
+                              ├─ unified_pipeline  ├─ technical_details.html
+                              └─ forecast_tracker  └─ styles.css
+
+┌─────────────────────────────────────────────────────────────────┐
+│                     CI/CD & Scripts                              │
+└─────────────────────────────────────────────────────────────────┘
+        │
+        ├─ .github/workflows/   (test, lint, main, monthly_tuning)
+        ├─ .github/dependabot.yml
+        └─ code/scripts/        (validate_forecast_data, normalize_tuner_paths, generate_tuning_report)
 ```
 
 ### Layer Responsibilities
@@ -52,13 +61,28 @@ CVE Forecast is built on a modular, extensible architecture that separates conce
 
 #### Core Layer
 - **Purpose**: Model training, forecasting, and validation
-- **Components**: Base classes, forecasters, pipeline orchestration
+- **Components**: Base classes, forecasters, pipeline orchestration, shared model utilities
+- **Key Modules**:
+  - `core/base_forecaster.py` — abstract base class for all forecasters
+  - `core/validation_mixin.py` — validation and backtesting capabilities
+  - `core/model_utils.py` — shared `fix_hyperparameters()` and `create_model_safe()` for Darts parameter fixing and safe model creation
 - **Output**: Forecast results, metrics, validation data
 
 #### Web Layer
 - **Purpose**: Visualization and user interface
 - **Components**: HTML pages, JavaScript, CSS
 - **Input**: JSON data files from core layer
+
+#### CI/CD & Scripts Layer
+- **Purpose**: Automation, validation, and development tooling
+- **Components**:
+  - `code/scripts/validate_forecast_data.py` — validates output JSON schema and data integrity
+  - `code/scripts/normalize_tuner_paths.py` — normalizes file paths in tuner output
+  - `code/scripts/generate_tuning_report.py` — generates human-readable tuning reports
+- **Workflows**:
+  - `.github/workflows/test.yml` — runs pytest on pull requests
+  - `.github/workflows/lint.yml` — runs ruff linting on pull requests
+  - `.github/dependabot.yml` — weekly dependency update checks
 
 ## Core Components
 
@@ -663,6 +687,14 @@ logger.error("Critical failure in data loading")
 - Run tests on every commit
 - Block merges if tests fail
 - Generate coverage reports
+
+## Recent Changes (v0.11)
+
+- **Constraint integration complete**: `ForecastConstraints.apply_constraints()` is now fully wired into the CVE adapter pipeline, with dynamic baselines derived from historical data (replacing previously hardcoded values)
+- **Shared model utilities**: Extracted `core/model_utils.py` with `fix_hyperparameters()` and `create_model_safe()` to eliminate duplication between CVE and CNA adapters
+- **CI/CD pipelines**: Added `test.yml` (pytest on PRs), `lint.yml` (ruff on PRs), and Dependabot for weekly dependency updates
+- **Development tooling**: Adopted ruff for linting/formatting and pytest as the test runner, configured via `pyproject.toml`
+- **Helper scripts**: Added `code/scripts/` with validation, path normalization, and tuning report generation utilities
 
 ## Future Enhancements
 
