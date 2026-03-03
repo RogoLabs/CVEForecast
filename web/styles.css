@@ -109,7 +109,7 @@ body {
    Validation Row
    -------------------------------------------------------------------------- */
 .validation-row:hover {
-    background-color: #f9fafb;
+    background-color: var(--color-row-hover);
 }
 
 /* --------------------------------------------------------------------------
@@ -326,4 +326,82 @@ body {
     font-size: 12px;
     white-space: nowrap;
     z-index: 1000;
+}
+
+/* --------------------------------------------------------------------------
+   Dark Mode: automatic via system preference
+   -------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --color-bg: #111827;
+        --color-surface: #1f2937;
+        --color-text: #f9fafb;
+        --color-text-secondary: #d1d5db;
+        --color-text-muted: #9ca3af;
+        --color-text-table: #e2e8f0;
+        --color-border: #374151;
+        --color-border-light: #4b5563;
+        --color-primary: #60a5fa;
+        --color-primary-light: #1e3a5f;
+        --color-primary-dark: #93c5fd;
+        --color-accent: #93c5fd;
+        --color-row-even: #1e293b;
+        --color-row-hover: #374151;
+        --color-collapsible-hover: #1e3a5f;
+        --color-spinner-track: #374151;
+        --color-spinner-active: #60a5fa;
+        --color-tooltip-bg: #f9fafb;
+        --color-tooltip-text: #1f2937;
+        --color-forecast: #f87171;
+        --color-growth-positive: #f87171;
+        --color-growth-negative: #34d399;
+        --color-growth-neutral: #9ca3af;
+        --color-summary-label: #d1d5db;
+        --color-summary-value: #f9fafb;
+        --gradient-start: #0f172a;
+        --gradient-mid: #1e293b;
+        --gradient-end: #020617;
+        --gradient-highlight-start: #1e293b;
+        --gradient-highlight-end: #374151;
+        --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+        --shadow-content: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Dark Mode: manual toggle
+   -------------------------------------------------------------------------- */
+[data-theme="dark"] {
+    --color-bg: #111827;
+    --color-surface: #1f2937;
+    --color-text: #f9fafb;
+    --color-text-secondary: #d1d5db;
+    --color-text-muted: #9ca3af;
+    --color-text-table: #e2e8f0;
+    --color-border: #374151;
+    --color-border-light: #4b5563;
+    --color-primary: #60a5fa;
+    --color-primary-light: #1e3a5f;
+    --color-primary-dark: #93c5fd;
+    --color-accent: #93c5fd;
+    --color-row-even: #1e293b;
+    --color-row-hover: #374151;
+    --color-collapsible-hover: #1e3a5f;
+    --color-spinner-track: #374151;
+    --color-spinner-active: #60a5fa;
+    --color-tooltip-bg: #f9fafb;
+    --color-tooltip-text: #1f2937;
+    --color-forecast: #f87171;
+    --color-growth-positive: #f87171;
+    --color-growth-negative: #34d399;
+    --color-growth-neutral: #9ca3af;
+    --color-summary-label: #d1d5db;
+    --color-summary-value: #f9fafb;
+    --gradient-start: #0f172a;
+    --gradient-mid: #1e293b;
+    --gradient-end: #020617;
+    --gradient-highlight-start: #1e293b;
+    --gradient-highlight-end: #374151;
+    --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    --shadow-content: 0 4px 6px rgba(0, 0, 0, 0.3);
 }

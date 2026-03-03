@@ -35,9 +35,17 @@
                     </h1>
                     <p class="text-gray-300 mt-1">Technical Details - v0.10 "Phoenix" 🔥🐦</p>
                 </div>
-                <nav aria-label="Main navigation" class="space-x-4">
+                <nav aria-label="Main navigation" class="flex items-center space-x-4">
                     <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
                     <a href="cna_forecast.html" class="text-gray-300 hover:text-white transition-colors">CNA Forecasts</a>
+                    <button id="themeToggle" aria-label="Toggle dark mode" class="text-gray-300 hover:text-white transition-colors p-2 rounded">
+                        <svg id="themeSun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        <svg id="themeMoon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                    </button>
                 </nav>
             </div>
         </div>
@@ -400,5 +408,43 @@
             </div>
         </div>
     </footer>
+
+    <script>
+    // Theme toggle with localStorage persistence
+    (function initTheme() {
+        const toggle = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('themeSun');
+        const moonIcon = document.getElementById('themeMoon');
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                if (sunIcon) sunIcon.classList.remove('hidden');
+                if (moonIcon) moonIcon.classList.add('hidden');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                if (sunIcon) sunIcon.classList.add('hidden');
+                if (moonIcon) moonIcon.classList.remove('hidden');
+            }
+        }
+
+        // Check saved preference, then system preference
+        const saved = localStorage.getItem('theme');
+        if (saved) {
+            applyTheme(saved);
+        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            applyTheme('dark');
+        }
+
+        if (toggle) {
+            toggle.addEventListener('click', function() {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const newTheme = isDark ? 'light' : 'dark';
+                applyTheme(newTheme);
+                localStorage.setItem('theme', newTheme);
+            });
+        }
+    })();
+    </script>
 </body>
 </html>
