@@ -218,12 +218,12 @@
 
         <div class="content-section">
             <h2 class="text-2xl font-bold mb-4">Release History</h2>
-            <div class="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-300 shadow-md">
-                <h3 class="font-bold text-green-800 text-lg mb-2">🇮🇪 v0.11 - Galway 🇮🇪 (March 2026)</h3>
-                <p class="text-green-700 font-medium mb-3">Comprehensive Spring Cleaning - Code quality, web overhaul, CI/CD hardening, and accessibility</p>
+            <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-300 shadow-md">
+                <h3 class="font-bold text-blue-800 text-lg mb-2">🇮🇪 v0.11 - Galway 🇮🇪 (March 2026)</h3>
+                <p class="text-blue-700 font-medium mb-3">Comprehensive Spring Cleaning - Code quality, web overhaul, CI/CD hardening, and accessibility</p>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-green-800 mb-2">Code Quality</h4>
-                    <ul class="list-disc list-inside space-y-1 text-green-700 text-sm">
+                    <h4 class="font-semibold text-blue-800 mb-2">Code Quality</h4>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
                         <li><strong>Shared Model Utilities:</strong> Extracted duplicated parameter-fixing logic from CVE/CNA adapters into <code>core/model_utils.py</code></li>
                         <li><strong>Constraint Integration:</strong> Completed the forecast constraint pipeline — growth floors, trend adjustments, and YTD floors now actively applied</li>
                         <li><strong>Date Handling:</strong> Standardized on <code>dateutil.parser.isoparse</code> across the codebase, replacing manual timezone hacks</li>
@@ -232,8 +232,8 @@
                     </ul>
                 </div>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-green-800 mb-2">Web Dashboard</h4>
-                    <ul class="list-disc list-inside space-y-1 text-green-700 text-sm">
+                    <h4 class="font-semibold text-blue-800 mb-2">Web Dashboard</h4>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
                         <li><strong>Dark Mode:</strong> System preference detection with manual toggle, persisted in localStorage</li>
                         <li><strong>Accessibility (WCAG AA):</strong> ARIA labels on all interactive elements, keyboard navigation, focus indicators, skip-to-content links</li>
                         <li><strong>SEO:</strong> Meta descriptions, Open Graph tags, Twitter Cards, canonical URLs on all pages</li>
@@ -243,8 +243,8 @@
                     </ul>
                 </div>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-green-800 mb-2">CI/CD &amp; Testing</h4>
-                    <ul class="list-disc list-inside space-y-1 text-green-700 text-sm">
+                    <h4 class="font-semibold text-blue-800 mb-2">CI/CD &amp; Testing</h4>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
                         <li><strong>Test Workflow:</strong> Automated pytest on pull requests and pushes to main</li>
                         <li><strong>Lint Workflow:</strong> Ruff format and lint checks on pull requests</li>
                         <li><strong>Dependabot:</strong> Weekly dependency updates for pip packages and GitHub Actions</li>
@@ -254,20 +254,20 @@
                     </ul>
                 </div>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-green-800 mb-2">Repository Cleanup</h4>
-                    <ul class="list-disc list-inside space-y-1 text-green-700 text-sm">
+                    <h4 class="font-semibold text-blue-800 mb-2">Repository Cleanup</h4>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
                         <li><strong>Removed 60+ files:</strong> Empty scripts, old tuner logs/backups, unused web files, obsolete v.10 documentation</li>
                         <li><strong>Updated documentation:</strong> Architecture, deployment, development, and API reference guides refreshed for v0.11</li>
                         <li><strong>pyproject.toml:</strong> Centralized ruff and pytest configuration</li>
                     </ul>
                 </div>
             </div>
-            <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-300 shadow-md">
-                <h3 class="font-bold text-blue-800 text-lg mb-2">🔥🐦 v0.10 - Phoenix 🔥🐦 (October 2025)</h3>
-                <p class="text-blue-700 font-medium mb-3">Complete Architectural Rebirth - Production-ready unified pipeline with historical validation and accuracy tracking</p>
+            <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="font-semibold text-gray-800 text-lg mb-2">🔥🐦 v0.10 - Phoenix 🔥🐦 (October 2025)</h3>
+                <p class="text-gray-700 font-medium mb-3">Complete Architectural Rebirth - Production-ready unified pipeline with historical validation and accuracy tracking</p>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">✨ Major Features</h4>
-                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                    <h4 class="font-semibold text-gray-800 mb-2">✨ Major Features</h4>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
                         <li><strong>Unified Pipeline:</strong> Single command (run_production_forecast.py) for CVE + CNA forecasting</li>
                         <li><strong>Historical Backtest:</strong> Real-world validation on 2025 data (Jan-Sep) with actual vs. predicted comparisons</li>
                         <li><strong>Forecast Tracking:</strong> ForecastTracker accumulates prediction snapshots for long-term accuracy analysis</li>
@@ -276,8 +276,8 @@
                     </ul>
                 </div>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">🏗️ Architecture Improvements</h4>
-                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                    <h4 class="font-semibold text-gray-800 mb-2">🏗️ Architecture Improvements</h4>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
                         <li><strong>Modular Design:</strong> BaseForecaster, ValidationMixin, CVEForecaster, CNAForecaster adapters</li>
                         <li><strong>Clean Separation:</strong> Data loading, training, forecasting, and validation in separate modules</li>
                         <li><strong>Extensible Framework:</strong> Easy to add new models, data sources, or validation strategies</li>
@@ -285,8 +285,8 @@
                     </ul>
                 </div>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">🔄 Automated Workflows</h4>
-                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                    <h4 class="font-semibold text-gray-800 mb-2">🔄 Automated Workflows</h4>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
                         <li><strong>Daily Forecast:</strong> Midnight UTC execution with automatic deployment to GitHub Pages</li>
                         <li><strong>Monthly Tuning:</strong> 1st of each month hyperparameter optimization with config updates</li>
                         <li><strong>Zero Downtime:</strong> Continuous deployment with automatic rollback on failure</li>
@@ -294,8 +294,8 @@
                     </ul>
                 </div>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">📚 Documentation</h4>
-                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                    <h4 class="font-semibold text-gray-800 mb-2">📚 Documentation</h4>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
                         <li><strong>Architecture Guide:</strong> System design, components, and data flow</li>
                         <li><strong>API Reference:</strong> Classes, methods, and configuration options</li>
                         <li><strong>Deployment Guide:</strong> GitHub Actions, hosting, and CI/CD</li>
