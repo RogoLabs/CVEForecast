@@ -189,23 +189,93 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
 
         return create_model_safe(model_classes[model_name], model_name, hyperparameters, self.logger)
     
+    def _get_previous_year_actuals(self) -> Dict[int, int]:
+        """Get actual yearly CVE totals from historical data."""
+        if self.series is None:
+            return {}
+        df = self.series.pd_dataframe()
+        yearly = {}
+        for idx, row in df.iterrows():
+            year = idx.year
+            yearly[year] = yearly.get(year, 0) + int(row.iloc[0])
+        return yearly
+
     def apply_constraints(self, forecasts: Dict[str, ForecastResult]) -> Dict[str, ForecastResult]:
         """
         Apply CVE-specific forecast constraints.
-        
-        NOTE: Constraint logic simplified for unified architecture.
-        Full constraint integration to be completed in Week 6.
-        
+
+        Converts monthly ForecastResult values into yearly totals,
+        applies growth floor / trend constraints via ForecastConstraints,
+        then scales monthly values proportionally so yearly totals match.
+
         Args:
-            forecasts: Raw forecasts
-            
+            forecasts: Raw forecasts from all models
+
         Returns:
-            Forecasts (constraints to be fully integrated later)
+            Constrained forecasts with adjusted monthly values
         """
-        # TODO: Integrate ForecastConstraints with proper data format conversion
-        # For now, return forecasts as-is to allow pipeline to complete
-        self.logger.info(f"✓ Passing through {len(forecasts)} models (constraints integration pending)")
-        
+        if not self.forecast_constraints:
+            self.logger.warning("Forecast constraints not initialized, passing through")
+            return forecasts
+
+        # 1. Build yearly totals by summing monthly forecast values per model per year
+        yearly_totals: Dict[int, Dict[str, int]] = {}
+        for model_name, result in forecasts.items():
+            if model_name == 'Ensemble':
+                continue
+            for date_str, value in result.forecast_values.items():
+                year = pd.to_datetime(date_str).year
+                if year not in yearly_totals:
+                    yearly_totals[year] = {}
+                yearly_totals[year][model_name] = yearly_totals[year].get(model_name, 0) + int(round(value))
+
+        if not yearly_totals:
+            self.logger.info("No yearly totals to constrain, passing through")
+            return forecasts
+
+        # 2. Get previous year actuals from historical series data
+        prev_year_actuals = self._get_previous_year_actuals()
+
+        # 3. Apply constraints
+        self.logger.info(f"Applying constraints to {len(yearly_totals)} forecast years, "
+                         f"{sum(len(m) for m in yearly_totals.values())} model-year entries")
+        constrained_totals = self.forecast_constraints.apply_constraints(
+            yearly_totals, previous_year_actuals=prev_year_actuals
+        )
+
+        # 4. Calculate scaling factors and apply back to monthly forecasts
+        adjusted_count = 0
+        for model_name, result in forecasts.items():
+            if model_name == 'Ensemble':
+                continue
+
+            # Group monthly values by year for this model
+            year_months: Dict[int, List[str]] = {}
+            for date_str in result.forecast_values:
+                year = pd.to_datetime(date_str).year
+                year_months.setdefault(year, []).append(date_str)
+
+            for year, date_strs in year_months.items():
+                original_total = yearly_totals.get(year, {}).get(model_name, 0)
+                constrained_total = constrained_totals.get(year, {}).get(model_name, original_total)
+
+                if original_total == 0 or constrained_total == original_total:
+                    continue
+
+                # Scale each month proportionally
+                scale_factor = constrained_total / original_total
+                for date_str in date_strs:
+                    old_val = result.forecast_values[date_str]
+                    result.forecast_values[date_str] = round(old_val * scale_factor, 2)
+
+                adjusted_count += 1
+                self.logger.info(
+                    f"  {model_name} {year}: {original_total:,} -> {constrained_total:,} "
+                    f"(scale {scale_factor:.4f})"
+                )
+
+        self.logger.info(f"Constraints applied to {len(forecasts)} models "
+                         f"({adjusted_count} model-year adjustments)")
         return forecasts
     
     def _get_actuals_cumulative(self) -> List[Dict[str, Any]]:

@@ -2,6 +2,7 @@
 Forecast constraint utilities to ensure realistic predictions.
 Implements growth floors, trend adjustments, and sanity checks.
 """
+import datetime as _dt
 import numpy as np
 from typing import Dict, Optional
 import logging
@@ -108,49 +109,51 @@ class ForecastConstraints:
         
         return base_forecast
     
-    def apply_constraints(self, yearly_totals: Dict[int, Dict[str, int]], 
-                         ytd_growth_2025: Optional[float] = None) -> Dict[int, Dict[str, int]]:
+    def apply_constraints(self, yearly_totals: Dict[int, Dict[str, int]],
+                         ytd_growth: Optional[float] = None,
+                         previous_year_actuals: Optional[Dict[int, int]] = None) -> Dict[int, Dict[str, int]]:
         """
         Apply all constraints to yearly forecast totals.
-        
+
         Args:
             yearly_totals: Dictionary of {year: {model: total}}
-            ytd_growth_2025: Year-to-date growth for 2025 (optional)
-            
+            ytd_growth: Year-to-date growth rate (optional)
+            previous_year_actuals: Actual yearly CVE totals from historical data
+
         Returns:
             Constrained yearly totals
         """
         if not yearly_totals:
             return yearly_totals
-            
+
+        current_year = _dt.datetime.now(_dt.timezone.utc).year
         constrained = {}
         years = sorted(yearly_totals.keys())
-        
+
         for year in years:
             constrained[year] = {}
             previous_year = year - 1
-            
-            # Get previous year total (use 2024 actual as baseline)
+
+            # Get previous year total from actuals or forecast data
             if previous_year in yearly_totals:
                 # Use average of previous year models as baseline
                 prev_totals = list(yearly_totals[previous_year].values())
                 prev_baseline = int(np.mean(prev_totals))
-            elif previous_year == 2024:
-                # Hardcoded 2024 actual (will be updated from summary if available)
-                prev_baseline = 39941
+            elif previous_year_actuals and previous_year in previous_year_actuals:
+                prev_baseline = previous_year_actuals[previous_year]
             else:
                 # No baseline available, skip constraints
                 constrained[year] = yearly_totals[year].copy()
                 continue
-            
+
             self.logger.info(f"\nApplying constraints for {year} (baseline: {prev_baseline:,})")
-            
+
             # Apply YTD-based floor for current year if enabled
             ytd_floor = None
-            if year == 2025 and ytd_growth_2025 is not None and self.enable_ytd_floor:
-                ytd_floor = max(self.min_growth, ytd_growth_2025 * self.ytd_min_factor)
-                self.logger.info(f"YTD-based floor for 2025: {ytd_floor*100:.1f}% ({self.ytd_min_factor*100:.0f}% of YTD {ytd_growth_2025*100:.1f}%)")
-            
+            if year == current_year and ytd_growth is not None and self.enable_ytd_floor:
+                ytd_floor = max(self.min_growth, ytd_growth * self.ytd_min_factor)
+                self.logger.info(f"YTD-based floor for {current_year}: {ytd_floor*100:.1f}% ({self.ytd_min_factor*100:.0f}% of YTD {ytd_growth*100:.1f}%)")
+
             for model_name, forecast_value in yearly_totals[year].items():
                 # Apply growth floor (with YTD override for current year)
                 if ytd_floor is not None:
@@ -164,13 +167,13 @@ class ForecastConstraints:
                         )
                 else:
                     adjusted = self.apply_growth_floor(forecast_value, prev_baseline)
-                
-                # Apply trend adjustment (always for 2025 with YTD data)
-                if year == 2025 and ytd_growth_2025 is not None:
-                    adjusted = self.trend_adjusted_forecast(adjusted, prev_baseline, ytd_growth_2025)
+
+                # Apply trend adjustment (always for current year with YTD data)
+                if year == current_year and ytd_growth is not None:
+                    adjusted = self.trend_adjusted_forecast(adjusted, prev_baseline, ytd_growth)
                 else:
                     adjusted = self.trend_adjusted_forecast(adjusted, prev_baseline)
-                
+
                 constrained[year][model_name] = adjusted
-        
+
         return constrained
