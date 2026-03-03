@@ -62,6 +62,9 @@ jobs:
       env:
         PYTHONUNBUFFERED: 1
     
+    - name: Validate forecast data
+      run: python code/scripts/validate_forecast_data.py
+
     - name: Check for changes
       id: verify-changed-files
       run: |
@@ -76,7 +79,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        git add web/data.json
+        git add web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json || true
         git commit -m "Update CVE forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
         git push
     
@@ -86,6 +89,7 @@ jobs:
       with:
         name: forecast-data
         path: web/data.json
+        retention-days: 30
     
     - name: Setup Pages
       uses: actions/configure-pages@v4
