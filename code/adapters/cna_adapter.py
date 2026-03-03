@@ -21,6 +21,7 @@ from darts.models import (
 )
 
 from core.base_forecaster import BaseForecaster, ForecastResult
+from core.model_utils import create_model_safe
 
 
 class CNAForecaster(BaseForecaster):
@@ -244,51 +245,8 @@ class CNAForecaster(BaseForecaster):
         
         if model_name not in model_classes:
             raise ValueError(f"Unknown CNA model: {model_name}")
-        
-        model_class = model_classes[model_name]
-        
-        # Handle parameter name changes for backwards compatibility
-        hyperparameters = hyperparameters.copy()
-        
-        if model_name == 'ExponentialSmoothing':
-            # Fix parameter name changes in newer Darts versions
-            if 'damped_trend' in hyperparameters:
-                val = hyperparameters.pop('damped_trend')
-                # damping_trend must be float (0.0-1.0) or None
-                if val is None or val is False or val == 0:
-                    hyperparameters['damping_trend'] = None
-                elif val is True or val == 1:
-                    hyperparameters['damping_trend'] = 0.98
-                elif isinstance(val, (int, float)):
-                    hyperparameters['damping_trend'] = float(val)
-                else:
-                    hyperparameters['damping_trend'] = None
-            
-            # Ensure damping_trend is correct type if already exists
-            if 'damping_trend' in hyperparameters:
-                val = hyperparameters['damping_trend']
-                if isinstance(val, bool):
-                    hyperparameters['damping_trend'] = 0.98 if val else None
-                elif val is not None:
-                    hyperparameters['damping_trend'] = float(val) if val != 0 else None
-            
-            # Remove unsupported params
-            hyperparameters.pop('initialization_method', None)
-            hyperparameters.pop('missing', None)
-        
-        if model_name == 'LinearRegression':
-            # Fix incompatible parameter combination
-            if hyperparameters.get('output_chunk_shift', 0) > 0:
-                hyperparameters['output_chunk_shift'] = 0
-        
-        try:
-            return model_class(**hyperparameters)
-        except Exception as e:
-            self.logger.warning(f"Failed to create {model_name}, using defaults: {e}")
-            try:
-                return model_class()
-            except:
-                return None
+
+        return create_model_safe(model_classes[model_name], model_name, hyperparameters, self.logger)
     
     def select_best_model_for_cna(self, cna_id: str, ts: TimeSeries) -> Tuple[str, float, Dict[str, float]]:
         """

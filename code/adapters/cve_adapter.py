@@ -23,6 +23,7 @@ from darts.models.forecasting.baselines import NaiveMean, NaiveDrift, NaiveSeaso
 
 from core.base_forecaster import BaseForecaster, ForecastResult
 from core.validation_mixin import ValidationMixin
+from core.model_utils import create_model_safe
 from data_loader import load_cve_data
 from forecast_constraints import ForecastConstraints
 from forecast_tracker import ForecastTracker
@@ -185,69 +186,8 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         
         if model_name not in model_classes:
             raise ValueError(f"Unknown model: {model_name}")
-        
-        model_class = model_classes[model_name]
-        
-        # Handle parameter name changes for backwards compatibility
-        hyperparameters = hyperparameters.copy()
-        
-        if model_name == 'ExponentialSmoothing':
-            # Fix parameter name changes in newer Darts versions
-            if 'damped_trend' in hyperparameters:
-                val = hyperparameters.pop('damped_trend')
-                # damping_trend must be float (0.0-1.0) or None
-                # If False/0, set to None (no damping)
-                # If True/1, use 0.98 as default damping
-                # If float, use as-is
-                if val is None or val is False or val == 0:
-                    hyperparameters['damping_trend'] = None
-                elif val is True or val == 1:
-                    hyperparameters['damping_trend'] = 0.98
-                elif isinstance(val, (int, float)):
-                    hyperparameters['damping_trend'] = float(val)
-                else:
-                    hyperparameters['damping_trend'] = None
-            
-            # Ensure damping_trend is correct type if already exists
-            if 'damping_trend' in hyperparameters:
-                val = hyperparameters['damping_trend']
-                if isinstance(val, bool):
-                    hyperparameters['damping_trend'] = 0.98 if val else None
-                elif val is not None:
-                    hyperparameters['damping_trend'] = float(val) if val != 0 else None
-            
-            # Remove unsupported params
-            hyperparameters.pop('initialization_method', None)
-            hyperparameters.pop('missing', None)  # Not supported in current version
-        
-        if model_name in ['Theta', 'FourTheta']:
-            # Fix season_mode: must be SeasonalityMode enum, not string
-            if 'season_mode' in hyperparameters:
-                from darts.utils.utils import SeasonalityMode
-                mode_str = str(hyperparameters['season_mode']).lower()
-                if mode_str in ['additive', 'add']:
-                    hyperparameters['season_mode'] = SeasonalityMode.ADDITIVE
-                elif mode_str in ['multiplicative', 'mult', 'mul']:
-                    hyperparameters['season_mode'] = SeasonalityMode.MULTIPLICATIVE
-                else:
-                    hyperparameters.pop('season_mode')  # Remove invalid value
-        
-        if model_name == 'LinearRegression':
-            # Fix incompatible parameter combination
-            if hyperparameters.get('output_chunk_shift', 0) > 0:
-                # Can't use output_chunk_shift with auto-regression
-                hyperparameters['output_chunk_shift'] = 0
-        
-        # Create model with hyperparameters
-        try:
-            return model_class(**hyperparameters)
-        except Exception as e:
-            self.logger.warning(f"Failed to create {model_name} with params, using defaults: {e}")
-            try:
-                return model_class()
-            except:
-                # Some models need minimum params
-                return None
+
+        return create_model_safe(model_classes[model_name], model_name, hyperparameters, self.logger)
     
     def apply_constraints(self, forecasts: Dict[str, ForecastResult]) -> Dict[str, ForecastResult]:
         """
