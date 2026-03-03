@@ -1,4 +1,5 @@
 """Validate forecast data JSON files before deployment."""
+
 import json
 import sys
 
@@ -10,10 +11,10 @@ def validate():
         with open('web/data.json') as f:
             data = json.load(f)
     except FileNotFoundError:
-        print("FAIL: web/data.json not found")
+        print('FAIL: web/data.json not found')
         return False
     except json.JSONDecodeError as e:
-        print(f"FAIL: web/data.json is not valid JSON: {e}")
+        print(f'FAIL: web/data.json is not valid JSON: {e}')
         return False
 
     for key in REQUIRED_KEYS:
@@ -22,10 +23,10 @@ def validate():
             return False
 
     if not data['model_rankings']:
-        print("FAIL: model_rankings is empty")
+        print('FAIL: model_rankings is empty')
         return False
 
-    print(f"OK: data.json valid ({len(data['model_rankings'])} models)")
+    print(f'OK: data.json valid ({len(data["model_rankings"])} models)')
     return True
 
 

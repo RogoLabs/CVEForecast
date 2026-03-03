@@ -1,9 +1,7 @@
 """Tests for core.model_utils shared utilities."""
-import importlib
-import sys
-from pathlib import Path
 
-import pytest
+import importlib
+from pathlib import Path
 
 # Import fix_hyperparameters directly from the module file to avoid
 # pulling in heavy dependencies through core/__init__.py
@@ -39,11 +37,9 @@ class TestFixHyperparameters:
         assert result['damping_trend'] is None
 
     def test_exponential_smoothing_removes_unsupported_params(self):
-        result = fix_hyperparameters('ExponentialSmoothing', {
-            'initialization_method': 'estimated',
-            'missing': 'drop',
-            'trend': 'add'
-        })
+        result = fix_hyperparameters(
+            'ExponentialSmoothing', {'initialization_method': 'estimated', 'missing': 'drop', 'trend': 'add'}
+        )
         assert 'initialization_method' not in result
         assert 'missing' not in result
         assert result['trend'] == 'add'

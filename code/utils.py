@@ -1,4 +1,5 @@
 """Logging configuration with rotation support."""
+
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
@@ -12,9 +13,7 @@ def setup_logging(config):
 
     handlers = [logging.StreamHandler(sys.stdout)]
 
-    file_handler = RotatingFileHandler(
-        log_file, maxBytes=10 * 1024 * 1024, backupCount=3
-    )
+    file_handler = RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=3)
     handlers.append(file_handler)
 
     logging.basicConfig(level=level, format=fmt, handlers=handlers)

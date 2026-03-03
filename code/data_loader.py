@@ -2,8 +2,9 @@ import json
 import logging
 from pathlib import Path
 
-from dateutil import parser as dateutil_parser
 import pandas as pd
+from dateutil import parser as dateutil_parser
+
 
 def load_cve_data(config: dict) -> pd.DataFrame:
     """
@@ -19,21 +20,21 @@ def load_cve_data(config: dict) -> pd.DataFrame:
     data_processing_config = config.get('data_processing', {})
     filter_by_date = data_processing_config.get('filter_by_date', False)
     start_date_filter = data_processing_config.get('start_date_filter')
-    
+
     logger = logging.getLogger(__name__)
-    logger.info(f"Starting CVE data processing from: {cve_data_path}")
+    logger.info(f'Starting CVE data processing from: {cve_data_path}')
 
     if not cve_data_path.exists():
         logger.error(f"CVE data directory not found at '{cve_data_path}'. Please check your config.json.")
-        raise FileNotFoundError(f"Directory not found: {cve_data_path}")
+        raise FileNotFoundError(f'Directory not found: {cve_data_path}')
 
-    json_files = list(cve_data_path.rglob("cves/**/*.json"))
-    logger.info(f"Found {len(json_files)} CVE JSON files to process.")
+    json_files = list(cve_data_path.rglob('cves/**/*.json'))
+    logger.info(f'Found {len(json_files)} CVE JSON files to process.')
 
     cve_dates = []
     for i, json_file in enumerate(json_files):
         if (i + 1) % 50000 == 0:
-            logger.info(f"  ... processed {i + 1}/{len(json_files)} files")
+            logger.info(f'  ... processed {i + 1}/{len(json_files)} files')
         try:
             with open(json_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -65,13 +66,13 @@ def load_cve_data(config: dict) -> pd.DataFrame:
                         logger.debug(f"Could not parse date '{published_date_str}' in {json_file.name}")
 
         except (json.JSONDecodeError, KeyError, AttributeError) as e:
-            logger.warning(f"Skipping malformed file {json_file.name}: {e}")
+            logger.warning(f'Skipping malformed file {json_file.name}: {e}')
             continue
-    
-    logger.info(f"Successfully extracted dates from {len(cve_dates)} valid CVEs.")
+
+    logger.info(f'Successfully extracted dates from {len(cve_dates)} valid CVEs.')
 
     if not cve_dates:
-        logger.error("No valid CVE publication dates were found. Aborting.")
+        logger.error('No valid CVE publication dates were found. Aborting.')
         return pd.DataFrame()
 
     # Aggregate data monthly
@@ -88,14 +89,16 @@ def load_cve_data(config: dict) -> pd.DataFrame:
 
     # Conditionally filter by start date
     if filter_by_date and start_date_filter:
-        logger.info(f"Applying date filter. Keeping data from {start_date_filter} onwards.")
+        logger.info(f'Applying date filter. Keeping data from {start_date_filter} onwards.')
         monthly_counts = monthly_counts[monthly_counts.index >= pd.to_datetime(start_date_filter)]
     else:
-        logger.info("No date filter applied. Processing all historical data.")
-    
+        logger.info('No date filter applied. Processing all historical data.')
+
     if not monthly_counts.empty:
-        logger.info(f"Aggregated data into {len(monthly_counts)} monthly periods from {monthly_counts.index.min().strftime('%Y-%m')} to {monthly_counts.index.max().strftime('%Y-%m')}.")
+        logger.info(
+            f'Aggregated data into {len(monthly_counts)} monthly periods from {monthly_counts.index.min().strftime("%Y-%m")} to {monthly_counts.index.max().strftime("%Y-%m")}.'
+        )
     else:
-        logger.warning("Resulting DataFrame is empty after processing and filtering.")
+        logger.warning('Resulting DataFrame is empty after processing and filtering.')
 
     return monthly_counts

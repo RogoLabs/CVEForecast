@@ -1,4 +1,5 @@
 """Tests for forecast_constraints.py."""
+
 import pytest
 from forecast_constraints import ForecastConstraints
 
@@ -54,9 +55,7 @@ class TestApplyConstraints:
     def test_with_previous_year_actuals(self, constraints):
         yearly = {2026: {'ModelA': 30000}}
         actuals = {2025: 40000}
-        result = constraints.apply_constraints(
-            yearly, previous_year_actuals=actuals
-        )
+        result = constraints.apply_constraints(yearly, previous_year_actuals=actuals)
         # 30000 is below 5% growth from 40000 (42000), so should be raised
         assert result[2026]['ModelA'] >= 42000
 
@@ -68,8 +67,6 @@ class TestApplyConstraints:
     def test_multiple_models(self, constraints):
         yearly = {2026: {'ModelA': 30000, 'ModelB': 50000}}
         actuals = {2025: 40000}
-        result = constraints.apply_constraints(
-            yearly, previous_year_actuals=actuals
-        )
+        result = constraints.apply_constraints(yearly, previous_year_actuals=actuals)
         assert result[2026]['ModelA'] >= 42000  # Constrained up
         assert result[2026]['ModelB'] == 50000  # Within range, unchanged

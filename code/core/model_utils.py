@@ -5,7 +5,7 @@ Extracted from cve_adapter.py and cna_adapter.py to eliminate duplication.
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 
 def fix_hyperparameters(model_name: str, hyperparameters: Dict[str, Any]) -> Dict[str, Any]:
@@ -62,6 +62,7 @@ def fix_hyperparameters(model_name: str, hyperparameters: Dict[str, Any]) -> Dic
         # Fix season_mode: must be SeasonalityMode enum, not string
         if 'season_mode' in params:
             from darts.utils.utils import SeasonalityMode
+
             mode_str = str(params['season_mode']).lower()
             if mode_str in ['additive', 'add']:
                 params['season_mode'] = SeasonalityMode.ADDITIVE
@@ -79,8 +80,9 @@ def fix_hyperparameters(model_name: str, hyperparameters: Dict[str, Any]) -> Dic
     return params
 
 
-def create_model_safe(model_class, model_name: str, hyperparameters: Dict[str, Any],
-                      logger: Optional[logging.Logger] = None):
+def create_model_safe(
+    model_class, model_name: str, hyperparameters: Dict[str, Any], logger: Optional[logging.Logger] = None
+):
     """
     Safely create a model instance with parameter fixing and fallback.
 
@@ -104,7 +106,7 @@ def create_model_safe(model_class, model_name: str, hyperparameters: Dict[str, A
         return model_class(**fixed_params)
     except Exception as e:
         if logger:
-            logger.warning(f"Failed to create {model_name} with params, using defaults: {e}")
+            logger.warning(f'Failed to create {model_name} with params, using defaults: {e}')
         try:
             return model_class()
         except Exception:

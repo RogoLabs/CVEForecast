@@ -14,6 +14,12 @@ line-length = 120
 select = ["E", "F", "W", "I"]
 ignore = ["E501"]
 
+[tool.ruff.lint.per-file-ignores]
+# These files need sys.path manipulation before imports
+"code/run_production_forecast.py" = ["E402"]
+"code/run_unified_pipeline.py" = ["E402"]
+"code/tuner/comprehensive_tuner.py" = ["E402", "E722"]
+
 [tool.ruff.format]
 quote-style = "single"
 
