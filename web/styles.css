@@ -329,8 +329,11 @@ body {
 }
 
 /* --------------------------------------------------------------------------
-   Dark Mode: automatic via system preference
-   -------------------------------------------------------------------------- */
+   Dark Mode: Custom property overrides
+   --------------------------------------------------------------------------
+   These variables are used by our custom classes (.gradient-bg, .card-shadow,
+   .custom-table, etc.) and work automatically. */
+
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
         --color-bg: #111827;
@@ -368,9 +371,6 @@ body {
     }
 }
 
-/* --------------------------------------------------------------------------
-   Dark Mode: manual toggle
-   -------------------------------------------------------------------------- */
 [data-theme="dark"] {
     --color-bg: #111827;
     --color-surface: #1f2937;
@@ -404,4 +404,225 @@ body {
     --gradient-highlight-end: #374151;
     --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
     --shadow-content: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Dark Mode: Tailwind utility class overrides
+   --------------------------------------------------------------------------
+   Tailwind classes (bg-white, text-gray-900, etc.) are applied directly on
+   HTML elements and override our CSS custom properties. These rules force
+   dark colors when dark mode is active. Uses !important to beat Tailwind's
+   specificity since we can't use Tailwind's built-in dark: variant with the
+   CDN play version and data-theme attribute strategy. */
+
+/* --- Backgrounds --- */
+[data-theme="dark"] .bg-white {
+    background-color: #1f2937 !important;
+}
+[data-theme="dark"] .bg-gray-50 {
+    background-color: #1e293b !important;
+}
+[data-theme="dark"] .bg-gray-100 {
+    background-color: #111827 !important;
+}
+[data-theme="dark"] .bg-gray-200 {
+    background-color: #374151 !important;
+}
+[data-theme="dark"] .bg-gray-300 {
+    background-color: #4b5563 !important;
+}
+[data-theme="dark"] .bg-blue-50 {
+    background-color: #1e3a5f !important;
+}
+[data-theme="dark"] .bg-blue-100 {
+    background-color: #1e3a5f !important;
+}
+[data-theme="dark"] .bg-blue-500 {
+    background-color: #2563eb !important;
+}
+[data-theme="dark"] .bg-blue-600 {
+    background-color: #1d4ed8 !important;
+}
+[data-theme="dark"] .bg-blue-700 {
+    background-color: #1e40af !important;
+}
+[data-theme="dark"] .bg-gray-900 {
+    background-color: #030712 !important;
+}
+
+/* --- Text colors --- */
+[data-theme="dark"] .text-gray-500 {
+    color: #9ca3af !important;
+}
+[data-theme="dark"] .text-gray-600 {
+    color: #d1d5db !important;
+}
+[data-theme="dark"] .text-gray-700 {
+    color: #e5e7eb !important;
+}
+[data-theme="dark"] .text-gray-800 {
+    color: #f3f4f6 !important;
+}
+[data-theme="dark"] .text-gray-900 {
+    color: #f9fafb !important;
+}
+[data-theme="dark"] .text-blue-600 {
+    color: #60a5fa !important;
+}
+[data-theme="dark"] .text-blue-700 {
+    color: #93c5fd !important;
+}
+[data-theme="dark"] .text-blue-800 {
+    color: #93c5fd !important;
+}
+[data-theme="dark"] .text-blue-900 {
+    color: #bfdbfe !important;
+}
+[data-theme="dark"] .text-green-600 {
+    color: #34d399 !important;
+}
+[data-theme="dark"] .text-green-700 {
+    color: #6ee7b7 !important;
+}
+[data-theme="dark"] .text-green-800 {
+    color: #6ee7b7 !important;
+}
+[data-theme="dark"] .text-green-900 {
+    color: #a7f3d0 !important;
+}
+[data-theme="dark"] .text-red-500 {
+    color: #f87171 !important;
+}
+[data-theme="dark"] .text-red-600 {
+    color: #f87171 !important;
+}
+
+/* --- Borders --- */
+[data-theme="dark"] .border-gray-200 {
+    border-color: #374151 !important;
+}
+[data-theme="dark"] .border-gray-300 {
+    border-color: #4b5563 !important;
+}
+[data-theme="dark"] .border-gray-500 {
+    border-color: #6b7280 !important;
+}
+[data-theme="dark"] .border-gray-600 {
+    border-color: #6b7280 !important;
+}
+[data-theme="dark"] .border-blue-300 {
+    border-color: #1d4ed8 !important;
+}
+[data-theme="dark"] .border-blue-400 {
+    border-color: #2563eb !important;
+}
+[data-theme="dark"] .border-blue-500 {
+    border-color: #3b82f6 !important;
+}
+[data-theme="dark"] .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #374151 !important;
+}
+
+/* --- Form elements --- */
+[data-theme="dark"] select,
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="search"] {
+    background-color: #374151 !important;
+    color: #f9fafb !important;
+    border-color: #4b5563 !important;
+}
+
+/* --- Chart canvas container --- */
+[data-theme="dark"] canvas {
+    filter: none;
+}
+
+/* --- Hover states --- */
+[data-theme="dark"] .hover\:bg-blue-600:hover {
+    background-color: #1d4ed8 !important;
+}
+[data-theme="dark"] .hover\:bg-gray-50:hover {
+    background-color: #374151 !important;
+}
+
+/* --------------------------------------------------------------------------
+   Dark Mode: Tailwind overrides for @media prefers-color-scheme
+   -------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .bg-white {
+        background-color: #1f2937 !important;
+    }
+    :root:not([data-theme="light"]) .bg-gray-50 {
+        background-color: #1e293b !important;
+    }
+    :root:not([data-theme="light"]) .bg-gray-100 {
+        background-color: #111827 !important;
+    }
+    :root:not([data-theme="light"]) .bg-gray-200 {
+        background-color: #374151 !important;
+    }
+    :root:not([data-theme="light"]) .bg-gray-300 {
+        background-color: #4b5563 !important;
+    }
+    :root:not([data-theme="light"]) .bg-blue-50 {
+        background-color: #1e3a5f !important;
+    }
+    :root:not([data-theme="light"]) .bg-blue-100 {
+        background-color: #1e3a5f !important;
+    }
+    :root:not([data-theme="light"]) .text-gray-500 {
+        color: #9ca3af !important;
+    }
+    :root:not([data-theme="light"]) .text-gray-600 {
+        color: #d1d5db !important;
+    }
+    :root:not([data-theme="light"]) .text-gray-700 {
+        color: #e5e7eb !important;
+    }
+    :root:not([data-theme="light"]) .text-gray-800 {
+        color: #f3f4f6 !important;
+    }
+    :root:not([data-theme="light"]) .text-gray-900 {
+        color: #f9fafb !important;
+    }
+    :root:not([data-theme="light"]) .text-blue-600 {
+        color: #60a5fa !important;
+    }
+    :root:not([data-theme="light"]) .text-blue-700 {
+        color: #93c5fd !important;
+    }
+    :root:not([data-theme="light"]) .text-blue-800 {
+        color: #93c5fd !important;
+    }
+    :root:not([data-theme="light"]) .text-green-600 {
+        color: #34d399 !important;
+    }
+    :root:not([data-theme="light"]) .text-green-700 {
+        color: #6ee7b7 !important;
+    }
+    :root:not([data-theme="light"]) .text-green-800 {
+        color: #6ee7b7 !important;
+    }
+    :root:not([data-theme="light"]) .text-red-500 {
+        color: #f87171 !important;
+    }
+    :root:not([data-theme="light"]) .text-red-600 {
+        color: #f87171 !important;
+    }
+    :root:not([data-theme="light"]) .border-gray-200 {
+        border-color: #374151 !important;
+    }
+    :root:not([data-theme="light"]) .border-gray-300 {
+        border-color: #4b5563 !important;
+    }
+    :root:not([data-theme="light"]) .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+        border-color: #374151 !important;
+    }
+    :root:not([data-theme="light"]) select,
+    :root:not([data-theme="light"]) input[type="text"],
+    :root:not([data-theme="light"]) input[type="search"] {
+        background-color: #374151 !important;
+        color: #f9fafb !important;
+        border-color: #4b5563 !important;
+    }
 }
