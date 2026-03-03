@@ -1,7 +1,8 @@
 import json
 import logging
-from datetime import datetime
 from pathlib import Path
+
+from dateutil import parser as dateutil_parser
 import pandas as pd
 
 def load_cve_data(config: dict) -> pd.DataFrame:
@@ -58,7 +59,7 @@ def load_cve_data(config: dict) -> pd.DataFrame:
                 published_date_str = cve_metadata.get('datePublished')
                 if published_date_str:
                     try:
-                        dt_obj = datetime.fromisoformat(published_date_str.replace('Z', '+00:00'))
+                        dt_obj = dateutil_parser.isoparse(published_date_str)
                         cve_dates.append(dt_obj.date())
                     except ValueError:
                         logger.debug(f"Could not parse date '{published_date_str}' in {json_file.name}")

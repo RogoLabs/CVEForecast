@@ -4,7 +4,7 @@ Fetches official CNA list and extracts growth trends over time.
 """
 import requests
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Tuple
 import logging
 import json
@@ -41,7 +41,7 @@ class CNATrendData:
                     cache_data = json.load(f)
                     # Check if cache is less than 24 hours old
                     cache_time = datetime.fromisoformat(cache_data['timestamp'])
-                    if (datetime.now() - cache_time).total_seconds() < 86400:
+                    if (datetime.now(timezone.utc) - cache_time).total_seconds() < 86400:
                         self.logger.info("Using cached CNA list data")
                         self.cna_data = cache_data['data']
                         return self.cna_data
@@ -51,7 +51,7 @@ class CNATrendData:
         # Fetch from official source
         try:
             self.logger.info(f"Fetching CNA list from {self.OFFICIAL_CNA_LIST_URL}")
-            response = requests.get(self.OFFICIAL_CNA_LIST_URL, timeout=10)
+            response = requests.get(self.OFFICIAL_CNA_LIST_URL, timeout=30)
             response.raise_for_status()
             self.cna_data = response.json()
             
@@ -59,7 +59,7 @@ class CNATrendData:
             try:
                 with open(cache_path, 'w') as f:
                     json.dump({
-                        'timestamp': datetime.now().isoformat(),
+                        'timestamp': datetime.now(timezone.utc).isoformat(),
                         'data': self.cna_data
                     }, f)
                 self.logger.info(f"Cached CNA list data ({len(self.cna_data)} CNAs)")
