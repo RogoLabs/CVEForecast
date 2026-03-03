@@ -1,11 +1,12 @@
-import os
 import json
+import os
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
-from collections import Counter
+
 
 def extract_publish_dates(cve_dir):
-    json_files = list(Path(cve_dir).rglob("*.json"))
+    json_files = list(Path(cve_dir).rglob('*.json'))
     publish_dates = []
     for json_file in json_files:
         try:
@@ -29,6 +30,7 @@ def extract_publish_dates(cve_dir):
             continue
     return publish_dates
 
+
 def cumulative_counts_by_month(publish_dates):
     counts = Counter()
     for d in publish_dates:
@@ -46,14 +48,15 @@ def cumulative_counts_by_month(publish_dates):
         last_year = m.year
     return cumulative
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     cve_dir = os.path.join(os.path.dirname(__file__), '../cvelistV5/cves')
     publish_dates = extract_publish_dates(cve_dir)
     cumulative = cumulative_counts_by_month(publish_dates)
-    print(f"Total CVEs published: {len(publish_dates)}")
-    print("\nMonth-by-month counts for 2025:")
-    print("  Month     | Monthly | Cumulative")
-    print("------------|---------|-----------")
+    print(f'Total CVEs published: {len(publish_dates)}')
+    print('\nMonth-by-month counts for 2025:')
+    print('  Month     | Monthly | Cumulative')
+    print('------------|---------|-----------')
     for entry in cumulative:
         if entry['date'].startswith('2025-'):
-            print(f"{entry['date'][:7]}   | {entry['monthly_total']:7d} | {entry['cumulative_total']:10d}")
+            print(f'{entry["date"][:7]}   | {entry["monthly_total"]:7d} | {entry["cumulative_total"]:10d}')

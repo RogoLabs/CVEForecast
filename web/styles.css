@@ -1,0 +1,628 @@
+/* ==========================================================================
+   CVEForecast - Shared Styles
+   Extracted from index.html, cna_forecast.html, and technical_details.html
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   CSS Custom Properties (Design Tokens)
+   -------------------------------------------------------------------------- */
+:root {
+    --color-bg: #f3f4f6;
+    --color-surface: #ffffff;
+    --color-text: #1f2937;
+    --color-text-secondary: #475569;
+    --color-text-muted: #9ca3af;
+    --color-text-table: #334155;
+    --color-border: #e2e8f0;
+    --color-border-light: #e5e7eb;
+    --color-primary: #2563eb;
+    --color-primary-light: #dbeafe;
+    --color-primary-dark: #1e40af;
+    --color-accent: #60a5fa;
+    --color-row-even: #f8fafc;
+    --color-row-hover: #f1f5f9;
+    --color-collapsible-hover: #eff6ff;
+    --color-spinner-track: #f3f3f3;
+    --color-spinner-active: #3498db;
+    --color-tooltip-bg: #1f2937;
+    --color-tooltip-text: #ffffff;
+    --color-forecast: #dc2626;
+    --color-growth-positive: #dc2626;
+    --color-growth-negative: #059669;
+    --color-growth-neutral: #6b7280;
+    --color-summary-label: #374151;
+    --color-summary-value: #111827;
+    --gradient-start: #1f2937;
+    --gradient-mid: #374151;
+    --gradient-end: #111827;
+    --gradient-highlight-start: #f8fafc;
+    --gradient-highlight-end: #e2e8f0;
+    --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-content: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   Base Styles
+   -------------------------------------------------------------------------- */
+body {
+    font-family: var(--font-family);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+}
+
+/* --------------------------------------------------------------------------
+   Layout & Utility Classes
+   -------------------------------------------------------------------------- */
+.hidden-row {
+    display: none !important;
+}
+
+.gradient-bg {
+    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-mid) 50%, var(--gradient-end) 100%);
+}
+
+.rogo-blue {
+    color: var(--color-accent);
+}
+
+.rogo-dark {
+    color: var(--color-text);
+}
+
+.card-shadow {
+    box-shadow: var(--shadow-card);
+}
+
+.chart-container {
+    position: relative;
+    height: 400px;
+}
+
+/* --------------------------------------------------------------------------
+   Loading Spinner
+   -------------------------------------------------------------------------- */
+.loading-spinner {
+    border: 4px solid var(--color-spinner-track);
+    border-top: 4px solid var(--color-spinner-active);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 2s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------------------------
+   Metric Highlight
+   -------------------------------------------------------------------------- */
+.metric-highlight {
+    background: linear-gradient(135deg, var(--gradient-highlight-start) 0%, var(--gradient-highlight-end) 100%);
+    border-left: 4px solid var(--color-primary-dark);
+}
+
+/* --------------------------------------------------------------------------
+   Validation Row
+   -------------------------------------------------------------------------- */
+.validation-row:hover {
+    background-color: var(--color-row-hover);
+}
+
+/* --------------------------------------------------------------------------
+   Tooltip
+   -------------------------------------------------------------------------- */
+.tooltip {
+    position: relative;
+}
+
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-tooltip-bg);
+    color: var(--color-tooltip-text);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+}
+
+/* --------------------------------------------------------------------------
+   Metric Link
+   -------------------------------------------------------------------------- */
+.metric-link {
+    transition: color 0.2s ease-in-out;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+}
+
+.metric-link:hover {
+    color: var(--color-primary) !important;
+    text-decoration-style: solid;
+}
+
+/* --------------------------------------------------------------------------
+   Custom Table
+   -------------------------------------------------------------------------- */
+.custom-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.custom-table th,
+.custom-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+
+.custom-table thead {
+    background-color: var(--color-row-even);
+    border-bottom: 2px solid var(--color-border);
+}
+
+.custom-table th {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+}
+
+.custom-table tbody tr:nth-child(even) {
+    background-color: var(--color-row-even);
+}
+
+.custom-table tbody tr:hover {
+    background-color: var(--color-row-hover);
+}
+
+.custom-table td {
+    color: var(--color-text-table);
+}
+
+/* --------------------------------------------------------------------------
+   Collapsible Row
+   -------------------------------------------------------------------------- */
+.collapsible-row {
+    cursor: pointer;
+}
+
+.collapsible-row:hover {
+    background-color: var(--color-collapsible-hover);
+}
+
+/* --------------------------------------------------------------------------
+   Year Header & Nested Tables
+   -------------------------------------------------------------------------- */
+.year-header {
+    background-color: var(--color-row-even);
+}
+
+.nested-table-container {
+    padding: 0;
+    background-color: var(--color-row-even);
+}
+
+.nested-table {
+    width: 100%;
+    border-top: 1px solid var(--color-border);
+}
+
+.nested-table td {
+    padding-left: 2.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Content Section (technical_details.html)
+   -------------------------------------------------------------------------- */
+.content-section {
+    background-color: var(--color-surface);
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-content);
+    margin-bottom: 2rem;
+}
+
+/* --------------------------------------------------------------------------
+   Summary Card (cna_forecast.html)
+   -------------------------------------------------------------------------- */
+.summary-card {
+    background: var(--color-surface);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-card);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-label {
+    font-weight: 500;
+    color: var(--color-summary-label);
+}
+
+.summary-value {
+    font-weight: 600;
+    color: var(--color-summary-value);
+}
+
+/* --------------------------------------------------------------------------
+   Forecast & Growth Colors (cna_forecast.html)
+   -------------------------------------------------------------------------- */
+.forecast-value {
+    color: var(--color-forecast);
+}
+
+.growth-positive {
+    color: var(--color-growth-positive);
+}
+
+.growth-negative {
+    color: var(--color-growth-negative);
+}
+
+.growth-neutral {
+    color: var(--color-growth-neutral);
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: Visible Focus Indicators (WCAG AA)
+   -------------------------------------------------------------------------- */
+*:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: Screen Reader Only Utility
+   -------------------------------------------------------------------------- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: Tooltip focus styles
+   -------------------------------------------------------------------------- */
+.tooltip:focus::after,
+.tooltip:focus-within::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-tooltip-bg);
+    color: var(--color-tooltip-text);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+}
+
+/* --------------------------------------------------------------------------
+   Dark Mode: Custom property overrides
+   --------------------------------------------------------------------------
+   These variables are used by our custom classes (.gradient-bg, .card-shadow,
+   .custom-table, etc.) and work automatically. */
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --color-bg: #111827;
+        --color-surface: #1f2937;
+        --color-text: #f9fafb;
+        --color-text-secondary: #d1d5db;
+        --color-text-muted: #9ca3af;
+        --color-text-table: #e2e8f0;
+        --color-border: #374151;
+        --color-border-light: #4b5563;
+        --color-primary: #60a5fa;
+        --color-primary-light: #1e3a5f;
+        --color-primary-dark: #93c5fd;
+        --color-accent: #93c5fd;
+        --color-row-even: #1e293b;
+        --color-row-hover: #374151;
+        --color-collapsible-hover: #1e3a5f;
+        --color-spinner-track: #374151;
+        --color-spinner-active: #60a5fa;
+        --color-tooltip-bg: #f9fafb;
+        --color-tooltip-text: #1f2937;
+        --color-forecast: #f87171;
+        --color-growth-positive: #f87171;
+        --color-growth-negative: #34d399;
+        --color-growth-neutral: #9ca3af;
+        --color-summary-label: #d1d5db;
+        --color-summary-value: #f9fafb;
+        --gradient-start: #0f172a;
+        --gradient-mid: #1e293b;
+        --gradient-end: #020617;
+        --gradient-highlight-start: #1e293b;
+        --gradient-highlight-end: #374151;
+        --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+        --shadow-content: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+}
+
+[data-theme="dark"] {
+    --color-bg: #111827;
+    --color-surface: #1f2937;
+    --color-text: #f9fafb;
+    --color-text-secondary: #d1d5db;
+    --color-text-muted: #9ca3af;
+    --color-text-table: #e2e8f0;
+    --color-border: #374151;
+    --color-border-light: #4b5563;
+    --color-primary: #60a5fa;
+    --color-primary-light: #1e3a5f;
+    --color-primary-dark: #93c5fd;
+    --color-accent: #93c5fd;
+    --color-row-even: #1e293b;
+    --color-row-hover: #374151;
+    --color-collapsible-hover: #1e3a5f;
+    --color-spinner-track: #374151;
+    --color-spinner-active: #60a5fa;
+    --color-tooltip-bg: #f9fafb;
+    --color-tooltip-text: #1f2937;
+    --color-forecast: #f87171;
+    --color-growth-positive: #f87171;
+    --color-growth-negative: #34d399;
+    --color-growth-neutral: #9ca3af;
+    --color-summary-label: #d1d5db;
+    --color-summary-value: #f9fafb;
+    --gradient-start: #0f172a;
+    --gradient-mid: #1e293b;
+    --gradient-end: #020617;
+    --gradient-highlight-start: #1e293b;
+    --gradient-highlight-end: #374151;
+    --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    --shadow-content: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Dark Mode: Tailwind utility class overrides
+   --------------------------------------------------------------------------
+   Tailwind classes (bg-white, text-gray-900, etc.) are applied directly on
+   HTML elements and override our CSS custom properties. These rules force
+   dark colors when dark mode is active. Uses !important to beat Tailwind's
+   specificity since we can't use Tailwind's built-in dark: variant with the
+   CDN play version and data-theme attribute strategy. */
+
+/* --- Backgrounds --- */
+[data-theme="dark"] .bg-white {
+    background-color: #1f2937 !important;
+}
+[data-theme="dark"] .bg-gray-50 {
+    background-color: #1e293b !important;
+}
+[data-theme="dark"] .bg-gray-100 {
+    background-color: #111827 !important;
+}
+[data-theme="dark"] .bg-gray-200 {
+    background-color: #374151 !important;
+}
+[data-theme="dark"] .bg-gray-300 {
+    background-color: #4b5563 !important;
+}
+[data-theme="dark"] .bg-blue-50 {
+    background-color: #1e3a5f !important;
+}
+[data-theme="dark"] .bg-blue-100 {
+    background-color: #1e3a5f !important;
+}
+[data-theme="dark"] .bg-blue-500 {
+    background-color: #2563eb !important;
+}
+[data-theme="dark"] .bg-blue-600 {
+    background-color: #1d4ed8 !important;
+}
+[data-theme="dark"] .bg-blue-700 {
+    background-color: #1e40af !important;
+}
+[data-theme="dark"] .bg-gray-900 {
+    background-color: #030712 !important;
+}
+
+/* --- Text colors --- */
+[data-theme="dark"] .text-gray-500 {
+    color: #9ca3af !important;
+}
+[data-theme="dark"] .text-gray-600 {
+    color: #d1d5db !important;
+}
+[data-theme="dark"] .text-gray-700 {
+    color: #e5e7eb !important;
+}
+[data-theme="dark"] .text-gray-800 {
+    color: #f3f4f6 !important;
+}
+[data-theme="dark"] .text-gray-900 {
+    color: #f9fafb !important;
+}
+[data-theme="dark"] .text-blue-600 {
+    color: #60a5fa !important;
+}
+[data-theme="dark"] .text-blue-700 {
+    color: #93c5fd !important;
+}
+[data-theme="dark"] .text-blue-800 {
+    color: #93c5fd !important;
+}
+[data-theme="dark"] .text-blue-900 {
+    color: #bfdbfe !important;
+}
+[data-theme="dark"] .text-green-600 {
+    color: #34d399 !important;
+}
+[data-theme="dark"] .text-green-700 {
+    color: #6ee7b7 !important;
+}
+[data-theme="dark"] .text-green-800 {
+    color: #6ee7b7 !important;
+}
+[data-theme="dark"] .text-green-900 {
+    color: #a7f3d0 !important;
+}
+[data-theme="dark"] .text-red-500 {
+    color: #f87171 !important;
+}
+[data-theme="dark"] .text-red-600 {
+    color: #f87171 !important;
+}
+
+/* --- Borders --- */
+[data-theme="dark"] .border-gray-200 {
+    border-color: #374151 !important;
+}
+[data-theme="dark"] .border-gray-300 {
+    border-color: #4b5563 !important;
+}
+[data-theme="dark"] .border-gray-500 {
+    border-color: #6b7280 !important;
+}
+[data-theme="dark"] .border-gray-600 {
+    border-color: #6b7280 !important;
+}
+[data-theme="dark"] .border-blue-300 {
+    border-color: #1d4ed8 !important;
+}
+[data-theme="dark"] .border-blue-400 {
+    border-color: #2563eb !important;
+}
+[data-theme="dark"] .border-blue-500 {
+    border-color: #3b82f6 !important;
+}
+[data-theme="dark"] .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #374151 !important;
+}
+
+/* --- Form elements --- */
+[data-theme="dark"] select,
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="search"] {
+    background-color: #374151 !important;
+    color: #f9fafb !important;
+    border-color: #4b5563 !important;
+}
+
+/* --- Chart canvas container --- */
+[data-theme="dark"] canvas {
+    filter: none;
+}
+
+/* --- Hover states --- */
+[data-theme="dark"] .hover\:bg-blue-600:hover {
+    background-color: #1d4ed8 !important;
+}
+[data-theme="dark"] .hover\:bg-gray-50:hover {
+    background-color: #374151 !important;
+}
+
+/* --------------------------------------------------------------------------
+   Dark Mode: Tailwind overrides for @media prefers-color-scheme
+   -------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .bg-white {
+        background-color: #1f2937 !important;
+    }
+    :root:not([data-theme="light"]) .bg-gray-50 {
+        background-color: #1e293b !important;
+    }
+    :root:not([data-theme="light"]) .bg-gray-100 {
+        background-color: #111827 !important;
+    }
+    :root:not([data-theme="light"]) .bg-gray-200 {
+        background-color: #374151 !important;
+    }
+    :root:not([data-theme="light"]) .bg-gray-300 {
+        background-color: #4b5563 !important;
+    }
+    :root:not([data-theme="light"]) .bg-blue-50 {
+        background-color: #1e3a5f !important;
+    }
+    :root:not([data-theme="light"]) .bg-blue-100 {
+        background-color: #1e3a5f !important;
+    }
+    :root:not([data-theme="light"]) .text-gray-500 {
+        color: #9ca3af !important;
+    }
+    :root:not([data-theme="light"]) .text-gray-600 {
+        color: #d1d5db !important;
+    }
+    :root:not([data-theme="light"]) .text-gray-700 {
+        color: #e5e7eb !important;
+    }
+    :root:not([data-theme="light"]) .text-gray-800 {
+        color: #f3f4f6 !important;
+    }
+    :root:not([data-theme="light"]) .text-gray-900 {
+        color: #f9fafb !important;
+    }
+    :root:not([data-theme="light"]) .text-blue-600 {
+        color: #60a5fa !important;
+    }
+    :root:not([data-theme="light"]) .text-blue-700 {
+        color: #93c5fd !important;
+    }
+    :root:not([data-theme="light"]) .text-blue-800 {
+        color: #93c5fd !important;
+    }
+    :root:not([data-theme="light"]) .text-green-600 {
+        color: #34d399 !important;
+    }
+    :root:not([data-theme="light"]) .text-green-700 {
+        color: #6ee7b7 !important;
+    }
+    :root:not([data-theme="light"]) .text-green-800 {
+        color: #6ee7b7 !important;
+    }
+    :root:not([data-theme="light"]) .text-red-500 {
+        color: #f87171 !important;
+    }
+    :root:not([data-theme="light"]) .text-red-600 {
+        color: #f87171 !important;
+    }
+    :root:not([data-theme="light"]) .border-gray-200 {
+        border-color: #374151 !important;
+    }
+    :root:not([data-theme="light"]) .border-gray-300 {
+        border-color: #4b5563 !important;
+    }
+    :root:not([data-theme="light"]) .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+        border-color: #374151 !important;
+    }
+    :root:not([data-theme="light"]) select,
+    :root:not([data-theme="light"]) input[type="text"],
+    :root:not([data-theme="light"]) input[type="search"] {
+        background-color: #374151 !important;
+        color: #f9fafb !important;
+        border-color: #4b5563 !important;
+    }
+}

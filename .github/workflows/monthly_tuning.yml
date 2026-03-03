@@ -52,26 +52,7 @@ jobs:
         ls -la cvelistV5/
 
     - name: Normalize tuner file paths
-      run: |
-        python - <<'PY'
-        import json
-        import os
-        import pathlib
-
-        cfg_path = pathlib.Path("code/tuner/tuner_config.json")
-        data = json.loads(cfg_path.read_text())
-        workspace = pathlib.Path(os.environ["GITHUB_WORKSPACE"])
-
-        updated = False
-        for key, rel in data.get("file_paths", {}).items():
-            abs_path = (workspace / rel).resolve()
-            if data["file_paths"][key] != str(abs_path):
-                data["file_paths"][key] = str(abs_path)
-                updated = True
-
-        if updated:
-            cfg_path.write_text(json.dumps(data, indent=2))
-        PY
+      run: python code/scripts/normalize_tuner_paths.py
       env:
         GITHUB_WORKSPACE: ${{ github.workspace }}
     
@@ -104,44 +85,7 @@ jobs:
     
     - name: Generate tuning report
       if: always()
-      run: |
-        python - <<'PY'
-        import datetime as dt
-        import json
-        import os
-        import pathlib
-
-        workspace = pathlib.Path(os.environ["GITHUB_WORKSPACE"])
-        logs_dir = workspace / "code" / "tuner" / "logs"
-        logs_dir.mkdir(parents=True, exist_ok=True)
-
-        status = os.environ["JOB_STATUS"]
-        now = dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-
-        summary_lines = [
-            "# Hyperparameter Tuning Summary",
-            "",
-            f"**Date:** {now}",
-            f"**Status:** {status}",
-            ""
-        ]
-
-        config_path = workspace / "code" / "config.json"
-        if config_path.exists():
-            data = json.loads(config_path.read_text())
-            models = sorted(data.get("models", {}).keys())
-            summary_lines.append("## Models in config.json")
-            summary_lines.extend([f"- {model}" for model in models])
-            summary_lines.append("")
-
-        (workspace / "tuning_summary.md").write_text("\n".join(summary_lines))
-
-        status_payload = {
-            "status": status,
-            "generated_at": dt.datetime.utcnow().isoformat() + "Z"
-        }
-        (workspace / "tuning_status.json").write_text(json.dumps(status_payload, indent=2))
-        PY
+      run: python code/scripts/generate_tuning_report.py
       env:
         GITHUB_WORKSPACE: ${{ github.workspace }}
         JOB_STATUS: ${{ job.status }}

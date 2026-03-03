@@ -12,28 +12,21 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVE Forecast v0.10 "Phoenix" - Technical Details</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f3f4f6;
-        }
-        .content-section {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-        .gradient-bg {
-            background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #111827 100%);
-        }
-        .rogo-blue {
-            color: #60a5fa;
-        }
-    </style>
+    <title>Technical Details - CVEForecast</title>
+    <meta name="description" content="Technical documentation for CVEForecast including architecture, forecasting models, validation methodology, and deployment.">
+    <meta property="og:title" content="Technical Details - CVEForecast">
+    <meta property="og:description" content="Architecture, models, and methodology behind CVEForecast predictions.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://cveforecast.org/technical_details.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://cveforecast.org/technical_details.html">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body class="font-sans text-gray-800">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50">Skip to main content</a>
+
     <header class="gradient-bg text-white shadow-lg">
         <div class="container mx-auto px-6 py-4">
             <div class="flex justify-between items-end">
@@ -41,17 +34,25 @@
                     <h1 class="text-3xl font-bold">
                         <span class="text-white">CVE</span><span class="rogo-blue">Forecast</span>
                     </h1>
-                    <p class="text-gray-300 mt-1">Technical Details - v0.10 "Phoenix" 🔥🐦</p>
+                    <p class="text-gray-300 mt-1">Technical Details - v0.11 "Galway" 🇮🇪</p>
                 </div>
-                <nav class="space-x-4">
+                <nav aria-label="Main navigation" class="flex items-center space-x-4">
                     <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
                     <a href="cna_forecast.html" class="text-gray-300 hover:text-white transition-colors">CNA Forecasts</a>
+                    <button id="themeToggle" aria-label="Toggle dark mode" class="text-gray-300 hover:text-white transition-colors p-2 rounded">
+                        <svg id="themeSun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        <svg id="themeMoon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                    </button>
                 </nav>
             </div>
         </div>
     </header>
 
-    <main class="container mx-auto px-6 py-8">
+    <main id="main-content" class="container mx-auto px-6 py-8">
         <div class="content-section">
             <h2 class="text-2xl font-bold mb-4">Project Overview</h2>
             <p class="mb-4">CVE Forecast is a sophisticated, self-improving automated platform that leverages advanced hyperparameter optimization and multiple time series forecasting models to predict the number of Common Vulnerabilities and Exposures (CVEs). It provides a comprehensive, data-driven view of future trends in vulnerability disclosures, all accessible through a sleek, interactive web dashboard.</p>
@@ -218,11 +219,55 @@
         <div class="content-section">
             <h2 class="text-2xl font-bold mb-4">Release History</h2>
             <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-300 shadow-md">
-                <h3 class="font-bold text-blue-800 text-lg mb-2">🔥🐦 v0.10 - Phoenix 🔥🐦 (October 2025)</h3>
-                <p class="text-blue-700 font-medium mb-3">🎆 Complete Architectural Rebirth - Production-ready unified pipeline with historical validation and accuracy tracking</p>
+                <h3 class="font-bold text-blue-800 text-lg mb-2">🇮🇪 v0.11 - Galway 🇮🇪 (March 2026)</h3>
+                <p class="text-blue-700 font-medium mb-3">Comprehensive Spring Cleaning - Code quality, web overhaul, CI/CD hardening, and accessibility</p>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">✨ Major Features</h4>
+                    <h4 class="font-semibold text-blue-800 mb-2">Code Quality</h4>
                     <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                        <li><strong>Shared Model Utilities:</strong> Extracted duplicated parameter-fixing logic from CVE/CNA adapters into <code>core/model_utils.py</code></li>
+                        <li><strong>Constraint Integration:</strong> Completed the forecast constraint pipeline — growth floors, trend adjustments, and YTD floors now actively applied</li>
+                        <li><strong>Date Handling:</strong> Standardized on <code>dateutil.parser.isoparse</code> across the codebase, replacing manual timezone hacks</li>
+                        <li><strong>Logging:</strong> Added <code>RotatingFileHandler</code> with 10MB limit and 3 backups, request timeouts on external HTTP calls</li>
+                        <li><strong>Ruff:</strong> Full codebase formatted and linted with ruff — enforced via CI</li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-blue-800 mb-2">Web Dashboard</h4>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                        <li><strong>Dark Mode:</strong> System preference detection with manual toggle, persisted in localStorage</li>
+                        <li><strong>Accessibility (WCAG AA):</strong> ARIA labels on all interactive elements, keyboard navigation, focus indicators, skip-to-content links</li>
+                        <li><strong>SEO:</strong> Meta descriptions, Open Graph tags, Twitter Cards, canonical URLs on all pages</li>
+                        <li><strong>Shared CSS:</strong> Extracted duplicated styles from 3 HTML files into <code>styles.css</code> with CSS custom properties for theming</li>
+                        <li><strong>Tailwind v3:</strong> Upgraded from Tailwind CSS 2.2.19 to v3 CDN play version</li>
+                        <li><strong>JavaScript:</strong> Deferred script loading, chart update pattern (no more destroy/recreate), named constants</li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-blue-800 mb-2">CI/CD &amp; Testing</h4>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                        <li><strong>Test Workflow:</strong> Automated pytest on pull requests and pushes to main</li>
+                        <li><strong>Lint Workflow:</strong> Ruff format and lint checks on pull requests</li>
+                        <li><strong>Dependabot:</strong> Weekly dependency updates for pip packages and GitHub Actions</li>
+                        <li><strong>Data Validation:</strong> JSON schema validation of forecast data before deployment</li>
+                        <li><strong>Unit Tests:</strong> 20 tests covering model utilities and forecast constraints</li>
+                        <li><strong>Extracted Scripts:</strong> Moved inline Python from workflows to <code>code/scripts/</code></li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-blue-800 mb-2">Repository Cleanup</h4>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                        <li><strong>Removed 60+ files:</strong> Empty scripts, old tuner logs/backups, unused web files, obsolete v.10 documentation</li>
+                        <li><strong>Updated documentation:</strong> Architecture, deployment, development, and API reference guides refreshed for v0.11</li>
+                        <li><strong>pyproject.toml:</strong> Centralized ruff and pytest configuration</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="font-semibold text-gray-800 text-lg mb-2">🔥🐦 v0.10 - Phoenix 🔥🐦 (October 2025)</h3>
+                <p class="text-gray-700 font-medium mb-3">Complete Architectural Rebirth - Production-ready unified pipeline with historical validation and accuracy tracking</p>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-gray-800 mb-2">✨ Major Features</h4>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
                         <li><strong>Unified Pipeline:</strong> Single command (run_production_forecast.py) for CVE + CNA forecasting</li>
                         <li><strong>Historical Backtest:</strong> Real-world validation on 2025 data (Jan-Sep) with actual vs. predicted comparisons</li>
                         <li><strong>Forecast Tracking:</strong> ForecastTracker accumulates prediction snapshots for long-term accuracy analysis</li>
@@ -231,8 +276,8 @@
                     </ul>
                 </div>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">🏗️ Architecture Improvements</h4>
-                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                    <h4 class="font-semibold text-gray-800 mb-2">🏗️ Architecture Improvements</h4>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
                         <li><strong>Modular Design:</strong> BaseForecaster, ValidationMixin, CVEForecaster, CNAForecaster adapters</li>
                         <li><strong>Clean Separation:</strong> Data loading, training, forecasting, and validation in separate modules</li>
                         <li><strong>Extensible Framework:</strong> Easy to add new models, data sources, or validation strategies</li>
@@ -240,8 +285,8 @@
                     </ul>
                 </div>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">🔄 Automated Workflows</h4>
-                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                    <h4 class="font-semibold text-gray-800 mb-2">🔄 Automated Workflows</h4>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
                         <li><strong>Daily Forecast:</strong> Midnight UTC execution with automatic deployment to GitHub Pages</li>
                         <li><strong>Monthly Tuning:</strong> 1st of each month hyperparameter optimization with config updates</li>
                         <li><strong>Zero Downtime:</strong> Continuous deployment with automatic rollback on failure</li>
@@ -249,8 +294,8 @@
                     </ul>
                 </div>
                 <div class="mt-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">📚 Documentation</h4>
-                    <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                    <h4 class="font-semibold text-gray-800 mb-2">📚 Documentation</h4>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
                         <li><strong>Architecture Guide:</strong> System design, components, and data flow</li>
                         <li><strong>API Reference:</strong> Classes, methods, and configuration options</li>
                         <li><strong>Deployment Guide:</strong> GitHub Actions, hosting, and CI/CD</li>
@@ -403,10 +448,48 @@
             <p class="text-gray-300 text-sm mt-2">Powered by time series forecasting models using the <a href="https://unit8co.github.io/darts/" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">Darts library</a></p>
             <div class="mt-4 pt-4 border-t border-gray-600">
                 <div class="mt-2">
-                    <span class="inline-block bg-red-600 text-white text-xs px-2 py-1 rounded-full font-mono">v0.10 Phoenix 🔥🐦</span>
+                    <span class="inline-block bg-green-600 text-white text-xs px-2 py-1 rounded-full font-mono">v0.11 Galway 🇮🇪</span>
                 </div>
             </div>
         </div>
     </footer>
+
+    <script>
+    // Theme toggle with localStorage persistence
+    (function initTheme() {
+        const toggle = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('themeSun');
+        const moonIcon = document.getElementById('themeMoon');
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                if (sunIcon) sunIcon.classList.remove('hidden');
+                if (moonIcon) moonIcon.classList.add('hidden');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                if (sunIcon) sunIcon.classList.add('hidden');
+                if (moonIcon) moonIcon.classList.remove('hidden');
+            }
+        }
+
+        // Check saved preference, then system preference
+        const saved = localStorage.getItem('theme');
+        if (saved) {
+            applyTheme(saved);
+        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            applyTheme('dark');
+        }
+
+        if (toggle) {
+            toggle.addEventListener('click', function() {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const newTheme = isDark ? 'light' : 'dark';
+                applyTheme(newTheme);
+                localStorage.setItem('theme', newTheme);
+            });
+        }
+    })();
+    </script>
 </body>
 </html>

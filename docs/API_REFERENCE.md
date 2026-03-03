@@ -1,7 +1,7 @@
 # CVE Forecast API Reference
 
-**Version**: 0.10 "Phoenix" 🔥🐦  
-**Last Updated**: October 2025
+**Version**: 0.11 "Phoenix" 🔥🐦
+**Last Updated**: March 2026
 
 ## Table of Contents
 - [Core Classes](#core-classes)
@@ -389,6 +389,107 @@ class ForecastTracker:
                     "stable": int
                 }
             }
+        """
+        pass
+```
+
+### Model Utilities (`core.model_utils`)
+
+Shared utilities for parameter fixing and safe model creation, extracted from
+adapters to eliminate duplication.
+
+```python
+from core.model_utils import fix_hyperparameters, create_model_safe
+
+def fix_hyperparameters(model_name: str, hyperparameters: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Fix known hyperparameter compatibility issues for Darts models.
+
+    Returns a new dict with corrected parameters (never modifies the original).
+
+    Handles:
+        - ExponentialSmoothing: damped_trend -> damping_trend conversion,
+          removal of unsupported initialization_method and missing params
+        - Theta/FourTheta: season_mode string -> SeasonalityMode enum
+        - LinearRegression: clamp output_chunk_shift to 0 if > 0
+
+    Args:
+        model_name: Name of the model (e.g., "ExponentialSmoothing", "Theta")
+        hyperparameters: Original hyperparameters dict
+
+    Returns:
+        New dict with fixed hyperparameters
+    """
+    pass
+
+
+def create_model_safe(model_class, model_name: str, hyperparameters: Dict[str, Any],
+                      logger: logging.Logger):
+    """
+    Safely create a Darts model instance with fallback.
+
+    Attempts to create a model with the given hyperparameters.
+    If creation fails, retries with an empty parameter set as a fallback.
+
+    Args:
+        model_class: The Darts model class to instantiate
+        model_name: Name of the model (for logging)
+        hyperparameters: Model-specific hyperparameters
+        logger: Logger instance
+
+    Returns:
+        Configured model instance, or None if both attempts fail
+    """
+    pass
+```
+
+### ForecastConstraints
+
+Enforces domain-specific constraints on forecast outputs.
+
+```python
+from forecast_constraints import ForecastConstraints
+
+class ForecastConstraints:
+    """
+    Apply growth floor and trend constraints to yearly forecast totals.
+
+    Attributes:
+        min_growth_rate (float): Minimum allowed year-over-year growth
+        max_growth_rate (float): Maximum allowed year-over-year growth
+        enable_floor (bool): Whether growth floor is active
+        enable_trend (bool): Whether trend constraint is active
+    """
+
+    def apply_constraints(self, yearly_totals: Dict[int, Dict[str, int]],
+                         ytd_growth: Optional[float] = None,
+                         previous_year_actuals: Optional[Dict[int, int]] = None
+                         ) -> Dict[int, Dict[str, int]]:
+        """
+        Apply all constraints to yearly forecast totals.
+
+        Args:
+            yearly_totals: Dictionary of {year: {model_name: total}}
+            ytd_growth: Year-to-date growth rate (optional, for trend adjustment)
+            previous_year_actuals: Actual yearly CVE totals from historical data,
+                                  used as baseline when prior year is not in
+                                  yearly_totals (e.g., {2024: 39941, 2023: 34700})
+
+        Returns:
+            Constrained yearly totals with the same structure
+        """
+        pass
+
+    def apply_growth_floor(self, forecast: int, previous_year: int) -> int:
+        """
+        Ensure forecast meets minimum growth rate relative to previous year.
+
+        Args:
+            forecast: Forecasted yearly total
+            previous_year: Previous year's actual total
+
+        Returns:
+            Adjusted forecast (>= previous_year * (1 + min_growth_rate))
         """
         pass
 ```

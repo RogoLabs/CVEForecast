@@ -3,6 +3,47 @@
  * Handles data loading, visualization, and user interactions.
  */
 
+// Theme toggle with localStorage persistence
+(function initTheme() {
+    const toggle = document.getElementById('themeToggle');
+    const sunIcon = document.getElementById('themeSun');
+    const moonIcon = document.getElementById('themeMoon');
+
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            if (sunIcon) sunIcon.classList.remove('hidden');
+            if (moonIcon) moonIcon.classList.add('hidden');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            if (sunIcon) sunIcon.classList.add('hidden');
+            if (moonIcon) moonIcon.classList.remove('hidden');
+        }
+    }
+
+    // Check saved preference, then system preference
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+        applyTheme(saved);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        applyTheme('dark');
+    }
+
+    if (toggle) {
+        toggle.addEventListener('click', function() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            applyTheme(newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+    }
+})();
+
+// Constants
+const TOP_MODELS_COUNT = 5;
+const CHART_ANIMATION_DURATION = 750;
+const CACHE_BUSTER = new Date().getTime();
+
 // Global state variables
 let forecastData = null;
 let modelInfoData = null;
@@ -19,8 +60,8 @@ async function loadForecastData() {
     console.log('🔄 Loading application data...');
     try {
         const [forecastResponse, modelInfoResponse] = await Promise.all([
-            fetch('data.json?v=' + new Date().getTime()), // Cache-busting for forecast data
-            fetch('model_info.json?v=' + new Date().getTime()) // Cache-busting for model info
+            fetch('data.json?v=' + CACHE_BUSTER), // Cache-busting for forecast data
+            fetch('model_info.json?v=' + CACHE_BUSTER) // Cache-busting for model info
         ]);
 
         if (!forecastResponse.ok) {
@@ -173,8 +214,8 @@ function populateModelSelector() {
     if (!selector) return;
     selector.innerHTML = '';
     
-    // Get the top 5 models from the rankings
-    const topModels = forecastData.model_rankings?.slice(0, 5) || [];
+    // Get the top models from the rankings
+    const topModels = forecastData.model_rankings?.slice(0, TOP_MODELS_COUNT) || [];
 
     topModels.forEach(model => {
         const option = document.createElement('option');
@@ -423,14 +464,16 @@ function createOrUpdateChart() {
     const chartOptions = getChartOptions();
 
     if (chartInstance) {
-        chartInstance.destroy();
+        chartInstance.data = chartData;
+        chartInstance.options = chartOptions;
+        chartInstance.update('none'); // 'none' = no animation on update
+    } else {
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: chartData,
+            options: chartOptions,
+        });
     }
-
-    chartInstance = new Chart(ctx, {
-        type: 'line',
-        data: chartData,
-        options: chartOptions,
-    });
 }
 
 /**
@@ -487,7 +530,7 @@ function prepareChartData() {
         return `rgb(${result.join(', ')})`;
     };
 
-    const topFiveModels = model_rankings.filter(m => cumulative_timelines[m.model_name + '_cumulative']).slice(0, 5);
+    const topFiveModels = model_rankings.filter(m => cumulative_timelines[m.model_name + '_cumulative']).slice(0, TOP_MODELS_COUNT);
 
     topFiveModels.forEach((model, index) => {
         const modelKey = `${model.model_name}_cumulative`;

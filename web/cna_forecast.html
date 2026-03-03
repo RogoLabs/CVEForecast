@@ -13,112 +13,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CNA Forecasts - CVEForecast</title>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-    .gradient-bg {
-      background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #111827 100%);
-    }
-    .rogo-blue {
-      color: #60a5fa;
-    }
-    .rogo-dark {
-      color: #1f2937;
-    }
-    .card-shadow {
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-    .chart-container {
-      position: relative;
-      height: 400px;
-    }
-    .summary-card {
-      background: white;
-      border-radius: 8px;
-      padding: 1.5rem;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-    .summary-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    .summary-item:last-child {
-      border-bottom: none;
-    }
-    .summary-label {
-      font-weight: 500;
-      color: #374151;
-    }
-    .summary-value {
-      font-weight: 600;
-      color: #111827;
-    }
-    .forecast-value {
-      color: #dc2626;
-    }
-    .growth-positive {
-      color: #dc2626;
-    }
-    .growth-negative {
-      color: #059669;
-    }
-    .growth-neutral {
-      color: #6b7280;
-    }
-    .metric-highlight {
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      border-left: 4px solid #1e40af;
-    }
-    .custom-table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 0.9rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
-      overflow: hidden;
-    }
-    .custom-table th,
-    .custom-table td {
-      padding: 0.75rem 1rem;
-      text-align: left;
-    }
-    .custom-table thead {
-      background-color: #f8fafc;
-      border-bottom: 2px solid #e2e8f0;
-    }
-    .custom-table th {
-      font-weight: 600;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      font-size: 0.75rem;
-    }
-    .custom-table tbody tr:nth-child(even) {
-      background-color: #f8fafc;
-    }
-    .custom-table tbody tr:hover {
-      background-color: #f1f5f9;
-    }
-    .custom-table td {
-      color: #334155;
-    }
-  </style>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta name="description" content="Individual CVE publication forecasts for 120+ CVE Numbering Authorities (CNAs) with per-organization model selection.">
+  <meta property="og:title" content="CNA Forecasts - CVEForecast">
+  <meta property="og:description" content="Individual CVE forecasts for 120+ CVE Numbering Authorities.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cveforecast.org/cna_forecast.html">
+  <meta name="twitter:card" content="summary">
+  <link rel="canonical" href="https://cveforecast.org/cna_forecast.html">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-  <script src="cna.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="cna.js" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50">Skip to main content</a>
+
   <!-- Header -->
   <header class="gradient-bg text-white shadow-lg">
     <div class="container mx-auto px-6 py-4">
@@ -127,15 +41,23 @@
           <h1 class="text-3xl font-bold">CVE<span class="rogo-blue">Forecast</span></h1>
           <p class="text-blue-100 mt-1">Predictive Analytics for CVE Publications</p>
         </div>
-        <nav>
-          <a href="index.html" class="text-gray-300 hover:text-white transition-colors mr-6">Home</a>
+        <nav aria-label="Main navigation" class="flex items-center space-x-4">
+          <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
           <a href="technical_details.html" class="text-gray-300 hover:text-white transition-colors">Technical Details</a>
+          <button id="themeToggle" aria-label="Toggle dark mode" class="text-gray-300 hover:text-white transition-colors p-2 rounded">
+              <svg id="themeSun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+              </svg>
+              <svg id="themeMoon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+              </svg>
+          </button>
         </nav>
       </div>
     </div>
   </header>
 
-  <main class="container mx-auto px-6 py-8">
+  <main id="main-content" class="container mx-auto px-6 py-8">
     <!-- CNA Table Section -->
     <div class="bg-white rounded-lg card-shadow p-6 mb-6">
       <div class="flex justify-between items-center mb-6">
@@ -145,8 +67,8 @@
         </div>
         <div class="flex items-center space-x-4">
           <div class="flex items-center space-x-2">
-            <label class="text-sm font-medium text-gray-700">Show:</label>
-            <select id="tablePageSize" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
+            <label for="tablePageSize" class="text-sm font-medium text-gray-700">Show:</label>
+            <select id="tablePageSize" aria-label="Rows per page" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
               <option value="10" selected>10</option>
               <option value="25">25</option>
               <option value="50">50</option>
@@ -154,7 +76,8 @@
             </select>
           </div>
           <div>
-            <input id="tableSearch" type="text" placeholder="Search CNAs..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-48" />
+            <label for="tableSearch" class="sr-only">Search CNAs</label>
+            <input id="tableSearch" type="text" aria-label="Search CNAs" placeholder="Search CNAs..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-48" />
           </div>
         </div>
       </div>
