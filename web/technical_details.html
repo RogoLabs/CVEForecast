@@ -34,7 +34,7 @@
                     <h1 class="text-3xl font-bold">
                         <span class="text-white">CVE</span><span class="rogo-blue">Forecast</span>
                     </h1>
-                    <p class="text-gray-300 mt-1">Technical Details - v0.10 "Phoenix" 🔥🐦</p>
+                    <p class="text-gray-300 mt-1">Technical Details - v0.11 "Galway" 🇮🇪</p>
                 </div>
                 <nav aria-label="Main navigation" class="flex items-center space-x-4">
                     <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
@@ -218,9 +218,53 @@
 
         <div class="content-section">
             <h2 class="text-2xl font-bold mb-4">Release History</h2>
+            <div class="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-300 shadow-md">
+                <h3 class="font-bold text-green-800 text-lg mb-2">🇮🇪 v0.11 - Galway 🇮🇪 (March 2026)</h3>
+                <p class="text-green-700 font-medium mb-3">Comprehensive Spring Cleaning - Code quality, web overhaul, CI/CD hardening, and accessibility</p>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-green-800 mb-2">Code Quality</h4>
+                    <ul class="list-disc list-inside space-y-1 text-green-700 text-sm">
+                        <li><strong>Shared Model Utilities:</strong> Extracted duplicated parameter-fixing logic from CVE/CNA adapters into <code>core/model_utils.py</code></li>
+                        <li><strong>Constraint Integration:</strong> Completed the forecast constraint pipeline — growth floors, trend adjustments, and YTD floors now actively applied</li>
+                        <li><strong>Date Handling:</strong> Standardized on <code>dateutil.parser.isoparse</code> across the codebase, replacing manual timezone hacks</li>
+                        <li><strong>Logging:</strong> Added <code>RotatingFileHandler</code> with 10MB limit and 3 backups, request timeouts on external HTTP calls</li>
+                        <li><strong>Ruff:</strong> Full codebase formatted and linted with ruff — enforced via CI</li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-green-800 mb-2">Web Dashboard</h4>
+                    <ul class="list-disc list-inside space-y-1 text-green-700 text-sm">
+                        <li><strong>Dark Mode:</strong> System preference detection with manual toggle, persisted in localStorage</li>
+                        <li><strong>Accessibility (WCAG AA):</strong> ARIA labels on all interactive elements, keyboard navigation, focus indicators, skip-to-content links</li>
+                        <li><strong>SEO:</strong> Meta descriptions, Open Graph tags, Twitter Cards, canonical URLs on all pages</li>
+                        <li><strong>Shared CSS:</strong> Extracted duplicated styles from 3 HTML files into <code>styles.css</code> with CSS custom properties for theming</li>
+                        <li><strong>Tailwind v3:</strong> Upgraded from Tailwind CSS 2.2.19 to v3 CDN play version</li>
+                        <li><strong>JavaScript:</strong> Deferred script loading, chart update pattern (no more destroy/recreate), named constants</li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-green-800 mb-2">CI/CD &amp; Testing</h4>
+                    <ul class="list-disc list-inside space-y-1 text-green-700 text-sm">
+                        <li><strong>Test Workflow:</strong> Automated pytest on pull requests and pushes to main</li>
+                        <li><strong>Lint Workflow:</strong> Ruff format and lint checks on pull requests</li>
+                        <li><strong>Dependabot:</strong> Weekly dependency updates for pip packages and GitHub Actions</li>
+                        <li><strong>Data Validation:</strong> JSON schema validation of forecast data before deployment</li>
+                        <li><strong>Unit Tests:</strong> 20 tests covering model utilities and forecast constraints</li>
+                        <li><strong>Extracted Scripts:</strong> Moved inline Python from workflows to <code>code/scripts/</code></li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-green-800 mb-2">Repository Cleanup</h4>
+                    <ul class="list-disc list-inside space-y-1 text-green-700 text-sm">
+                        <li><strong>Removed 60+ files:</strong> Empty scripts, old tuner logs/backups, unused web files, obsolete v.10 documentation</li>
+                        <li><strong>Updated documentation:</strong> Architecture, deployment, development, and API reference guides refreshed for v0.11</li>
+                        <li><strong>pyproject.toml:</strong> Centralized ruff and pytest configuration</li>
+                    </ul>
+                </div>
+            </div>
             <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-300 shadow-md">
                 <h3 class="font-bold text-blue-800 text-lg mb-2">🔥🐦 v0.10 - Phoenix 🔥🐦 (October 2025)</h3>
-                <p class="text-blue-700 font-medium mb-3">🎆 Complete Architectural Rebirth - Production-ready unified pipeline with historical validation and accuracy tracking</p>
+                <p class="text-blue-700 font-medium mb-3">Complete Architectural Rebirth - Production-ready unified pipeline with historical validation and accuracy tracking</p>
                 <div class="mt-4">
                     <h4 class="font-semibold text-blue-800 mb-2">✨ Major Features</h4>
                     <ul class="list-disc list-inside space-y-1 text-blue-700 text-sm">
@@ -404,7 +448,7 @@
             <p class="text-gray-300 text-sm mt-2">Powered by time series forecasting models using the <a href="https://unit8co.github.io/darts/" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">Darts library</a></p>
             <div class="mt-4 pt-4 border-t border-gray-600">
                 <div class="mt-2">
-                    <span class="inline-block bg-red-600 text-white text-xs px-2 py-1 rounded-full font-mono">v0.10 Phoenix 🔥🐦</span>
+                    <span class="inline-block bg-green-600 text-white text-xs px-2 py-1 rounded-full font-mono">v0.11 Galway 🇮🇪</span>
                 </div>
             </div>
         </div>

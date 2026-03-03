@@ -130,4 +130,4 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-**Version:** 0.11 | **Website:** [cveforecast.org](https://cveforecast.org)
+**Version:** 0.11 "Galway" 🇮🇪 | **Website:** [cveforecast.org](https://cveforecast.org)
