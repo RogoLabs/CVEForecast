@@ -81,7 +81,7 @@ jobs:
         run: |
           git add web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json || true
           git commit -m "Update CVE forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          git pull --rebase origin main
+          git pull --rebase --autostash origin main
           git push
 
       - name: Upload artifacts
