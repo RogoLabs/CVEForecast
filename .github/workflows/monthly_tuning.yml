@@ -14,6 +14,10 @@ permissions:
   contents: write
   issues: write
 
+concurrency:
+  group: "monthly-tuning-${{ github.ref }}"
+  cancel-in-progress: false
+
 jobs:
   tune-hyperparameters:
     runs-on: ubuntu-latest
@@ -43,11 +47,30 @@ jobs:
 
       - name: Prepare CVE data repository
         run: |
-          if [ -d cvelistV5 ]; then
+          set -euo pipefail
+
+          retry_git() {
+            local attempt=1
+            local max_attempts=3
+            while [ "$attempt" -le "$max_attempts" ]; do
+              if "$@"; then
+                return 0
+              fi
+              echo "Git command failed (attempt ${attempt}/${max_attempts}): $*"
+              attempt=$((attempt + 1))
+              sleep 5
+            done
+            return 1
+          }
+
+          if [ -d cvelistV5/.git ]; then
+            retry_git git -C cvelistV5 fetch --depth 1 origin
+            git -C cvelistV5 reset --hard FETCH_HEAD
+          else
             rm -rf cvelistV5
+            retry_git git clone --depth 1 https://github.com/CVEProject/cvelistV5.git cvelistV5
           fi
-          git clone --depth 1 https://github.com/CVEProject/cvelistV5.git cvelistV5
-          echo "CVE data cloned successfully"
+          echo "CVE data ready at commit $(git -C cvelistV5 rev-parse --short HEAD)"
           ls -la cvelistV5/
 
       - name: Normalize tuner file paths
@@ -79,9 +102,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git add code/config.json
+          if git diff --cached --quiet; then
+            echo "No config changes to commit"
+            exit 0
+          fi
           git commit -m "🔧 Update optimized hyperparameters - Monthly tuning $(date -u '+%Y-%m-%d')"
-          git pull --rebase
-          git push
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Generate tuning report
         if: always()

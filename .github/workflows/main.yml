@@ -52,12 +52,34 @@ jobs:
 
       - name: Clone CVE data repository
         run: |
-          git clone --depth 1 https://github.com/CVEProject/cvelistV5.git cvelistV5
-          echo "CVE data cloned successfully"
+          set -euo pipefail
+
+          retry_git() {
+            local attempt=1
+            local max_attempts=3
+            while [ "$attempt" -le "$max_attempts" ]; do
+              if "$@"; then
+                return 0
+              fi
+              echo "Git command failed (attempt ${attempt}/${max_attempts}): $*"
+              attempt=$((attempt + 1))
+              sleep 5
+            done
+            return 1
+          }
+
+          if [ -d cvelistV5/.git ]; then
+            retry_git git -C cvelistV5 fetch --depth 1 origin
+            git -C cvelistV5 reset --hard FETCH_HEAD
+          else
+            rm -rf cvelistV5
+            retry_git git clone --depth 1 https://github.com/CVEProject/cvelistV5.git cvelistV5
+          fi
+          echo "CVE data ready at commit $(git -C cvelistV5 rev-parse --short HEAD)"
           ls -la cvelistV5/
 
       - name: Sync with latest main
-        run: git pull --rebase origin main
+        run: git pull --rebase origin "${GITHUB_REF_NAME}"
 
       - name: Run CVE forecast
         run: |
@@ -71,7 +93,7 @@ jobs:
       - name: Check for changes
         id: verify-changed-files
         run: |
-          if [ -n "$(git status --porcelain)" ]; then
+          if [ -n "$(git status --porcelain -- web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json)" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT
@@ -82,9 +104,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git add web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json || true
+          git add web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json
+          if git diff --cached --quiet; then
+            echo "No tracked forecast changes to commit"
+            exit 0
+          fi
           git commit -m "Update CVE forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          git push
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Upload artifacts
         if: always()
