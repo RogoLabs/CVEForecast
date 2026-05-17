@@ -78,9 +78,6 @@ jobs:
           echo "CVE data ready at commit $(git -C cvelistV5 rev-parse --short HEAD)"
           ls -la cvelistV5/
 
-      - name: Sync with latest main
-        run: git pull --rebase origin "${GITHUB_REF_NAME}"
-
       - name: Run CVE forecast
         run: |
           python code/run_production_forecast.py

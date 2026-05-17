@@ -107,7 +107,6 @@ jobs:
             exit 0
           fi
           git commit -m "🔧 Update optimized hyperparameters - Monthly tuning $(date -u '+%Y-%m-%d')"
-          git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Generate tuning report
