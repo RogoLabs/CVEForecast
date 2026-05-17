@@ -68,6 +68,9 @@ jobs:
             return 1
           }
 
+          # Ensure we have latest workflows by fetching main
+          git fetch origin main
+
           if [ -d cvelistV5/.git ]; then
             retry_git git -C cvelistV5 fetch --depth 1 origin
             git -C cvelistV5 reset --hard FETCH_HEAD
@@ -118,9 +121,14 @@ jobs:
               exit 0
             fi
 
-            echo "Push rejected (attempt ${attempt}/${max_attempts}); fetching and rebasing onto origin/${GITHUB_REF_NAME}"
+            echo "Push rejected (attempt ${attempt}/${max_attempts}); resetting and retrying"
             git fetch origin "${GITHUB_REF_NAME}"
-            git rebase "origin/${GITHUB_REF_NAME}"
+            git reset --hard "origin/${GITHUB_REF_NAME}"
+            git add web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json
+            git commit -m "Update CVE forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')" || {
+              echo "No changes after reset; exiting cleanly"
+              exit 0
+            }
             attempt=$((attempt + 1))
           done
 
