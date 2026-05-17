@@ -101,13 +101,31 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
+
           git add web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json
           if git diff --cached --quiet; then
             echo "No tracked forecast changes to commit"
             exit 0
           fi
           git commit -m "Update CVE forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+          max_attempts=3
+          attempt=1
+          while [ "$attempt" -le "$max_attempts" ]; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "Push succeeded on attempt ${attempt}/${max_attempts}"
+              exit 0
+            fi
+
+            echo "Push rejected (attempt ${attempt}/${max_attempts}); fetching and rebasing onto origin/${GITHUB_REF_NAME}"
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}"
+            attempt=$((attempt + 1))
+          done
+
+          echo "Push failed after ${max_attempts} attempts"
+          exit 1
 
       - name: Upload artifacts
         if: always()
