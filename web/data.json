@@ -1,30 +1,10 @@
 {
-  "generated_at": "2026-05-31T00:39:32.566907+00:00",
+  "generated_at": "2026-06-01T00:40:20.108182+00:00",
   "model_rankings": [
     {
-      "model_name": "TBATS",
-      "mape": 13.79,
-      "mae": 817.0,
-      "rmse": null,
-      "hyperparameters": {
-        "season_length": 12
-      }
-    },
-    {
-      "model_name": "FourTheta",
-      "mape": 14.08,
-      "mae": 835.75,
-      "rmse": null,
-      "hyperparameters": {
-        "season_mode": "ADDITIVE",
-        "theta": 0.5
-      },
-      "tuned_at": "2025-09-25T02:40:36.468419"
-    },
-    {
       "model_name": "LinearRegression",
-      "mape": 14.1,
-      "mae": 690.25,
+      "mape": 14.41,
+      "mae": 771.8,
       "rmse": null,
       "hyperparameters": {
         "lags": 24,
@@ -41,9 +21,29 @@
       "tuned_at": "2025-09-27T02:40:51.158896"
     },
     {
+      "model_name": "TBATS",
+      "mape": 17.88,
+      "mae": 1129.6,
+      "rmse": null,
+      "hyperparameters": {
+        "season_length": 12
+      }
+    },
+    {
+      "model_name": "FourTheta",
+      "mape": 18.78,
+      "mae": 1191.0,
+      "rmse": null,
+      "hyperparameters": {
+        "season_mode": "ADDITIVE",
+        "theta": 0.5
+      },
+      "tuned_at": "2025-09-25T02:40:36.468419"
+    },
+    {
       "model_name": "Prophet",
-      "mape": 14.86,
-      "mae": 862.75,
+      "mape": 18.82,
+      "mae": 1171.8,
       "rmse": null,
       "hyperparameters": {
         "yearly_seasonality": true,
@@ -61,8 +61,8 @@
     },
     {
       "model_name": "KalmanFilter",
-      "mape": 15.43,
-      "mae": 877.0,
+      "mape": 19.27,
+      "mae": 1182.8,
       "rmse": null,
       "hyperparameters": {
         "dim_x": 5
@@ -71,8 +71,8 @@
     },
     {
       "model_name": "ExponentialSmoothing",
-      "mape": 15.45,
-      "mae": 909.75,
+      "mape": 19.79,
+      "mae": 1244.2,
       "rmse": null,
       "hyperparameters": {
         "trend": null,
@@ -89,9 +89,27 @@
       "tuned_at": "2025-08-01T04:10:53.306326"
     },
     {
+      "model_name": "AutoARIMA",
+      "mape": 20.07,
+      "mae": 1257.8,
+      "rmse": null,
+      "hyperparameters": {
+        "start_p": 0,
+        "start_q": 0,
+        "max_p": 3,
+        "max_q": 3,
+        "seasonal": true,
+        "stepwise": true,
+        "random_state": null,
+        "quantiles": null,
+        "season_length": 12
+      },
+      "tuned_at": "2025-09-23T02:41:08.890837"
+    },
+    {
       "model_name": "XGBoost",
-      "mape": 15.63,
-      "mae": 920.5,
+      "mape": 20.1,
+      "mae": 1264.4,
       "rmse": null,
       "hyperparameters": {
         "lags": 24,
@@ -111,27 +129,9 @@
       "tuned_at": "2025-07-30T04:03:58.670124"
     },
     {
-      "model_name": "AutoARIMA",
-      "mape": 15.87,
-      "mae": 932.25,
-      "rmse": null,
-      "hyperparameters": {
-        "start_p": 0,
-        "start_q": 0,
-        "max_p": 3,
-        "max_q": 3,
-        "seasonal": true,
-        "stepwise": true,
-        "random_state": null,
-        "quantiles": null,
-        "season_length": 12
-      },
-      "tuned_at": "2025-09-23T02:41:08.890837"
-    },
-    {
       "model_name": "Theta",
-      "mape": 17.71,
-      "mae": 1021.75,
+      "mape": 22.22,
+      "mae": 1377.0,
       "rmse": null,
       "hyperparameters": {
         "season_mode": "ADDITIVE",
@@ -141,8 +141,8 @@
     },
     {
       "model_name": "RandomForest",
-      "mape": 18.19,
-      "mae": 1050.5,
+      "mape": 22.39,
+      "mae": 1384.8,
       "rmse": null,
       "hyperparameters": {
         "lags": 24,
@@ -159,8 +159,8 @@
     },
     {
       "model_name": "LightGBM",
-      "mape": 19.66,
-      "mae": 1123.25,
+      "mape": 23.92,
+      "mae": 1467.6,
       "rmse": null,
       "hyperparameters": {
         "lags": 36,
@@ -189,8 +189,8 @@
     },
     {
       "model_name": "Croston",
-      "mape": 26.08,
-      "mae": 1459.75,
+      "mape": 29.96,
+      "mae": 1800.0,
       "rmse": null,
       "hyperparameters": {
         "alpha_d": null,
@@ -203,8 +203,8 @@
     },
     {
       "model_name": "CatBoost",
-      "mape": 27.62,
-      "mae": 1534.5,
+      "mape": 31.66,
+      "mae": 1891.8,
       "rmse": null,
       "hyperparameters": {
         "lags": 48,
@@ -222,42 +222,42 @@
   ],
   "yearly_forecast_totals": {
     "2026": {
-      "Prophet": 75956,
-      "ExponentialSmoothing": 75953,
-      "TBATS": 75954,
-      "XGBoost": 75954,
-      "LightGBM": 75957,
-      "CatBoost": 75957,
-      "RandomForest": 75955,
-      "LinearRegression": 75955,
-      "AutoARIMA": 75955,
-      "Theta": 75955,
-      "FourTheta": 75956,
-      "KalmanFilter": 75956,
-      "Croston": 75959,
-      "all_models": 75956
+      "Prophet": 82903,
+      "ExponentialSmoothing": 82906,
+      "TBATS": 82904,
+      "XGBoost": 82904,
+      "LightGBM": 82903,
+      "CatBoost": 82904,
+      "RandomForest": 82903,
+      "LinearRegression": 82905,
+      "AutoARIMA": 82904,
+      "Theta": 82904,
+      "FourTheta": 82903,
+      "KalmanFilter": 82904,
+      "Croston": 82898,
+      "all_models": 82903
     },
     "2027": {
-      "Prophet": 57963,
-      "ExponentialSmoothing": 57962,
-      "TBATS": 57965,
-      "XGBoost": 57965,
-      "LightGBM": 57969,
-      "CatBoost": 55173,
-      "RandomForest": 57964,
-      "LinearRegression": 57964,
-      "AutoARIMA": 57964,
-      "Theta": 57965,
-      "FourTheta": 57964,
-      "KalmanFilter": 57965,
-      "Croston": 51808,
-      "all_models": 57276
+      "Prophet": 55370,
+      "ExponentialSmoothing": 55372,
+      "TBATS": 55370,
+      "XGBoost": 55370,
+      "LightGBM": 55374,
+      "CatBoost": 55370,
+      "RandomForest": 55371,
+      "LinearRegression": 55370,
+      "AutoARIMA": 55370,
+      "Theta": 55370,
+      "FourTheta": 55371,
+      "KalmanFilter": 55370,
+      "Croston": 54966,
+      "all_models": 55340
     }
   },
   "current_month_actual": {
-    "date": "2026-05",
-    "cve_count": 6898,
-    "cumulative_total": 20991
+    "date": "2026-06",
+    "cve_count": 2,
+    "cumulative_total": 27940
   },
   "actuals_cumulative": [
     {
@@ -281,8 +281,12 @@
       "cumulative_total": 20991
     },
     {
-      "date": "2026-05-31T00:38:49Z",
-      "cumulative_total": 27889
+      "date": "2026-06-01T00:00:00Z",
+      "cumulative_total": 27940
+    },
+    {
+      "date": "2026-06-01T00:39:37Z",
+      "cumulative_total": 27942
     }
   ],
   "cumulative_timelines": {
@@ -292,40 +296,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 27710
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 34393
+        "cumulative_total": 35533
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 41187
+        "cumulative_total": 43261
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 48024
+        "cumulative_total": 51049
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 54797
+        "cumulative_total": 58767
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 61847
+        "cumulative_total": 66797
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 68625
+        "cumulative_total": 74542
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75956
+        "cumulative_total": 82903
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -333,51 +333,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4519
+        "cumulative_total": 4286
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 9005
+        "cumulative_total": 8546
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 13861
+        "cumulative_total": 13148
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 18821
+        "cumulative_total": 17838
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 23595
+        "cumulative_total": 22551
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 28376
+        "cumulative_total": 27103
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 33236
+        "cumulative_total": 31738
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 38130
+        "cumulative_total": 36415
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 42959
+        "cumulative_total": 41026
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 47952
+        "cumulative_total": 45790
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 52787
+        "cumulative_total": 50422
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 57963
+        "cumulative_total": 55370
       }
     ],
     "ExponentialSmoothing_cumulative": [
@@ -386,40 +386,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 27861
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 34732
+        "cumulative_total": 35792
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 41602
+        "cumulative_total": 43645
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 48472
+        "cumulative_total": 51497
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 55342
+        "cumulative_total": 59349
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 62213
+        "cumulative_total": 67202
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 69083
+        "cumulative_total": 75054
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75953
+        "cumulative_total": 82906
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -427,51 +423,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4830
+        "cumulative_total": 4614
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 9660
+        "cumulative_total": 9229
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 14491
+        "cumulative_total": 13843
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 19321
+        "cumulative_total": 18457
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 24151
+        "cumulative_total": 23072
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 28981
+        "cumulative_total": 27686
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 33811
+        "cumulative_total": 32301
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 38642
+        "cumulative_total": 36915
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 43472
+        "cumulative_total": 41529
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 48302
+        "cumulative_total": 46144
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 53132
+        "cumulative_total": 50758
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 57962
+        "cumulative_total": 55372
       }
     ],
     "TBATS_cumulative": [
@@ -480,40 +476,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 27643
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 34365
+        "cumulative_total": 35476
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 41140
+        "cumulative_total": 43107
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 47960
+        "cumulative_total": 50818
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 54831
+        "cumulative_total": 58617
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 61770
+        "cumulative_total": 66534
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 68803
+        "cumulative_total": 74613
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75954
+        "cumulative_total": 82904
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -521,51 +513,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4465
+        "cumulative_total": 4067
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 9023
+        "cumulative_total": 8268
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 13670
+        "cumulative_total": 12602
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 18399
+        "cumulative_total": 17057
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 23192
+        "cumulative_total": 21613
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 28034
+        "cumulative_total": 26246
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 32913
+        "cumulative_total": 30936
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 37824
+        "cumulative_total": 35674
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 42770
+        "cumulative_total": 40465
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 47764
+        "cumulative_total": 45327
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 52823
+        "cumulative_total": 50285
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 57965
+        "cumulative_total": 55370
       }
     ],
     "XGBoost_cumulative": [
@@ -574,40 +566,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 28188
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 35148
+        "cumulative_total": 36016
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 41594
+        "cumulative_total": 43374
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 48217
+        "cumulative_total": 51005
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 54680
+        "cumulative_total": 58189
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 61808
+        "cumulative_total": 66476
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 68851
+        "cumulative_total": 74739
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75954
+        "cumulative_total": 82904
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -615,51 +603,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4836
+        "cumulative_total": 4570
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 9681
+        "cumulative_total": 9176
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 14518
+        "cumulative_total": 13767
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 19353
+        "cumulative_total": 18357
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 24198
+        "cumulative_total": 22958
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 29050
+        "cumulative_total": 27551
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 33898
+        "cumulative_total": 32128
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 39007
+        "cumulative_total": 36995
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 43754
+        "cumulative_total": 41552
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 48544
+        "cumulative_total": 46139
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 53112
+        "cumulative_total": 50369
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 57965
+        "cumulative_total": 55370
       }
     ],
     "LightGBM_cumulative": [
@@ -668,40 +656,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 27496
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 34393
+        "cumulative_total": 35307
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 41103
+        "cumulative_total": 43406
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 48080
+        "cumulative_total": 51198
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 55058
+        "cumulative_total": 59100
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 62002
+        "cumulative_total": 66736
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 68980
+        "cumulative_total": 74815
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75957
+        "cumulative_total": 82903
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -709,51 +693,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4831
+        "cumulative_total": 4615
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 9662
+        "cumulative_total": 9229
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 14492
+        "cumulative_total": 13844
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 19323
+        "cumulative_total": 18458
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 24154
+        "cumulative_total": 23073
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 28985
+        "cumulative_total": 27687
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 33815
+        "cumulative_total": 32302
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 38646
+        "cumulative_total": 36916
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 43477
+        "cumulative_total": 41531
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 48308
+        "cumulative_total": 46145
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 53138
+        "cumulative_total": 50760
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 57969
+        "cumulative_total": 55374
       }
     ],
     "CatBoost_cumulative": [
@@ -762,40 +746,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 28178
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 35148
+        "cumulative_total": 35834
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 42098
+        "cumulative_total": 43626
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 48970
+        "cumulative_total": 51660
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 55580
+        "cumulative_total": 59553
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 62194
+        "cumulative_total": 67204
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 69199
+        "cumulative_total": 75089
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75957
+        "cumulative_total": 82904
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -803,51 +783,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4498
+        "cumulative_total": 4611
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 9163
+        "cumulative_total": 9291
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 13890
+        "cumulative_total": 14030
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 18520
+        "cumulative_total": 18578
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 23186
+        "cumulative_total": 23239
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 27765
+        "cumulative_total": 27813
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 32332
+        "cumulative_total": 32465
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 36885
+        "cumulative_total": 37050
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 41465
+        "cumulative_total": 41648
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 46014
+        "cumulative_total": 46222
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 50593
+        "cumulative_total": 50796
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 55173
+        "cumulative_total": 55370
       }
     ],
     "RandomForest_cumulative": [
@@ -856,40 +836,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 27641
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 34425
+        "cumulative_total": 35776
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 41070
+        "cumulative_total": 43281
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 47997
+        "cumulative_total": 51100
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 54850
+        "cumulative_total": 58869
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 61793
+        "cumulative_total": 66810
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 68905
+        "cumulative_total": 74940
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75955
+        "cumulative_total": 82903
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -897,51 +873,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4793
+        "cumulative_total": 4528
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 9632
+        "cumulative_total": 9135
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 14463
+        "cumulative_total": 13735
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 19295
+        "cumulative_total": 18341
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 24142
+        "cumulative_total": 22975
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 28980
+        "cumulative_total": 27591
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 33817
+        "cumulative_total": 32234
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 38668
+        "cumulative_total": 36886
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 43502
+        "cumulative_total": 41534
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 48297
+        "cumulative_total": 46147
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 53117
+        "cumulative_total": 50728
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 57964
+        "cumulative_total": 55371
       }
     ],
     "LinearRegression_cumulative": [
@@ -950,40 +926,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 27752
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 34194
+        "cumulative_total": 35293
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 40880
+        "cumulative_total": 42524
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 47455
+        "cumulative_total": 50104
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 54167
+        "cumulative_total": 57698
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 61166
+        "cumulative_total": 65766
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 68635
+        "cumulative_total": 74534
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75955
+        "cumulative_total": 82905
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -991,51 +963,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4430
+        "cumulative_total": 4066
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 8875
+        "cumulative_total": 8397
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 13360
+        "cumulative_total": 12615
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 17890
+        "cumulative_total": 16957
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 22527
+        "cumulative_total": 21517
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 27144
+        "cumulative_total": 25852
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 31984
+        "cumulative_total": 30461
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 36654
+        "cumulative_total": 35064
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 41785
+        "cumulative_total": 39916
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 46968
+        "cumulative_total": 44936
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 52025
+        "cumulative_total": 49641
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 57964
+        "cumulative_total": 55370
       }
     ],
     "AutoARIMA_cumulative": [
@@ -1044,40 +1016,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 27694
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 34445
+        "cumulative_total": 35624
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 41244
+        "cumulative_total": 43363
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 48091
+        "cumulative_total": 51159
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 54985
+        "cumulative_total": 59011
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 61928
+        "cumulative_total": 66919
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 68918
+        "cumulative_total": 74883
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75955
+        "cumulative_total": 82904
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -1085,51 +1053,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4658
+        "cumulative_total": 4444
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 9347
+        "cumulative_total": 8920
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 14067
+        "cumulative_total": 13426
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 18819
+        "cumulative_total": 17963
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 23602
+        "cumulative_total": 22531
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 28417
+        "cumulative_total": 27129
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 33263
+        "cumulative_total": 31759
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 38140
+        "cumulative_total": 36419
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 43049
+        "cumulative_total": 41111
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 47989
+        "cumulative_total": 45833
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 52961
+        "cumulative_total": 50586
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 57964
+        "cumulative_total": 55370
       }
     ],
     "Theta_cumulative": [
@@ -1138,40 +1106,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 27889
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 34887
+        "cumulative_total": 35968
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 41797
+        "cumulative_total": 43874
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 48572
+        "cumulative_total": 51682
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 55493
+        "cumulative_total": 59492
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 62531
+        "cumulative_total": 67376
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 69193
+        "cumulative_total": 75201
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75955
+        "cumulative_total": 82904
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -1179,51 +1143,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4967
+        "cumulative_total": 4709
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 9833
+        "cumulative_total": 9420
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 14808
+        "cumulative_total": 14176
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 19871
+        "cumulative_total": 18897
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 24654
+        "cumulative_total": 23541
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 29510
+        "cumulative_total": 28124
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 34301
+        "cumulative_total": 32710
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 38992
+        "cumulative_total": 37340
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 43791
+        "cumulative_total": 41934
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 48678
+        "cumulative_total": 46453
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 53284
+        "cumulative_total": 50910
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 57965
+        "cumulative_total": 55370
       }
     ],
     "FourTheta_cumulative": [
@@ -1232,40 +1196,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 27889
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 34884
+        "cumulative_total": 35964
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 41792
+        "cumulative_total": 43869
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 48570
+        "cumulative_total": 51677
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 55490
+        "cumulative_total": 59488
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 62524
+        "cumulative_total": 67371
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 69192
+        "cumulative_total": 75197
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75956
+        "cumulative_total": 82903
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -1273,51 +1233,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4963
+        "cumulative_total": 4707
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 9828
+        "cumulative_total": 9416
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 14799
+        "cumulative_total": 14169
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 19855
+        "cumulative_total": 18886
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 24639
+        "cumulative_total": 23530
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 29495
+        "cumulative_total": 28114
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 34287
+        "cumulative_total": 32700
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 38982
+        "cumulative_total": 37330
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 43782
+        "cumulative_total": 41925
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 48667
+        "cumulative_total": 46446
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 53280
+        "cumulative_total": 50908
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 57964
+        "cumulative_total": 55371
       }
     ],
     "KalmanFilter_cumulative": [
@@ -1326,40 +1286,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 27685
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 34504
+        "cumulative_total": 35901
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 40749
+        "cumulative_total": 43123
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 47625
+        "cumulative_total": 51155
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 54571
+        "cumulative_total": 58811
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 61413
+        "cumulative_total": 66532
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 68761
+        "cumulative_total": 74949
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75956
+        "cumulative_total": 82904
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -1367,51 +1323,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4378
+        "cumulative_total": 4176
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 8930
+        "cumulative_total": 8504
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 13418
+        "cumulative_total": 12679
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 18068
+        "cumulative_total": 17165
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 22798
+        "cumulative_total": 21643
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 27535
+        "cumulative_total": 26116
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 32435
+        "cumulative_total": 30866
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 37368
+        "cumulative_total": 35535
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 42375
+        "cumulative_total": 40338
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 47512
+        "cumulative_total": 45320
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 52684
+        "cumulative_total": 50239
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 57965
+        "cumulative_total": 55370
       }
     ],
     "Croston_cumulative": [
@@ -1420,40 +1376,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 27862
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 34733
+        "cumulative_total": 35791
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 41604
+        "cumulative_total": 43642
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 48475
+        "cumulative_total": 51493
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 55346
+        "cumulative_total": 59345
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 62217
+        "cumulative_total": 67196
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 69088
+        "cumulative_total": 75047
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75959
+        "cumulative_total": 82898
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -1461,51 +1413,51 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4317
+        "cumulative_total": 4581
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 8635
+        "cumulative_total": 9161
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 12952
+        "cumulative_total": 13742
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 17269
+        "cumulative_total": 18322
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 21587
+        "cumulative_total": 22903
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 25904
+        "cumulative_total": 27483
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 30221
+        "cumulative_total": 32064
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 34539
+        "cumulative_total": 36644
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 38856
+        "cumulative_total": 41225
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 43173
+        "cumulative_total": 45805
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 47491
+        "cumulative_total": 50386
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 51808
+        "cumulative_total": 54966
       }
     ],
     "all_models_cumulative": [
@@ -1514,40 +1466,36 @@
         "cumulative_total": 0
       },
       {
-        "date": "2026-05-01T00:00:00Z",
-        "cumulative_total": 20991
-      },
-      {
         "date": "2026-06-01T00:00:00Z",
-        "cumulative_total": 27807
+        "cumulative_total": 27940
       },
       {
         "date": "2026-07-01T00:00:00Z",
-        "cumulative_total": 34635
+        "cumulative_total": 35713
       },
       {
         "date": "2026-08-01T00:00:00Z",
-        "cumulative_total": 41374
+        "cumulative_total": 43392
       },
       {
         "date": "2026-09-01T00:00:00Z",
-        "cumulative_total": 48193
+        "cumulative_total": 51200
       },
       {
         "date": "2026-10-01T00:00:00Z",
-        "cumulative_total": 55015
+        "cumulative_total": 58945
       },
       {
         "date": "2026-11-01T00:00:00Z",
-        "cumulative_total": 61954
+        "cumulative_total": 66840
       },
       {
         "date": "2026-12-01T00:00:00Z",
-        "cumulative_total": 68941
+        "cumulative_total": 74893
       },
       {
         "date": "2026-12-31T23:59:59Z",
-        "cumulative_total": 75956
+        "cumulative_total": 82903
       },
       {
         "date": "2027-01-01T00:00:00Z",
@@ -1555,1217 +1503,1161 @@
       },
       {
         "date": "2027-02-01T00:00:00Z",
-        "cumulative_total": 4653
+        "cumulative_total": 4460
       },
       {
         "date": "2027-03-01T00:00:00Z",
-        "cumulative_total": 9329
+        "cumulative_total": 8976
       },
       {
         "date": "2027-04-01T00:00:00Z",
-        "cumulative_total": 14061
+        "cumulative_total": 13521
       },
       {
         "date": "2027-05-01T00:00:00Z",
-        "cumulative_total": 18831
+        "cumulative_total": 18098
       },
       {
         "date": "2027-06-01T00:00:00Z",
-        "cumulative_total": 23571
+        "cumulative_total": 22704
       },
       {
         "date": "2027-07-01T00:00:00Z",
-        "cumulative_total": 28321
+        "cumulative_total": 27269
       },
       {
         "date": "2027-08-01T00:00:00Z",
-        "cumulative_total": 33101
+        "cumulative_total": 31897
       },
       {
         "date": "2027-09-01T00:00:00Z",
-        "cumulative_total": 37883
+        "cumulative_total": 36553
       },
       {
         "date": "2027-10-01T00:00:00Z",
-        "cumulative_total": 42695
+        "cumulative_total": 41210
       },
       {
         "date": "2027-11-01T00:00:00Z",
-        "cumulative_total": 47551
+        "cumulative_total": 45901
       },
       {
         "date": "2027-12-01T00:00:00Z",
-        "cumulative_total": 52341
+        "cumulative_total": 50522
       },
       {
         "date": "2027-12-31T23:59:59Z",
-        "cumulative_total": 57276
+        "cumulative_total": 55340
       }
     ]
   },
   "forecasts": {
     "Prophet": [
       {
-        "date": "2026-05",
-        "cve_count": 6718
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6683
+        "cve_count": 7593
       },
       {
         "date": "2026-07",
-        "cve_count": 6793
+        "cve_count": 7728
       },
       {
         "date": "2026-08",
-        "cve_count": 6837
+        "cve_count": 7787
       },
       {
         "date": "2026-09",
-        "cve_count": 6772
+        "cve_count": 7717
       },
       {
         "date": "2026-10",
-        "cve_count": 7050
+        "cve_count": 8030
       },
       {
         "date": "2026-11",
-        "cve_count": 6777
+        "cve_count": 7744
       },
       {
         "date": "2026-12",
-        "cve_count": 7330
+        "cve_count": 8360
       },
       {
         "date": "2027-01",
-        "cve_count": 4519
+        "cve_count": 4286
       },
       {
         "date": "2027-02",
-        "cve_count": 4485
+        "cve_count": 4259
       },
       {
         "date": "2027-03",
-        "cve_count": 4855
+        "cve_count": 4601
       },
       {
         "date": "2027-04",
-        "cve_count": 4960
+        "cve_count": 4690
       },
       {
         "date": "2027-05",
-        "cve_count": 4773
+        "cve_count": 4712
       },
       {
         "date": "2027-06",
-        "cve_count": 4781
+        "cve_count": 4551
       },
       {
         "date": "2027-07",
-        "cve_count": 4859
+        "cve_count": 4634
       },
       {
         "date": "2027-08",
-        "cve_count": 4894
+        "cve_count": 4677
       },
       {
         "date": "2027-09",
-        "cve_count": 4828
+        "cve_count": 4610
       },
       {
         "date": "2027-10",
-        "cve_count": 4992
+        "cve_count": 4764
       },
       {
         "date": "2027-11",
-        "cve_count": 4835
+        "cve_count": 4631
       },
       {
         "date": "2027-12",
-        "cve_count": 5176
+        "cve_count": 4948
       }
     ],
     "ExponentialSmoothing": [
       {
-        "date": "2026-05",
-        "cve_count": 6870
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6870
+        "cve_count": 7852
       },
       {
         "date": "2026-07",
-        "cve_count": 6870
+        "cve_count": 7852
       },
       {
         "date": "2026-08",
-        "cve_count": 6870
+        "cve_count": 7852
       },
       {
         "date": "2026-09",
-        "cve_count": 6870
+        "cve_count": 7852
       },
       {
         "date": "2026-10",
-        "cve_count": 6870
+        "cve_count": 7852
       },
       {
         "date": "2026-11",
-        "cve_count": 6870
+        "cve_count": 7852
       },
       {
         "date": "2026-12",
-        "cve_count": 6870
+        "cve_count": 7852
       },
       {
         "date": "2027-01",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-02",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-03",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-04",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-05",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-06",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-07",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-08",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-09",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-10",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-11",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-12",
-        "cve_count": 4830
+        "cve_count": 4614
       }
     ],
     "TBATS": [
       {
-        "date": "2026-05",
-        "cve_count": 6651
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6722
+        "cve_count": 7535
       },
       {
         "date": "2026-07",
-        "cve_count": 6774
+        "cve_count": 7630
       },
       {
         "date": "2026-08",
-        "cve_count": 6820
+        "cve_count": 7711
       },
       {
         "date": "2026-09",
-        "cve_count": 6871
+        "cve_count": 7799
       },
       {
         "date": "2026-10",
-        "cve_count": 6939
+        "cve_count": 7916
       },
       {
         "date": "2026-11",
-        "cve_count": 7032
+        "cve_count": 8079
       },
       {
         "date": "2026-12",
-        "cve_count": 7151
+        "cve_count": 8291
       },
       {
         "date": "2027-01",
-        "cve_count": 4465
+        "cve_count": 4067
       },
       {
         "date": "2027-02",
-        "cve_count": 4557
+        "cve_count": 4200
       },
       {
         "date": "2027-03",
-        "cve_count": 4647
+        "cve_count": 4334
       },
       {
         "date": "2027-04",
-        "cve_count": 4728
+        "cve_count": 4455
       },
       {
         "date": "2027-05",
-        "cve_count": 4793
+        "cve_count": 4556
       },
       {
         "date": "2027-06",
-        "cve_count": 4842
+        "cve_count": 4632
       },
       {
         "date": "2027-07",
-        "cve_count": 4879
+        "cve_count": 4690
       },
       {
         "date": "2027-08",
-        "cve_count": 4910
+        "cve_count": 4738
       },
       {
         "date": "2027-09",
-        "cve_count": 4946
+        "cve_count": 4790
       },
       {
         "date": "2027-10",
-        "cve_count": 4993
+        "cve_count": 4861
       },
       {
         "date": "2027-11",
-        "cve_count": 5058
+        "cve_count": 4958
       },
       {
         "date": "2027-12",
-        "cve_count": 5141
+        "cve_count": 5085
       }
     ],
     "XGBoost": [
       {
-        "date": "2026-05",
-        "cve_count": 7196
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6960
+        "cve_count": 8075
       },
       {
         "date": "2026-07",
-        "cve_count": 6446
+        "cve_count": 7358
       },
       {
         "date": "2026-08",
-        "cve_count": 6623
+        "cve_count": 7630
       },
       {
         "date": "2026-09",
-        "cve_count": 6462
+        "cve_count": 7183
       },
       {
         "date": "2026-10",
-        "cve_count": 7127
+        "cve_count": 8286
       },
       {
         "date": "2026-11",
-        "cve_count": 7043
+        "cve_count": 8263
       },
       {
         "date": "2026-12",
-        "cve_count": 7103
+        "cve_count": 8165
       },
       {
         "date": "2027-01",
-        "cve_count": 4836
+        "cve_count": 4569
       },
       {
         "date": "2027-02",
-        "cve_count": 4845
+        "cve_count": 4606
       },
       {
         "date": "2027-03",
-        "cve_count": 4836
+        "cve_count": 4590
       },
       {
         "date": "2027-04",
-        "cve_count": 4834
+        "cve_count": 4590
       },
       {
         "date": "2027-05",
-        "cve_count": 4845
+        "cve_count": 4600
       },
       {
         "date": "2027-06",
-        "cve_count": 4851
+        "cve_count": 4592
       },
       {
         "date": "2027-07",
-        "cve_count": 4848
+        "cve_count": 4577
       },
       {
         "date": "2027-08",
-        "cve_count": 5108
+        "cve_count": 4866
       },
       {
         "date": "2027-09",
-        "cve_count": 4747
+        "cve_count": 4557
       },
       {
         "date": "2027-10",
-        "cve_count": 4789
+        "cve_count": 4587
       },
       {
         "date": "2027-11",
-        "cve_count": 4567
+        "cve_count": 4229
       },
       {
         "date": "2027-12",
-        "cve_count": 4852
+        "cve_count": 5001
       }
     ],
     "LightGBM": [
       {
-        "date": "2026-05",
-        "cve_count": 6505
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6896
+        "cve_count": 7367
       },
       {
         "date": "2026-07",
-        "cve_count": 6709
+        "cve_count": 8098
       },
       {
         "date": "2026-08",
-        "cve_count": 6977
+        "cve_count": 7792
       },
       {
         "date": "2026-09",
-        "cve_count": 6977
+        "cve_count": 7901
       },
       {
         "date": "2026-10",
-        "cve_count": 6944
+        "cve_count": 7635
       },
       {
         "date": "2026-11",
-        "cve_count": 6977
+        "cve_count": 8078
       },
       {
         "date": "2026-12",
-        "cve_count": 6977
+        "cve_count": 8088
       },
       {
         "date": "2027-01",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-02",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-03",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-04",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-05",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-06",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-07",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-08",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-09",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-10",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-11",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-12",
-        "cve_count": 4830
+        "cve_count": 4614
       }
     ],
     "CatBoost": [
       {
-        "date": "2026-05",
-        "cve_count": 7187
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6969
+        "cve_count": 7894
       },
       {
         "date": "2026-07",
-        "cve_count": 6949
+        "cve_count": 7791
       },
       {
         "date": "2026-08",
-        "cve_count": 6871
+        "cve_count": 8034
       },
       {
         "date": "2026-09",
-        "cve_count": 6609
+        "cve_count": 7893
       },
       {
         "date": "2026-10",
-        "cve_count": 6614
+        "cve_count": 7650
       },
       {
         "date": "2026-11",
-        "cve_count": 7005
+        "cve_count": 7885
       },
       {
         "date": "2026-12",
-        "cve_count": 6757
+        "cve_count": 7815
       },
       {
         "date": "2027-01",
-        "cve_count": 4498
+        "cve_count": 4610
       },
       {
         "date": "2027-02",
-        "cve_count": 4665
+        "cve_count": 4679
       },
       {
         "date": "2027-03",
-        "cve_count": 4726
+        "cve_count": 4739
       },
       {
         "date": "2027-04",
-        "cve_count": 4629
+        "cve_count": 4547
       },
       {
         "date": "2027-05",
-        "cve_count": 4666
+        "cve_count": 4660
       },
       {
         "date": "2027-06",
-        "cve_count": 4579
+        "cve_count": 4573
       },
       {
         "date": "2027-07",
-        "cve_count": 4566
+        "cve_count": 4652
       },
       {
         "date": "2027-08",
-        "cve_count": 4553
+        "cve_count": 4584
       },
       {
         "date": "2027-09",
-        "cve_count": 4579
+        "cve_count": 4598
       },
       {
         "date": "2027-10",
-        "cve_count": 4548
+        "cve_count": 4573
       },
       {
         "date": "2027-11",
-        "cve_count": 4579
+        "cve_count": 4573
       },
       {
         "date": "2027-12",
-        "cve_count": 4579
+        "cve_count": 4573
       }
     ],
     "RandomForest": [
       {
-        "date": "2026-05",
-        "cve_count": 6649
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6784
+        "cve_count": 7835
       },
       {
         "date": "2026-07",
-        "cve_count": 6645
+        "cve_count": 7504
       },
       {
         "date": "2026-08",
-        "cve_count": 6926
+        "cve_count": 7819
       },
       {
         "date": "2026-09",
-        "cve_count": 6853
+        "cve_count": 7768
       },
       {
         "date": "2026-10",
-        "cve_count": 6942
+        "cve_count": 7941
       },
       {
         "date": "2026-11",
-        "cve_count": 7112
+        "cve_count": 8130
       },
       {
         "date": "2026-12",
-        "cve_count": 7049
+        "cve_count": 7963
       },
       {
         "date": "2027-01",
-        "cve_count": 4792
+        "cve_count": 4528
       },
       {
         "date": "2027-02",
-        "cve_count": 4839
+        "cve_count": 4606
       },
       {
         "date": "2027-03",
-        "cve_count": 4831
+        "cve_count": 4600
       },
       {
         "date": "2027-04",
-        "cve_count": 4832
+        "cve_count": 4605
       },
       {
         "date": "2027-05",
-        "cve_count": 4846
+        "cve_count": 4634
       },
       {
         "date": "2027-06",
-        "cve_count": 4838
+        "cve_count": 4615
       },
       {
         "date": "2027-07",
-        "cve_count": 4836
+        "cve_count": 4643
       },
       {
         "date": "2027-08",
-        "cve_count": 4851
+        "cve_count": 4652
       },
       {
         "date": "2027-09",
-        "cve_count": 4833
+        "cve_count": 4647
       },
       {
         "date": "2027-10",
-        "cve_count": 4795
+        "cve_count": 4613
       },
       {
         "date": "2027-11",
-        "cve_count": 4820
+        "cve_count": 4580
       },
       {
         "date": "2027-12",
-        "cve_count": 4846
+        "cve_count": 4643
       }
     ],
     "LinearRegression": [
       {
-        "date": "2026-05",
-        "cve_count": 6760
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6442
+        "cve_count": 7353
       },
       {
         "date": "2026-07",
-        "cve_count": 6686
+        "cve_count": 7230
       },
       {
         "date": "2026-08",
-        "cve_count": 6575
+        "cve_count": 7579
       },
       {
         "date": "2026-09",
-        "cve_count": 6711
+        "cve_count": 7594
       },
       {
         "date": "2026-10",
-        "cve_count": 6998
+        "cve_count": 8068
       },
       {
         "date": "2026-11",
-        "cve_count": 7468
+        "cve_count": 8767
       },
       {
         "date": "2026-12",
-        "cve_count": 7320
+        "cve_count": 8371
       },
       {
         "date": "2027-01",
-        "cve_count": 4430
+        "cve_count": 4065
       },
       {
         "date": "2027-02",
-        "cve_count": 4444
+        "cve_count": 4330
       },
       {
         "date": "2027-03",
-        "cve_count": 4485
+        "cve_count": 4218
       },
       {
         "date": "2027-04",
-        "cve_count": 4529
+        "cve_count": 4341
       },
       {
         "date": "2027-05",
-        "cve_count": 4636
+        "cve_count": 4560
       },
       {
         "date": "2027-06",
-        "cve_count": 4616
+        "cve_count": 4335
       },
       {
         "date": "2027-07",
-        "cve_count": 4840
+        "cve_count": 4608
       },
       {
         "date": "2027-08",
-        "cve_count": 4669
+        "cve_count": 4602
       },
       {
         "date": "2027-09",
-        "cve_count": 5131
+        "cve_count": 4852
       },
       {
         "date": "2027-10",
-        "cve_count": 5183
+        "cve_count": 5020
       },
       {
         "date": "2027-11",
-        "cve_count": 5056
+        "cve_count": 4704
       },
       {
         "date": "2027-12",
-        "cve_count": 5939
+        "cve_count": 5728
       }
     ],
     "AutoARIMA": [
       {
-        "date": "2026-05",
-        "cve_count": 6703
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6751
+        "cve_count": 7683
       },
       {
         "date": "2026-07",
-        "cve_count": 6798
+        "cve_count": 7739
       },
       {
         "date": "2026-08",
-        "cve_count": 6846
+        "cve_count": 7795
       },
       {
         "date": "2026-09",
-        "cve_count": 6894
+        "cve_count": 7851
       },
       {
         "date": "2026-10",
-        "cve_count": 6942
+        "cve_count": 7908
       },
       {
         "date": "2026-11",
-        "cve_count": 6989
+        "cve_count": 7964
       },
       {
         "date": "2026-12",
-        "cve_count": 7037
+        "cve_count": 8020
       },
       {
         "date": "2027-01",
-        "cve_count": 4657
+        "cve_count": 4444
       },
       {
         "date": "2027-02",
-        "cve_count": 4689
+        "cve_count": 4475
       },
       {
         "date": "2027-03",
-        "cve_count": 4720
+        "cve_count": 4506
       },
       {
         "date": "2027-04",
-        "cve_count": 4751
+        "cve_count": 4536
       },
       {
         "date": "2027-05",
-        "cve_count": 4783
+        "cve_count": 4567
       },
       {
         "date": "2027-06",
-        "cve_count": 4814
+        "cve_count": 4598
       },
       {
         "date": "2027-07",
-        "cve_count": 4846
+        "cve_count": 4629
       },
       {
         "date": "2027-08",
-        "cve_count": 4877
+        "cve_count": 4660
       },
       {
         "date": "2027-09",
-        "cve_count": 4908
+        "cve_count": 4691
       },
       {
         "date": "2027-10",
-        "cve_count": 4940
+        "cve_count": 4722
       },
       {
         "date": "2027-11",
-        "cve_count": 4971
+        "cve_count": 4753
       },
       {
         "date": "2027-12",
-        "cve_count": 5003
+        "cve_count": 4783
       }
     ],
     "Theta": [
       {
-        "date": "2026-05",
-        "cve_count": 6898
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6998
+        "cve_count": 8028
       },
       {
         "date": "2026-07",
-        "cve_count": 6909
+        "cve_count": 7905
       },
       {
         "date": "2026-08",
-        "cve_count": 6775
+        "cve_count": 7807
       },
       {
         "date": "2026-09",
-        "cve_count": 6920
+        "cve_count": 7810
       },
       {
         "date": "2026-10",
-        "cve_count": 7038
+        "cve_count": 7883
       },
       {
         "date": "2026-11",
-        "cve_count": 6662
+        "cve_count": 7825
       },
       {
         "date": "2026-12",
-        "cve_count": 6761
+        "cve_count": 7702
       },
       {
         "date": "2027-01",
-        "cve_count": 4966
+        "cve_count": 4709
       },
       {
         "date": "2027-02",
-        "cve_count": 4866
+        "cve_count": 4711
       },
       {
         "date": "2027-03",
-        "cve_count": 4975
+        "cve_count": 4756
       },
       {
         "date": "2027-04",
-        "cve_count": 5062
+        "cve_count": 4720
       },
       {
         "date": "2027-05",
-        "cve_count": 4782
+        "cve_count": 4644
       },
       {
         "date": "2027-06",
-        "cve_count": 4856
+        "cve_count": 4583
       },
       {
         "date": "2027-07",
-        "cve_count": 4790
+        "cve_count": 4585
       },
       {
         "date": "2027-08",
-        "cve_count": 4690
+        "cve_count": 4630
       },
       {
         "date": "2027-09",
-        "cve_count": 4799
+        "cve_count": 4594
       },
       {
         "date": "2027-10",
-        "cve_count": 4886
+        "cve_count": 4518
       },
       {
         "date": "2027-11",
-        "cve_count": 4606
+        "cve_count": 4457
       },
       {
         "date": "2027-12",
-        "cve_count": 4680
+        "cve_count": 4459
       }
     ],
     "FourTheta": [
       {
-        "date": "2026-05",
-        "cve_count": 6897
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6994
+        "cve_count": 8024
       },
       {
         "date": "2026-07",
-        "cve_count": 6908
+        "cve_count": 7904
       },
       {
         "date": "2026-08",
-        "cve_count": 6777
+        "cve_count": 7808
       },
       {
         "date": "2026-09",
-        "cve_count": 6919
+        "cve_count": 7811
       },
       {
         "date": "2026-10",
-        "cve_count": 7034
+        "cve_count": 7882
       },
       {
         "date": "2026-11",
-        "cve_count": 6667
+        "cve_count": 7825
       },
       {
         "date": "2026-12",
-        "cve_count": 6764
+        "cve_count": 7706
       },
       {
         "date": "2027-01",
-        "cve_count": 4962
+        "cve_count": 4707
       },
       {
         "date": "2027-02",
-        "cve_count": 4865
+        "cve_count": 4708
       },
       {
         "date": "2027-03",
-        "cve_count": 4970
+        "cve_count": 4752
       },
       {
         "date": "2027-04",
-        "cve_count": 5055
+        "cve_count": 4717
       },
       {
         "date": "2027-05",
-        "cve_count": 4783
+        "cve_count": 4643
       },
       {
         "date": "2027-06",
-        "cve_count": 4855
+        "cve_count": 4584
       },
       {
         "date": "2027-07",
-        "cve_count": 4791
+        "cve_count": 4585
       },
       {
         "date": "2027-08",
-        "cve_count": 4694
+        "cve_count": 4630
       },
       {
         "date": "2027-09",
-        "cve_count": 4800
+        "cve_count": 4594
       },
       {
         "date": "2027-10",
-        "cve_count": 4885
+        "cve_count": 4520
       },
       {
         "date": "2027-11",
-        "cve_count": 4612
+        "cve_count": 4461
       },
       {
         "date": "2027-12",
-        "cve_count": 4684
+        "cve_count": 4463
       }
     ],
     "KalmanFilter": [
       {
-        "date": "2026-05",
-        "cve_count": 6693
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6819
+        "cve_count": 7960
       },
       {
         "date": "2026-07",
-        "cve_count": 6244
+        "cve_count": 7222
       },
       {
         "date": "2026-08",
-        "cve_count": 6875
+        "cve_count": 8032
       },
       {
         "date": "2026-09",
-        "cve_count": 6945
+        "cve_count": 7655
       },
       {
         "date": "2026-10",
-        "cve_count": 6842
+        "cve_count": 7720
       },
       {
         "date": "2026-11",
-        "cve_count": 7347
+        "cve_count": 8417
       },
       {
         "date": "2026-12",
-        "cve_count": 7195
+        "cve_count": 7954
       },
       {
         "date": "2027-01",
-        "cve_count": 4377
+        "cve_count": 4176
       },
       {
         "date": "2027-02",
-        "cve_count": 4552
+        "cve_count": 4327
       },
       {
         "date": "2027-03",
-        "cve_count": 4487
+        "cve_count": 4175
       },
       {
         "date": "2027-04",
-        "cve_count": 4650
+        "cve_count": 4485
       },
       {
         "date": "2027-05",
-        "cve_count": 4729
+        "cve_count": 4477
       },
       {
         "date": "2027-06",
-        "cve_count": 4737
+        "cve_count": 4473
       },
       {
         "date": "2027-07",
-        "cve_count": 4899
+        "cve_count": 4750
       },
       {
         "date": "2027-08",
-        "cve_count": 4933
+        "cve_count": 4668
       },
       {
         "date": "2027-09",
-        "cve_count": 5007
+        "cve_count": 4802
       },
       {
         "date": "2027-10",
-        "cve_count": 5136
+        "cve_count": 4982
       },
       {
         "date": "2027-11",
-        "cve_count": 5171
+        "cve_count": 4918
       },
       {
         "date": "2027-12",
-        "cve_count": 5281
+        "cve_count": 5131
       }
     ],
     "Croston": [
       {
-        "date": "2026-05",
-        "cve_count": 6871
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6871
+        "cve_count": 7851
       },
       {
         "date": "2026-07",
-        "cve_count": 6871
+        "cve_count": 7851
       },
       {
         "date": "2026-08",
-        "cve_count": 6871
+        "cve_count": 7851
       },
       {
         "date": "2026-09",
-        "cve_count": 6871
+        "cve_count": 7851
       },
       {
         "date": "2026-10",
-        "cve_count": 6871
+        "cve_count": 7851
       },
       {
         "date": "2026-11",
-        "cve_count": 6871
+        "cve_count": 7851
       },
       {
         "date": "2026-12",
-        "cve_count": 6871
+        "cve_count": 7851
       },
       {
         "date": "2027-01",
-        "cve_count": 4317
+        "cve_count": 4580
       },
       {
         "date": "2027-02",
-        "cve_count": 4317
+        "cve_count": 4580
       },
       {
         "date": "2027-03",
-        "cve_count": 4317
+        "cve_count": 4580
       },
       {
         "date": "2027-04",
-        "cve_count": 4317
+        "cve_count": 4580
       },
       {
         "date": "2027-05",
-        "cve_count": 4317
+        "cve_count": 4580
       },
       {
         "date": "2027-06",
-        "cve_count": 4317
+        "cve_count": 4580
       },
       {
         "date": "2027-07",
-        "cve_count": 4317
+        "cve_count": 4580
       },
       {
         "date": "2027-08",
-        "cve_count": 4317
+        "cve_count": 4580
       },
       {
         "date": "2027-09",
-        "cve_count": 4317
+        "cve_count": 4580
       },
       {
         "date": "2027-10",
-        "cve_count": 4317
+        "cve_count": 4580
       },
       {
         "date": "2027-11",
-        "cve_count": 4317
+        "cve_count": 4580
       },
       {
         "date": "2027-12",
-        "cve_count": 4317
+        "cve_count": 4580
       }
     ],
     "all_models_avg": [
       {
-        "date": "2026-05",
-        "cve_count": 6760
-      },
-      {
         "date": "2026-06",
-        "cve_count": 6870
+        "cve_count": 7851
       },
       {
         "date": "2026-07",
-        "cve_count": 6793
+        "cve_count": 7739
       },
       {
         "date": "2026-08",
-        "cve_count": 6846
+        "cve_count": 7807
       },
       {
         "date": "2026-09",
-        "cve_count": 6871
+        "cve_count": 7810
       },
       {
         "date": "2026-10",
-        "cve_count": 6942
+        "cve_count": 7883
       },
       {
         "date": "2026-11",
-        "cve_count": 6989
+        "cve_count": 7964
       },
       {
         "date": "2026-12",
-        "cve_count": 7037
+        "cve_count": 7963
       },
       {
         "date": "2027-01",
-        "cve_count": 4657
+        "cve_count": 4569
       },
       {
         "date": "2027-02",
-        "cve_count": 4689
+        "cve_count": 4606
       },
       {
         "date": "2027-03",
-        "cve_count": 4830
+        "cve_count": 4600
       },
       {
         "date": "2027-04",
-        "cve_count": 4830
+        "cve_count": 4590
       },
       {
         "date": "2027-05",
-        "cve_count": 4783
+        "cve_count": 4614
       },
       {
         "date": "2027-06",
-        "cve_count": 4830
+        "cve_count": 4584
       },
       {
         "date": "2027-07",
-        "cve_count": 4836
+        "cve_count": 4614
       },
       {
         "date": "2027-08",
-        "cve_count": 4830
+        "cve_count": 4630
       },
       {
         "date": "2027-09",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-10",
-        "cve_count": 4885
+        "cve_count": 4614
       },
       {
         "date": "2027-11",
-        "cve_count": 4830
+        "cve_count": 4614
       },
       {
         "date": "2027-12",
-        "cve_count": 4846
+        "cve_count": 4643
       }
     ]
   },
   "summary": {
     "data_period": {
       "start": "2017-01-31",
-      "end": "2026-05-31"
+      "end": "2026-06-30"
     },
     "forecast_period": {
-      "start": "2026-06-01",
+      "start": "2026-07-01",
       "end": "2027-12-31"
     },
-    "total_historical_cves": 256839,
+    "total_historical_cves": 256892,
     "models_evaluated": 13,
-    "data_points": 113,
-    "cumulative_cves_2026": 27889,
+    "data_points": 114,
+    "cumulative_cves_2026": 27942,
     "previous_year_total": 48172
   },
   "forecast_vs_published": {
@@ -2802,11 +2694,19 @@
           "ERROR": -1162,
           "PERCENT_ERROR": -19.97,
           "PERFORMANCE": "Fair"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 4541,
+          "ERROR": -2408,
+          "PERCENT_ERROR": -34.65,
+          "PERFORMANCE": "Poor"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 862.75,
-        "mean_absolute_percentage_error": 14.86
+        "mean_absolute_error": 1171.8,
+        "mean_absolute_percentage_error": 18.82
       }
     },
     "ExponentialSmoothing": {
@@ -2842,11 +2742,19 @@
           "ERROR": -1453,
           "PERCENT_ERROR": -24.97,
           "PERFORMANCE": "Poor"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 4367,
+          "ERROR": -2582,
+          "PERCENT_ERROR": -37.16,
+          "PERFORMANCE": "Poor"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 909.75,
-        "mean_absolute_percentage_error": 15.45
+        "mean_absolute_error": 1244.2,
+        "mean_absolute_percentage_error": 19.79
       }
     },
     "TBATS": {
@@ -2882,11 +2790,19 @@
           "ERROR": -1283,
           "PERCENT_ERROR": -22.04,
           "PERFORMANCE": "Poor"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 4569,
+          "ERROR": -2380,
+          "PERCENT_ERROR": -34.25,
+          "PERFORMANCE": "Poor"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 817.0,
-        "mean_absolute_percentage_error": 13.79
+        "mean_absolute_error": 1129.6,
+        "mean_absolute_percentage_error": 17.88
       }
     },
     "XGBoost": {
@@ -2922,11 +2838,19 @@
           "ERROR": -1609,
           "PERCENT_ERROR": -27.65,
           "PERFORMANCE": "Poor"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 4309,
+          "ERROR": -2640,
+          "PERCENT_ERROR": -37.99,
+          "PERFORMANCE": "Poor"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 920.5,
-        "mean_absolute_percentage_error": 15.63
+        "mean_absolute_error": 1264.4,
+        "mean_absolute_percentage_error": 20.1
       }
     },
     "LightGBM": {
@@ -2962,11 +2886,19 @@
           "ERROR": -1681,
           "PERCENT_ERROR": -28.88,
           "PERFORMANCE": "Poor"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 4104,
+          "ERROR": -2845,
+          "PERCENT_ERROR": -40.94,
+          "PERFORMANCE": "Poor"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 1123.25,
-        "mean_absolute_percentage_error": 19.66
+        "mean_absolute_error": 1467.6,
+        "mean_absolute_percentage_error": 23.92
       }
     },
     "CatBoost": {
@@ -3002,11 +2934,19 @@
           "ERROR": -2205,
           "PERCENT_ERROR": -37.89,
           "PERFORMANCE": "Poor"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 3628,
+          "ERROR": -3321,
+          "PERCENT_ERROR": -47.79,
+          "PERFORMANCE": "Poor"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 1534.5,
-        "mean_absolute_percentage_error": 27.62
+        "mean_absolute_error": 1891.8,
+        "mean_absolute_percentage_error": 31.66
       }
     },
     "RandomForest": {
@@ -3042,11 +2982,19 @@
           "ERROR": -1620,
           "PERCENT_ERROR": -27.84,
           "PERFORMANCE": "Poor"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 4227,
+          "ERROR": -2722,
+          "PERCENT_ERROR": -39.17,
+          "PERFORMANCE": "Poor"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 1050.5,
-        "mean_absolute_percentage_error": 18.19
+        "mean_absolute_error": 1384.8,
+        "mean_absolute_percentage_error": 22.39
       }
     },
     "LinearRegression": {
@@ -3078,15 +3026,23 @@
         {
           "MONTH": "2026-04",
           "PUBLISHED": 5820,
-          "FORECAST": 5632,
-          "ERROR": -188,
-          "PERCENT_ERROR": -3.23,
+          "FORECAST": 5686,
+          "ERROR": -134,
+          "PERCENT_ERROR": -2.3,
           "PERFORMANCE": "Excellent"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 5797,
+          "ERROR": -1152,
+          "PERCENT_ERROR": -16.58,
+          "PERFORMANCE": "Fair"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 690.25,
-        "mean_absolute_percentage_error": 14.1
+        "mean_absolute_error": 771.8,
+        "mean_absolute_percentage_error": 14.41
       }
     },
     "AutoARIMA": {
@@ -3122,11 +3078,19 @@
           "ERROR": -1460,
           "PERCENT_ERROR": -25.09,
           "PERFORMANCE": "Poor"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 4389,
+          "ERROR": -2560,
+          "PERCENT_ERROR": -36.84,
+          "PERFORMANCE": "Poor"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 932.25,
-        "mean_absolute_percentage_error": 15.87
+        "mean_absolute_error": 1257.8,
+        "mean_absolute_percentage_error": 20.07
       }
     },
     "Theta": {
@@ -3162,11 +3126,19 @@
           "ERROR": -1520,
           "PERCENT_ERROR": -26.12,
           "PERFORMANCE": "Poor"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 4151,
+          "ERROR": -2798,
+          "PERCENT_ERROR": -40.26,
+          "PERFORMANCE": "Poor"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 1021.75,
-        "mean_absolute_percentage_error": 17.71
+        "mean_absolute_error": 1377.0,
+        "mean_absolute_percentage_error": 22.22
       }
     },
     "FourTheta": {
@@ -3202,11 +3174,19 @@
           "ERROR": -1334,
           "PERCENT_ERROR": -22.92,
           "PERFORMANCE": "Poor"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 4337,
+          "ERROR": -2612,
+          "PERCENT_ERROR": -37.59,
+          "PERFORMANCE": "Poor"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 835.75,
-        "mean_absolute_percentage_error": 14.08
+        "mean_absolute_error": 1191.0,
+        "mean_absolute_percentage_error": 18.78
       }
     },
     "KalmanFilter": {
@@ -3242,11 +3222,19 @@
           "ERROR": -1365,
           "PERCENT_ERROR": -23.45,
           "PERFORMANCE": "Poor"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 4543,
+          "ERROR": -2406,
+          "PERCENT_ERROR": -34.62,
+          "PERFORMANCE": "Poor"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 877.0,
-        "mean_absolute_percentage_error": 15.43
+        "mean_absolute_error": 1182.8,
+        "mean_absolute_percentage_error": 19.27
       }
     },
     "Croston": {
@@ -3282,11 +3270,19 @@
           "ERROR": -2032,
           "PERCENT_ERROR": -34.91,
           "PERFORMANCE": "Poor"
+        },
+        {
+          "MONTH": "2026-05",
+          "PUBLISHED": 6949,
+          "FORECAST": 3788,
+          "ERROR": -3161,
+          "PERCENT_ERROR": -45.49,
+          "PERFORMANCE": "Poor"
         }
       ],
       "summary_stats": {
-        "mean_absolute_error": 1459.75,
-        "mean_absolute_percentage_error": 26.08
+        "mean_absolute_error": 1800.0,
+        "mean_absolute_percentage_error": 29.96
       }
     }
   }
