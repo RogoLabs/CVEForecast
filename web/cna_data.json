@@ -120,7 +120,7 @@
       "2026-06-01 00:00:00": 335,
       "2026-07-01 00:00:00": 298,
       "2026-08-01 00:00:00": 482,
-      "2026-09-01 00:00:00": 85
+      "2026-09-01 00:00:00": 94
     },
     "historical_cumulative": [
       {
@@ -592,32 +592,32 @@
         "cumulative_total": 2854
       },
       {
-        "date": "2026-09-05T02:26:46Z",
-        "cumulative_total": 2939
+        "date": "2026-09-06T02:23:03Z",
+        "cumulative_total": 2948
       }
     ],
     "forecasts": {
-      "XGBoost": {
-        "2026-09-01 00:00:00": 382,
-        "2026-10-01 00:00:00": 444,
-        "2026-11-01 00:00:00": 502,
-        "2026-12-01 00:00:00": 427,
-        "2027-01-01 00:00:00": 400,
-        "2027-02-01 00:00:00": 364,
-        "2027-03-01 00:00:00": 282,
-        "2027-04-01 00:00:00": 396,
-        "2027-05-01 00:00:00": 416,
-        "2027-06-01 00:00:00": 331,
-        "2027-07-01 00:00:00": 396,
-        "2027-08-01 00:00:00": 391,
-        "2027-09-01 00:00:00": 342,
-        "2027-10-01 00:00:00": 357,
-        "2027-11-01 00:00:00": 374,
-        "2027-12-01 00:00:00": 354
+      "LinearRegression": {
+        "2026-09-01 00:00:00": 358,
+        "2026-10-01 00:00:00": 328,
+        "2026-11-01 00:00:00": 320,
+        "2026-12-01 00:00:00": 319,
+        "2027-01-01 00:00:00": 350,
+        "2027-02-01 00:00:00": 294,
+        "2027-03-01 00:00:00": 265,
+        "2027-04-01 00:00:00": 360,
+        "2027-05-01 00:00:00": 260,
+        "2027-06-01 00:00:00": 281,
+        "2027-07-01 00:00:00": 248,
+        "2027-08-01 00:00:00": 251,
+        "2027-09-01 00:00:00": 273,
+        "2027-10-01 00:00:00": 216,
+        "2027-11-01 00:00:00": 207,
+        "2027-12-01 00:00:00": 257
       }
     },
     "cumulative_timelines": {
-      "XGBoost_cumulative": [
+      "LinearRegression_cumulative": [
         {
           "date": "2026-01-01T00:00:00Z",
           "cumulative_total": 0
@@ -628,19 +628,19 @@
         },
         {
           "date": "2026-10-01T00:00:00Z",
-          "cumulative_total": 3236
+          "cumulative_total": 3212
         },
         {
           "date": "2026-11-01T00:00:00Z",
-          "cumulative_total": 3680
+          "cumulative_total": 3540
         },
         {
           "date": "2026-12-01T00:00:00Z",
-          "cumulative_total": 4182
+          "cumulative_total": 3860
         },
         {
           "date": "2026-12-31T23:59:59Z",
-          "cumulative_total": 4609
+          "cumulative_total": 4179
         },
         {
           "date": "2027-01-01T00:00:00Z",
@@ -648,63 +648,63 @@
         },
         {
           "date": "2027-02-01T00:00:00Z",
-          "cumulative_total": 400
+          "cumulative_total": 350
         },
         {
           "date": "2027-03-01T00:00:00Z",
-          "cumulative_total": 764
+          "cumulative_total": 644
         },
         {
           "date": "2027-04-01T00:00:00Z",
-          "cumulative_total": 1046
+          "cumulative_total": 909
         },
         {
           "date": "2027-05-01T00:00:00Z",
-          "cumulative_total": 1442
+          "cumulative_total": 1269
         },
         {
           "date": "2027-06-01T00:00:00Z",
-          "cumulative_total": 1858
+          "cumulative_total": 1529
         },
         {
           "date": "2027-07-01T00:00:00Z",
-          "cumulative_total": 2189
+          "cumulative_total": 1810
         },
         {
           "date": "2027-08-01T00:00:00Z",
-          "cumulative_total": 2585
+          "cumulative_total": 2058
         },
         {
           "date": "2027-09-01T00:00:00Z",
-          "cumulative_total": 2976
+          "cumulative_total": 2309
         },
         {
           "date": "2027-10-01T00:00:00Z",
-          "cumulative_total": 3318
+          "cumulative_total": 2582
         },
         {
           "date": "2027-11-01T00:00:00Z",
-          "cumulative_total": 3675
+          "cumulative_total": 2798
         },
         {
           "date": "2027-12-01T00:00:00Z",
-          "cumulative_total": 4049
+          "cumulative_total": 3005
         },
         {
           "date": "2027-12-31T23:59:59Z",
-          "cumulative_total": 4403
+          "cumulative_total": 3262
         }
       ]
     },
     "model_selection": {
-      "selected_model": "XGBoost",
-      "validation_mape": 64.76135716433836,
+      "selected_model": "LinearRegression",
+      "validation_mape": 58.08362279259948,
       "all_model_scores": {
         "ExponentialSmoothing": null,
-        "LightGBM": 69.63355010279174,
-        "XGBoost": 64.76135716433836,
-        "LinearRegression": 64.88344914629872,
-        "Prophet": 73.10729924266148
+        "LightGBM": 62.12617841386009,
+        "XGBoost": 58.13221846129647,
+        "LinearRegression": 58.08362279259948,
+        "Prophet": 65.51272554776962
       }
     }
   },
@@ -1141,7 +1141,7 @@
         "cumulative_total": 9478
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:03Z",
         "cumulative_total": 9613
       }
     ],
@@ -1252,7 +1252,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 148.94921651026382,
         "XGBoost": 220.09499397959047,
-        "LinearRegression": 372.07923229897364,
+        "LinearRegression": 372.0792322989736,
         "Prophet": 110.82468375497494
       }
     }
@@ -1570,7 +1570,7 @@
         "cumulative_total": 3705
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:03Z",
         "cumulative_total": 3784
       }
     ],
@@ -1745,7 +1745,7 @@
       "2026-06-01 00:00:00": 464,
       "2026-07-01 00:00:00": 440,
       "2026-08-01 00:00:00": 684,
-      "2026-09-01 00:00:00": 90
+      "2026-09-01 00:00:00": 96
     },
     "historical_cumulative": [
       {
@@ -1969,8 +1969,8 @@
         "cumulative_total": 4447
       },
       {
-        "date": "2026-09-05T02:26:46Z",
-        "cumulative_total": 4537
+        "date": "2026-09-06T02:23:03Z",
+        "cumulative_total": 4543
       }
     ],
     "forecasts": {
@@ -2075,13 +2075,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 107.01851238508159,
+      "validation_mape": 100.50093149291592,
       "all_model_scores": {
         "ExponentialSmoothing": null,
-        "LightGBM": 112.78536918698758,
-        "XGBoost": 143.32334202492225,
-        "LinearRegression": 239.79253071345838,
-        "Prophet": 107.01851238508159
+        "LightGBM": 105.92489240213877,
+        "XGBoost": 134.6891654174371,
+        "LinearRegression": 226.92550793054167,
+        "Prophet": 100.50093149291592
       }
     }
   },
@@ -2253,7 +2253,7 @@
         "cumulative_total": 5068
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:03Z",
         "cumulative_total": 5256
       }
     ],
@@ -2962,7 +2962,7 @@
         "cumulative_total": 1963
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:03Z",
         "cumulative_total": 1971
       }
     ],
@@ -3074,7 +3074,7 @@
         "LightGBM": 183.67937029449587,
         "XGBoost": 200.19325058373676,
         "LinearRegression": 210.7328255295132,
-        "Prophet": 202.1034291984397
+        "Prophet": 202.10342919843973
       }
     }
   },
@@ -3671,7 +3671,7 @@
         "cumulative_total": 783
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:03Z",
         "cumulative_total": 816
       }
     ],
@@ -3783,7 +3783,7 @@
         "LightGBM": 63.93498460008947,
         "XGBoost": 60.307914279578625,
         "LinearRegression": 66.58814173332487,
-        "Prophet": 63.25915345644923
+        "Prophet": 63.259153456449226
       }
     }
   },
@@ -3854,7 +3854,7 @@
       "2026-06-01 00:00:00": 258,
       "2026-07-01 00:00:00": 454,
       "2026-08-01 00:00:00": 303,
-      "2026-09-01 00:00:00": 41
+      "2026-09-01 00:00:00": 72
     },
     "historical_cumulative": [
       {
@@ -4110,8 +4110,8 @@
         "cumulative_total": 2728
       },
       {
-        "date": "2026-09-05T02:26:46Z",
-        "cumulative_total": 2769
+        "date": "2026-09-06T02:23:03Z",
+        "cumulative_total": 2800
       }
     ],
     "forecasts": {
@@ -4216,13 +4216,13 @@
     },
     "model_selection": {
       "selected_model": "LightGBM",
-      "validation_mape": 114.57904444205622,
+      "validation_mape": 66.71286677923356,
       "all_model_scores": {
         "ExponentialSmoothing": null,
-        "LightGBM": 114.57904444205622,
-        "XGBoost": 148.90402497666736,
-        "LinearRegression": 166.4173779005484,
-        "Prophet": 152.57453098062507
+        "LightGBM": 66.71286677923356,
+        "XGBoost": 86.309079160393,
+        "LinearRegression": 95.67376506620012,
+        "Prophet": 87.52902086958744
       }
     }
   },
@@ -4818,7 +4818,7 @@
         "cumulative_total": 2442
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 2442
       }
     ],
@@ -4929,7 +4929,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 100.72048191183025,
         "XGBoost": 84.35655891520145,
-        "LinearRegression": 94.8263078897941,
+        "LinearRegression": 94.82630788979412,
         "Prophet": 279.8774202121036
       }
     }
@@ -5527,7 +5527,7 @@
         "cumulative_total": 836
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 906
       }
     ],
@@ -5638,7 +5638,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 48.54119293670962,
         "XGBoost": 34.33481889312214,
-        "LinearRegression": 47.07382698776129,
+        "LinearRegression": 47.073826987761294,
         "Prophet": 67.34735466764566
       }
     }
@@ -6230,7 +6230,7 @@
         "cumulative_total": 561
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 561
       }
     ],
@@ -6341,7 +6341,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 34.49592754923378,
         "XGBoost": 37.12887448905506,
-        "LinearRegression": 38.56914506514176,
+        "LinearRegression": 38.569145065141775,
         "Prophet": 95.50384089106238
       }
     }
@@ -6939,7 +6939,7 @@
         "cumulative_total": 611
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 613
       }
     ],
@@ -7051,7 +7051,7 @@
         "LightGBM": 432.56188710154726,
         "XGBoost": 362.2906666326074,
         "LinearRegression": 1165.2470329378425,
-        "Prophet": 502.56648752953043
+        "Prophet": 502.5664875295304
       }
     }
   },
@@ -7101,7 +7101,7 @@
       "2026-06-01 00:00:00": 667,
       "2026-07-01 00:00:00": 705,
       "2026-08-01 00:00:00": 1261,
-      "2026-09-01 00:00:00": 277
+      "2026-09-01 00:00:00": 314
     },
     "historical_cumulative": [
       {
@@ -7273,8 +7273,8 @@
         "cumulative_total": 5276
       },
       {
-        "date": "2026-09-05T02:26:46Z",
-        "cumulative_total": 5553
+        "date": "2026-09-06T02:23:04Z",
+        "cumulative_total": 5590
       }
     ],
     "forecasts": {
@@ -7379,13 +7379,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 40.44445505671266,
+      "validation_mape": 36.63607609908628,
       "all_model_scores": {
         "ExponentialSmoothing": null,
-        "LightGBM": 77.28747700293312,
-        "XGBoost": 65.03710292127785,
-        "LinearRegression": 315.822567420105,
-        "Prophet": 40.44445505671266
+        "LightGBM": 78.76545168677595,
+        "XGBoost": 60.77937068526613,
+        "LinearRegression": 289.2120560701665,
+        "Prophet": 36.63607609908628
       }
     }
   },
@@ -7982,7 +7982,7 @@
         "cumulative_total": 366
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 377
       }
     ],
@@ -8093,8 +8093,8 @@
         "ExponentialSmoothing": null,
         "LightGBM": 76.14702049416486,
         "XGBoost": 38.82987119195132,
-        "LinearRegression": 40.630762204110376,
-        "Prophet": 63.51513889451164
+        "LinearRegression": 40.63076220411039,
+        "Prophet": 63.51513889451162
       }
     }
   },
@@ -8691,7 +8691,7 @@
         "cumulative_total": 2474
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 2512
       }
     ],
@@ -9389,7 +9389,7 @@
         "cumulative_total": 142
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 142
       }
     ],
@@ -9496,7 +9496,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 2336.22928465715,
         "XGBoost": 1230.800783617743,
-        "LinearRegression": 1184.999460409944,
+        "LinearRegression": 1184.9994604099434,
         "Prophet": 1002.5060241424928
       }
     }
@@ -9572,7 +9572,7 @@
       "2026-06-01 00:00:00": 54,
       "2026-07-01 00:00:00": 222,
       "2026-08-01 00:00:00": 538,
-      "2026-09-01 00:00:00": 88
+      "2026-09-01 00:00:00": 122
     },
     "historical_cumulative": [
       {
@@ -9844,8 +9844,8 @@
         "cumulative_total": 897
       },
       {
-        "date": "2026-09-05T02:26:46Z",
-        "cumulative_total": 985
+        "date": "2026-09-06T02:23:04Z",
+        "cumulative_total": 1019
       }
     ],
     "forecasts": {
@@ -9950,13 +9950,13 @@
     },
     "model_selection": {
       "selected_model": "LinearRegression",
-      "validation_mape": 123.10253644480905,
+      "validation_mape": 124.42698785886203,
       "all_model_scores": {
         "ExponentialSmoothing": null,
-        "LightGBM": 130.3324004709428,
-        "XGBoost": 130.69350091492018,
-        "LinearRegression": 123.10253644480905,
-        "Prophet": 141.51544842243763
+        "LightGBM": 133.99654879957447,
+        "XGBoost": 132.3149893903881,
+        "LinearRegression": 124.42698785886203,
+        "Prophet": 142.45335246761567
       }
     }
   },
@@ -10548,7 +10548,7 @@
         "cumulative_total": 361
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 367
       }
     ],
@@ -10659,7 +10659,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 91.97807813135609,
         "XGBoost": 91.43631981024699,
-        "LinearRegression": 108.18305567575833,
+        "LinearRegression": 108.18305567575834,
         "Prophet": 83.86386027204323
       }
     }
@@ -11241,7 +11241,7 @@
         "cumulative_total": 117
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 117
       }
     ],
@@ -11949,7 +11949,7 @@
         "cumulative_total": 142
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 142
       }
     ],
@@ -12060,7 +12060,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 107.85118791286858,
         "XGBoost": 86.29292378039428,
-        "LinearRegression": 229.78655942566948,
+        "LinearRegression": 229.78655942566942,
         "Prophet": 387.50022224740854
       }
     }
@@ -12658,7 +12658,7 @@
         "cumulative_total": 162
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 163
       }
     ],
@@ -12770,7 +12770,7 @@
         "LightGBM": 144.38452878076032,
         "XGBoost": 82.35502739053143,
         "LinearRegression": 111.76337930206392,
-        "Prophet": 107.25647185872349
+        "Prophet": 107.25647185872356
       }
     }
   },
@@ -13331,7 +13331,7 @@
         "cumulative_total": 211
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 211
       }
     ],
@@ -14035,7 +14035,7 @@
         "cumulative_total": 183
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 191
       }
     ],
@@ -14141,12 +14141,12 @@
     },
     "model_selection": {
       "selected_model": "LinearRegression",
-      "validation_mape": 83.3257652880233,
+      "validation_mape": 83.32576528802328,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 93.45685100278209,
         "XGBoost": 100.74087771770823,
-        "LinearRegression": 83.3257652880233,
+        "LinearRegression": 83.32576528802328,
         "Prophet": 104.1863348919363
       }
     }
@@ -14729,7 +14729,7 @@
         "cumulative_total": 400
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 434
       }
     ],
@@ -14841,7 +14841,7 @@
         "LightGBM": 66.92202418876603,
         "XGBoost": 56.16713746346632,
         "LinearRegression": 54.00888808642746,
-        "Prophet": 62.48892860056062
+        "Prophet": 62.48892860056061
       }
     }
   },
@@ -15427,7 +15427,7 @@
         "cumulative_total": 64
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 64
       }
     ],
@@ -15534,7 +15534,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 983.3920211347507,
         "XGBoost": 682.9629488665648,
-        "LinearRegression": 568.9060811357621,
+        "LinearRegression": 568.9060811357618,
         "Prophet": 560.4575727729505
       }
     }
@@ -16127,7 +16127,7 @@
         "cumulative_total": 710
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 718
       }
     ],
@@ -16570,7 +16570,7 @@
         "cumulative_total": 75
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 75
       }
     ],
@@ -17279,7 +17279,7 @@
         "cumulative_total": 286
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 305
       }
     ],
@@ -17972,7 +17972,7 @@
         "cumulative_total": 120
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 120
       }
     ],
@@ -18078,13 +18078,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 28.952443245872132,
+      "validation_mape": 28.95244324587212,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 51.38977495463559,
         "XGBoost": 47.277783408309475,
         "LinearRegression": 50.66624077163701,
-        "Prophet": 28.952443245872132
+        "Prophet": 28.95244324587212
       }
     }
   },
@@ -18676,7 +18676,7 @@
         "cumulative_total": 82
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 83
       }
     ],
@@ -18787,7 +18787,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 353.3304225117502,
         "XGBoost": 352.00067882383814,
-        "LinearRegression": 469.8625716274023,
+        "LinearRegression": 469.8625716274022,
         "Prophet": 583.5519435703618
       }
     }
@@ -19375,7 +19375,7 @@
         "cumulative_total": 199
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 206
       }
     ],
@@ -19487,7 +19487,7 @@
         "LightGBM": 52.57335529253798,
         "XGBoost": 56.54290178444946,
         "LinearRegression": 55.3760188477905,
-        "Prophet": 55.37472845104531
+        "Prophet": 55.3747284510453
       }
     }
   },
@@ -20028,7 +20028,7 @@
         "cumulative_total": 156
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 156
       }
     ],
@@ -20139,8 +20139,8 @@
         "ExponentialSmoothing": null,
         "LightGBM": 37.46520451227666,
         "XGBoost": 21.099694560187686,
-        "LinearRegression": 27.583029970125132,
-        "Prophet": 44.00105430654693
+        "LinearRegression": 27.58302997012514,
+        "Prophet": 44.00105430654695
       }
     }
   },
@@ -20737,7 +20737,7 @@
         "cumulative_total": 81
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 167
       }
     ],
@@ -21326,7 +21326,7 @@
         "cumulative_total": 85
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 118
       }
     ],
@@ -21784,7 +21784,7 @@
         "cumulative_total": 117
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 117
       }
     ],
@@ -21895,7 +21895,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 72.86508988440484,
         "XGBoost": 70.89631355333249,
-        "LinearRegression": 87.31389146578834,
+        "LinearRegression": 87.3138914657884,
         "Prophet": 39.89840720959999
       }
     }
@@ -22287,7 +22287,7 @@
         "cumulative_total": 302
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 302
       }
     ],
@@ -22801,7 +22801,7 @@
         "cumulative_total": 167
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 174
       }
     ],
@@ -23510,7 +23510,7 @@
         "cumulative_total": 197
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 227
       }
     ],
@@ -24213,7 +24213,7 @@
         "cumulative_total": 99
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 99
       }
     ],
@@ -24324,7 +24324,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 137.81304141672504,
         "XGBoost": 151.81749183550198,
-        "LinearRegression": 181.46870928195412,
+        "LinearRegression": 181.46870928195415,
         "Prophet": 125.07391788203222
       }
     }
@@ -24906,7 +24906,7 @@
         "cumulative_total": 74
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 74
       }
     ],
@@ -25008,13 +25008,13 @@
     },
     "model_selection": {
       "selected_model": "LinearRegression",
-      "validation_mape": 25.56275026975215,
+      "validation_mape": 25.562750269752193,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 252.62733660508889,
         "XGBoost": 102.16508179267517,
-        "LinearRegression": 25.56275026975215,
-        "Prophet": 30.42573055382811
+        "LinearRegression": 25.562750269752193,
+        "Prophet": 30.42573055382806
       }
     }
   },
@@ -25310,7 +25310,7 @@
         "cumulative_total": 125
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 125
       }
     ],
@@ -25416,12 +25416,12 @@
     },
     "model_selection": {
       "selected_model": "LinearRegression",
-      "validation_mape": 94.32998637917942,
+      "validation_mape": 94.32998637917937,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 141.38261786584286,
         "XGBoost": 257.5808438221836,
-        "LinearRegression": 94.32998637917942,
+        "LinearRegression": 94.32998637917937,
         "Prophet": 108.11233337073962
       }
     }
@@ -25998,7 +25998,7 @@
         "cumulative_total": 275
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 275
       }
     ],
@@ -26109,7 +26109,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 60.85571675438012,
         "XGBoost": 62.95108768407884,
-        "LinearRegression": 67.16124247131368,
+        "LinearRegression": 67.16124247131367,
         "Prophet": 70.73424673137568
       }
     }
@@ -26707,7 +26707,7 @@
         "cumulative_total": 27
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 28
       }
     ],
@@ -26813,13 +26813,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 49.66533529790719,
+      "validation_mape": 49.66533529790723,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 69.40202981665232,
         "XGBoost": 122.49466520734131,
-        "LinearRegression": 59.414346258626004,
-        "Prophet": 49.66533529790719
+        "LinearRegression": 59.414346258626,
+        "Prophet": 49.66533529790723
       }
     }
   },
@@ -27291,7 +27291,7 @@
         "cumulative_total": 123
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 129
       }
     ],
@@ -27402,7 +27402,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 41.047678869964784,
         "XGBoost": 38.17551991798499,
-        "LinearRegression": 42.11426661239145,
+        "LinearRegression": 42.11426661239144,
         "Prophet": 61.60857749649913
       }
     }
@@ -27904,7 +27904,7 @@
         "cumulative_total": 32
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 32
       }
     ],
@@ -28006,12 +28006,12 @@
     },
     "model_selection": {
       "selected_model": "LinearRegression",
-      "validation_mape": 38.75071706047423,
+      "validation_mape": 38.75071706047419,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 52.53667206262399,
         "XGBoost": 44.44525105612618,
-        "LinearRegression": 38.75071706047423,
+        "LinearRegression": 38.75071706047419,
         "Prophet": 71.83582657876742
       }
     }
@@ -28609,7 +28609,7 @@
         "cumulative_total": 79
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 86
       }
     ],
@@ -28715,13 +28715,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 49.75103961087511,
+      "validation_mape": 49.751039610875104,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 74.09518562767342,
         "XGBoost": 54.4477377752945,
-        "LinearRegression": 84.32830215900206,
-        "Prophet": 49.75103961087511
+        "LinearRegression": 84.32830215900205,
+        "Prophet": 49.751039610875104
       }
     }
   },
@@ -29307,7 +29307,7 @@
         "cumulative_total": 3
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 3
       }
     ],
@@ -29732,7 +29732,7 @@
         "cumulative_total": 239
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 257
       }
     ],
@@ -29844,7 +29844,7 @@
         "LightGBM": 42.48989540738661,
         "XGBoost": 72.51553388881575,
         "LinearRegression": 249.96347055344202,
-        "Prophet": 67.27943113681381
+        "Prophet": 67.27943113681384
       }
     }
   },
@@ -30421,7 +30421,7 @@
         "cumulative_total": 32
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 36
       }
     ],
@@ -30532,7 +30532,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 70.98420902154679,
         "XGBoost": 22.749600410461426,
-        "LinearRegression": 40.02983317954102,
+        "LinearRegression": 40.029833179540994,
         "Prophet": 62.25707029581683
       }
     }
@@ -30930,7 +30930,7 @@
         "cumulative_total": 176
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 177
       }
     ],
@@ -31041,7 +31041,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 421.9258707782819,
         "XGBoost": 520.8352902621476,
-        "LinearRegression": 500.2516135359186,
+        "LinearRegression": 500.251613535919,
         "Prophet": 273.05395467513426
       }
     }
@@ -31638,7 +31638,7 @@
         "cumulative_total": 21
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 21
       }
     ],
@@ -32006,7 +32006,7 @@
         "cumulative_total": 23
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 23
       }
     ],
@@ -32117,8 +32117,8 @@
         "ExponentialSmoothing": null,
         "LightGBM": 85.58114035087718,
         "XGBoost": 138.43023876349133,
-        "LinearRegression": 80814.58145250495,
-        "Prophet": 303.32199190180575
+        "LinearRegression": 80814.58145250408,
+        "Prophet": 303.3219919018058
       }
     }
   },
@@ -32715,7 +32715,7 @@
         "cumulative_total": 50
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 51
       }
     ],
@@ -32826,8 +32826,8 @@
         "ExponentialSmoothing": null,
         "LightGBM": 154.0204969662094,
         "XGBoost": 149.35853096371147,
-        "LinearRegression": 154.20592313846504,
-        "Prophet": 163.47438701145327
+        "LinearRegression": 154.2059231384651,
+        "Prophet": 163.4743870114533
       }
     }
   },
@@ -33199,7 +33199,7 @@
         "cumulative_total": 115
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 117
       }
     ],
@@ -33305,13 +33305,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 78.78562456847838,
+      "validation_mape": 78.78562456847837,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 186.60598812516588,
         "XGBoost": 201.0162256600021,
         "LinearRegression": 216.10417719184264,
-        "Prophet": 78.78562456847838
+        "Prophet": 78.78562456847837
       }
     }
   },
@@ -33857,7 +33857,7 @@
         "cumulative_total": 123
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 123
       }
     ],
@@ -33964,7 +33964,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 60.64016958487651,
         "XGBoost": 58.80651151647373,
-        "LinearRegression": 66.08323608911155,
+        "LinearRegression": 66.08323608911158,
         "Prophet": 56.126598131316854
       }
     }
@@ -34396,7 +34396,7 @@
         "cumulative_total": 216
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 216
       }
     ],
@@ -35069,7 +35069,7 @@
         "cumulative_total": 58
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 58
       }
     ],
@@ -35180,8 +35180,8 @@
         "ExponentialSmoothing": null,
         "LightGBM": 67.76688726157762,
         "XGBoost": 60.644225584191766,
-        "LinearRegression": 103.8903831967879,
-        "Prophet": 83.62716779726108
+        "LinearRegression": 103.89038319678792,
+        "Prophet": 83.62716779726107
       }
     }
   },
@@ -35757,7 +35757,7 @@
         "cumulative_total": 108
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 108
       }
     ],
@@ -35914,7 +35914,7 @@
       "2026-06-01 00:00:00": 47,
       "2026-07-01 00:00:00": 53,
       "2026-08-01 00:00:00": 33,
-      "2026-09-01 00:00:00": 1
+      "2026-09-01 00:00:00": 7
     },
     "historical_cumulative": [
       {
@@ -36066,8 +36066,8 @@
         "cumulative_total": 249
       },
       {
-        "date": "2026-09-05T02:26:46Z",
-        "cumulative_total": 250
+        "date": "2026-09-06T02:23:04Z",
+        "cumulative_total": 256
       }
     ],
     "forecasts": {
@@ -36172,13 +36172,13 @@
     },
     "model_selection": {
       "selected_model": "XGBoost",
-      "validation_mape": 206.26255076849316,
+      "validation_mape": 55.978137839503184,
       "all_model_scores": {
         "ExponentialSmoothing": null,
-        "LightGBM": 351.65201230669265,
-        "XGBoost": 206.26255076849316,
-        "LinearRegression": 289.50759474055104,
-        "Prophet": 320.03826043396106
+        "LightGBM": 74.86629802097839,
+        "XGBoost": 55.978137839503184,
+        "LinearRegression": 60.936166169122465,
+        "Prophet": 58.044774023097624
       }
     }
   },
@@ -36744,7 +36744,7 @@
         "cumulative_total": 2
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 2
       }
     ],
@@ -37398,7 +37398,7 @@
         "cumulative_total": 19
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 19
       }
     ],
@@ -37867,7 +37867,7 @@
         "cumulative_total": 139
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 139
       }
     ],
@@ -37973,13 +37973,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 46.34743780877248,
+      "validation_mape": 46.347437808772476,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 52.86738291112217,
         "XGBoost": 59.85497988164518,
         "LinearRegression": 49.66387967737185,
-        "Prophet": 46.34743780877248
+        "Prophet": 46.347437808772476
       }
     }
   },
@@ -38341,7 +38341,7 @@
         "cumulative_total": 256
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 262
       }
     ],
@@ -38954,7 +38954,7 @@
         "cumulative_total": 83
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 83
       }
     ],
@@ -39363,7 +39363,7 @@
         "cumulative_total": 59
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 60
       }
     ],
@@ -39474,7 +39474,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 201.16080541747925,
         "XGBoost": 266.9781162010299,
-        "LinearRegression": 376.28501317065394,
+        "LinearRegression": 376.28501317065377,
         "Prophet": 304.3126930809118
       }
     }
@@ -40046,7 +40046,7 @@
         "cumulative_total": 9
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 9
       }
     ],
@@ -40152,13 +40152,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 46.62751871940293,
+      "validation_mape": 46.627518719402914,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 225.8088956420159,
         "XGBoost": 404.1600853204727,
-        "LinearRegression": 75.96262456581778,
-        "Prophet": 46.62751871940293
+        "LinearRegression": 75.96262456581782,
+        "Prophet": 46.627518719402914
       }
     }
   },
@@ -40745,7 +40745,7 @@
         "cumulative_total": 123
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 149
       }
     ],
@@ -40851,13 +40851,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 41.47403933282311,
+      "validation_mape": 41.474039332823104,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 75.81419774801942,
         "XGBoost": 87.93662919593713,
-        "LinearRegression": 43.07853398971212,
-        "Prophet": 41.47403933282311
+        "LinearRegression": 43.07853398971213,
+        "Prophet": 41.474039332823104
       }
     }
   },
@@ -41428,7 +41428,7 @@
         "cumulative_total": 3
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 3
       }
     ],
@@ -41536,7 +41536,7 @@
         "LightGBM": 146.63904983682272,
         "XGBoost": 84.45844650268555,
         "LinearRegression": 67.07704786916574,
-        "Prophet": 117.18553172782744
+        "Prophet": 117.18553172782748
       }
     }
   },
@@ -42108,7 +42108,7 @@
         "cumulative_total": 110
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 152
       }
     ],
@@ -42501,7 +42501,7 @@
         "cumulative_total": 90
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 90
       }
     ],
@@ -42612,7 +42612,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 106.1131415809695,
         "XGBoost": 102.99996171067191,
-        "LinearRegression": 154.81448516645818,
+        "LinearRegression": 154.8144851664582,
         "Prophet": 152.93434882687936
       }
     }
@@ -43189,7 +43189,7 @@
         "cumulative_total": 9
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 9
       }
     ],
@@ -43297,7 +43297,7 @@
         "LightGBM": 50.724271177114474,
         "XGBoost": 78.65812225888172,
         "LinearRegression": 53.50533568624159,
-        "Prophet": 119.65327296724968
+        "Prophet": 119.6532729672497
       }
     }
   },
@@ -43759,7 +43759,7 @@
         "cumulative_total": 39
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 40
       }
     ],
@@ -44062,7 +44062,7 @@
         "cumulative_total": 63
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 63
       }
     ],
@@ -44168,13 +44168,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 103.89960588201264,
+      "validation_mape": 103.89960588201268,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 106.35777477882742,
         "XGBoost": 129.9281450740078,
         "LinearRegression": null,
-        "Prophet": 103.89960588201264
+        "Prophet": 103.89960588201268
       }
     }
   },
@@ -44760,7 +44760,7 @@
         "cumulative_total": 47
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 47
       }
     ],
@@ -45428,7 +45428,7 @@
         "cumulative_total": 38
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 38
       }
     ],
@@ -45539,8 +45539,8 @@
         "ExponentialSmoothing": null,
         "LightGBM": 120.9250580309461,
         "XGBoost": 197.84022370974225,
-        "LinearRegression": 586.1986662464057,
-        "Prophet": 321.55916814576904
+        "LinearRegression": 586.1986662464058,
+        "Prophet": 321.559168145769
       }
     }
   },
@@ -46116,7 +46116,7 @@
         "cumulative_total": 30
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 30
       }
     ],
@@ -46227,7 +46227,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 88.01495649256623,
         "XGBoost": 56.93034251530966,
-        "LinearRegression": 46.82922756505735,
+        "LinearRegression": 46.82922756505736,
         "Prophet": 38.587079915701366
       }
     }
@@ -46335,7 +46335,7 @@
         "cumulative_total": 256
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 258
       }
     ],
@@ -46798,7 +46798,7 @@
         "cumulative_total": 54
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 54
       }
     ],
@@ -46904,13 +46904,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 184.18240494749384,
+      "validation_mape": 184.18240494749378,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 207.91590585730796,
         "XGBoost": 311.4155251742442,
         "LinearRegression": 821.273869001601,
-        "Prophet": 184.18240494749384
+        "Prophet": 184.18240494749378
       }
     }
   },
@@ -47332,7 +47332,7 @@
         "cumulative_total": 21
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 22
       }
     ],
@@ -47850,7 +47850,7 @@
         "cumulative_total": 29
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 29
       }
     ],
@@ -48419,7 +48419,7 @@
         "cumulative_total": 73
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 82
       }
     ],
@@ -48992,7 +48992,7 @@
         "cumulative_total": 125
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 125
       }
     ],
@@ -49420,7 +49420,7 @@
         "cumulative_total": 12
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 12
       }
     ],
@@ -49531,7 +49531,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 189.73492359992701,
         "XGBoost": 200.8193360434638,
-        "LinearRegression": 323.49062568805573,
+        "LinearRegression": 323.4906256880552,
         "Prophet": 87.88756041173495
       }
     }
@@ -50089,7 +50089,7 @@
         "cumulative_total": 69
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 76
       }
     ],
@@ -50777,7 +50777,7 @@
         "cumulative_total": 66
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 66
       }
     ],
@@ -50889,7 +50889,7 @@
         "LightGBM": 86.43511498869735,
         "XGBoost": 95.75033373007227,
         "LinearRegression": 84.53601143083104,
-        "Prophet": 88.9916244526033
+        "Prophet": 88.99162445260332
       }
     }
   },
@@ -51146,7 +51146,7 @@
         "cumulative_total": 40
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 58
       }
     ],
@@ -51257,7 +51257,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 85.63793323892844,
         "XGBoost": 135.52213475518957,
-        "LinearRegression": 204.67475388015285,
+        "LinearRegression": 204.67475388015282,
         "Prophet": 304.8108163113301
       }
     }
@@ -51625,7 +51625,7 @@
         "cumulative_total": 90
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 92
       }
     ],
@@ -52179,7 +52179,7 @@
         "cumulative_total": 129
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 139
       }
     ],
@@ -52612,7 +52612,7 @@
         "cumulative_total": 19
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 19
       }
     ],
@@ -52723,7 +52723,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 73.9147997891509,
         "XGBoost": 67.44553074240685,
-        "LinearRegression": 134.77553485971598,
+        "LinearRegression": 134.77553485971595,
         "Prophet": 47.05264192999944
       }
     }
@@ -52921,7 +52921,7 @@
         "cumulative_total": 85
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 87
       }
     ],
@@ -53589,7 +53589,7 @@
         "cumulative_total": 24
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 24
       }
     ],
@@ -53701,7 +53701,7 @@
         "LightGBM": 126.05029853085266,
         "XGBoost": 135.34352084000903,
         "LinearRegression": 69.79029511348365,
-        "Prophet": 70.36124790577627
+        "Prophet": 70.36124790577625
       }
     }
   },
@@ -54478,7 +54478,7 @@
         "cumulative_total": 29
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 34
       }
     ],
@@ -54589,8 +54589,8 @@
         "ExponentialSmoothing": null,
         "LightGBM": 79.18424231295008,
         "XGBoost": 107.27834001893089,
-        "LinearRegression": 103.9403899378881,
-        "Prophet": 87.73505504717606
+        "LinearRegression": 103.94038993788813,
+        "Prophet": 87.73505504717608
       }
     }
   },
@@ -54897,7 +54897,7 @@
         "cumulative_total": 94
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 97
       }
     ],
@@ -55008,7 +55008,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 73.7855458962552,
         "XGBoost": 70.16749026865604,
-        "LinearRegression": 75.87381318449816,
+        "LinearRegression": 75.87381318449813,
         "Prophet": 60.711927217223284
       }
     }
@@ -55555,7 +55555,7 @@
         "cumulative_total": 3
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 3
       }
     ],
@@ -55984,7 +55984,7 @@
         "cumulative_total": 32
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 32
       }
     ],
@@ -56218,7 +56218,7 @@
         "cumulative_total": 105
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 105
       }
     ],
@@ -56707,7 +56707,7 @@
         "cumulative_total": 29
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 29
       }
     ],
@@ -56813,13 +56813,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 243.72427028162,
+      "validation_mape": 243.72427028162008,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": null,
         "XGBoost": null,
         "LinearRegression": null,
-        "Prophet": 243.72427028162
+        "Prophet": 243.72427028162008
       }
     }
   },
@@ -57115,7 +57115,7 @@
         "cumulative_total": 39
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 39
       }
     ],
@@ -57222,7 +57222,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 82.31652270244527,
         "XGBoost": 107.3951332465462,
-        "LinearRegression": 138.39957886860213,
+        "LinearRegression": 138.39957886860196,
         "Prophet": 94.04611560416438
       }
     }
@@ -57604,7 +57604,7 @@
         "cumulative_total": 31
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 31
       }
     ],
@@ -57711,7 +57711,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 89.69652499099968,
         "XGBoost": 237.98773686091104,
-        "LinearRegression": 210.22947035416286,
+        "LinearRegression": 210.22947035416274,
         "Prophet": 357.0229757138168
       }
     }
@@ -57908,7 +57908,7 @@
         "cumulative_total": 72
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 72
       }
     ],
@@ -58496,7 +58496,7 @@
         "cumulative_total": 9
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 9
       }
     ],
@@ -58604,7 +58604,7 @@
         "LightGBM": 55.19590969495663,
         "XGBoost": 60.455098996559784,
         "LinearRegression": 78.94838724111628,
-        "Prophet": 93.91660828088578
+        "Prophet": 93.91660828088577
       }
     }
   },
@@ -58706,7 +58706,7 @@
         "cumulative_total": 151
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 153
       }
     ],
@@ -59369,7 +59369,7 @@
         "cumulative_total": 2
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 2
       }
     ],
@@ -59718,7 +59718,7 @@
         "cumulative_total": 17
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 17
       }
     ],
@@ -59825,8 +59825,8 @@
         "ExponentialSmoothing": null,
         "LightGBM": 31.607142857142854,
         "XGBoost": 15.175223350524902,
-        "LinearRegression": 292.9143634201624,
-        "Prophet": 70.29853155948891
+        "LinearRegression": 292.91436342016283,
+        "Prophet": 70.2985315594889
       }
     }
   },
@@ -60372,7 +60372,7 @@
         "cumulative_total": 8
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 8
       }
     ],
@@ -60484,7 +60484,7 @@
         "LightGBM": 71.17558973202253,
         "XGBoost": 85.02186417579651,
         "LinearRegression": 75.6781634166388,
-        "Prophet": 106.5222690398171
+        "Prophet": 106.52226903981705
       }
     }
   },
@@ -61060,7 +61060,7 @@
         "cumulative_total": 49
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 49
       }
     ],
@@ -61743,7 +61743,7 @@
         "cumulative_total": 13
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 13
       }
     ],
@@ -61850,7 +61850,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 146.16875868254365,
         "XGBoost": 42.37623314062755,
-        "LinearRegression": 234.60667935498586,
+        "LinearRegression": 234.60667935498583,
         "Prophet": 58.15667324653357
       }
     }
@@ -62197,7 +62197,7 @@
         "cumulative_total": 22
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 22
       }
     ],
@@ -62303,13 +62303,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 64.1369824997915,
+      "validation_mape": 64.13698249979147,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 66.6794801520491,
         "XGBoost": 87.57210201942004,
-        "LinearRegression": 212.94244034191144,
-        "Prophet": 64.1369824997915
+        "LinearRegression": 212.9424403419116,
+        "Prophet": 64.13698249979147
       }
     }
   },
@@ -62620,7 +62620,7 @@
         "cumulative_total": 70
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 70
       }
     ],
@@ -62731,7 +62731,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 82.95515865827237,
         "XGBoost": 68.25225615627551,
-        "LinearRegression": 61.75271948707442,
+        "LinearRegression": 61.752719487074394,
         "Prophet": 51.73908058027193
       }
     }
@@ -62953,7 +62953,7 @@
         "cumulative_total": 96
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 96
       }
     ],
@@ -63197,7 +63197,7 @@
         "cumulative_total": 112
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 121
       }
     ],
@@ -63620,7 +63620,7 @@
         "cumulative_total": 54
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 54
       }
     ],
@@ -63731,7 +63731,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 76.99075874895591,
         "XGBoost": 71.63285110145807,
-        "LinearRegression": 151.49990679196287,
+        "LinearRegression": 151.49990679196296,
         "Prophet": 74.76920339305178
       }
     }
@@ -64058,7 +64058,7 @@
         "cumulative_total": 23
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 23
       }
     ],
@@ -64169,7 +64169,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 86.8509146139709,
         "XGBoost": 108.3236592610677,
-        "LinearRegression": 192.39371934743778,
+        "LinearRegression": 192.39371934743775,
         "Prophet": 71.35839173455118
       }
     }
@@ -64731,7 +64731,7 @@
         "cumulative_total": 9
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 9
       }
     ],
@@ -64843,7 +64843,7 @@
         "LightGBM": 84.81090028935186,
         "XGBoost": 149.07275531440973,
         "LinearRegression": 76.91410203064576,
-        "Prophet": 106.5190744974877
+        "Prophet": 106.51907449748768
       }
     }
   },
@@ -65179,7 +65179,7 @@
         "cumulative_total": 39
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 39
       }
     ],
@@ -65567,13 +65567,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 51.109340547234524,
+      "validation_mape": 51.109340547234574,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 100.0,
         "XGBoost": 100.0,
         "LinearRegression": null,
-        "Prophet": 51.109340547234524
+        "Prophet": 51.109340547234574
       }
     }
   },
@@ -66144,7 +66144,7 @@
         "cumulative_total": 21
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 21
       }
     ],
@@ -66663,7 +66663,7 @@
         "cumulative_total": 3
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 3
       }
     ],
@@ -66765,13 +66765,13 @@
     },
     "model_selection": {
       "selected_model": "LinearRegression",
-      "validation_mape": 48.560628670687116,
+      "validation_mape": 48.5606286706871,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 103.81345405655952,
         "XGBoost": 62.4030664563179,
-        "LinearRegression": 48.560628670687116,
-        "Prophet": 168.04244423266175
+        "LinearRegression": 48.5606286706871,
+        "Prophet": 168.04244423266178
       }
     }
   },
@@ -67063,7 +67063,7 @@
         "cumulative_total": 23
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 26
       }
     ],
@@ -67175,7 +67175,7 @@
         "LightGBM": 144.220205033978,
         "XGBoost": 183.21636301098448,
         "LinearRegression": 66.39112693860628,
-        "Prophet": 139.54778711616657
+        "Prophet": 139.5477871161666
       }
     }
   },
@@ -67576,7 +67576,7 @@
         "cumulative_total": 10
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 10
       }
     ],
@@ -67683,7 +67683,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 68.73679249487942,
         "XGBoost": 69.47396374618015,
-        "LinearRegression": 74.83662749193273,
+        "LinearRegression": 74.8366274919327,
         "Prophet": 275.5025886261741
       }
     }
@@ -68035,7 +68035,7 @@
         "cumulative_total": 12
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 12
       }
     ],
@@ -68143,7 +68143,7 @@
         "LightGBM": 61.44292406645515,
         "XGBoost": 45.34980913003287,
         "LinearRegression": 67.97160524549038,
-        "Prophet": 86.45339129093698
+        "Prophet": 86.45339129093699
       }
     }
   },
@@ -68535,7 +68535,7 @@
         "cumulative_total": 29
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 32
       }
     ],
@@ -68641,12 +68641,12 @@
     },
     "model_selection": {
       "selected_model": "LinearRegression",
-      "validation_mape": 29.0656068435754,
+      "validation_mape": 29.06560684357539,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 58.776566100016005,
         "XGBoost": 58.72924675544103,
-        "LinearRegression": 29.0656068435754,
+        "LinearRegression": 29.06560684357539,
         "Prophet": 44.18744508217145
       }
     }
@@ -69098,7 +69098,7 @@
         "cumulative_total": 8
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 8
       }
     ],
@@ -69452,7 +69452,7 @@
         "cumulative_total": 38
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 38
       }
     ],
@@ -69558,13 +69558,13 @@
     },
     "model_selection": {
       "selected_model": "Prophet",
-      "validation_mape": 63.45201016877582,
+      "validation_mape": 63.4520101687758,
       "all_model_scores": {
         "ExponentialSmoothing": null,
         "LightGBM": 80.99312452253628,
         "XGBoost": 139.57930455992232,
-        "LinearRegression": 140.70978491234183,
-        "Prophet": 63.45201016877582
+        "LinearRegression": 140.70978491234177,
+        "Prophet": 63.4520101687758
       }
     }
   },
@@ -69740,7 +69740,7 @@
         "cumulative_total": 55
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 55
       }
     ],
@@ -70129,7 +70129,7 @@
         "cumulative_total": 81
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 81
       }
     ],
@@ -70474,7 +70474,7 @@
         "cumulative_total": 26
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 27
       }
     ],
@@ -70585,7 +70585,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 72.98611111111111,
         "XGBoost": 66.26803470982445,
-        "LinearRegression": 152.89746283836115,
+        "LinearRegression": 152.8974628383611,
         "Prophet": 72.97839718668598
       }
     }
@@ -70763,7 +70763,7 @@
         "cumulative_total": 25
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 26
       }
     ],
@@ -71471,7 +71471,7 @@
         "cumulative_total": 15
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 15
       }
     ],
@@ -71829,7 +71829,7 @@
         "cumulative_total": 37
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 37
       }
     ],
@@ -72268,7 +72268,7 @@
         "cumulative_total": 8
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 12
       }
     ],
@@ -72379,7 +72379,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 45.70080989577501,
         "XGBoost": 105.41692177454631,
-        "LinearRegression": 167.7485516946623,
+        "LinearRegression": 167.74855169466215,
         "Prophet": 173.5025920953535
       }
     }
@@ -72931,7 +72931,7 @@
         "cumulative_total": 9
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 9
       }
     ],
@@ -73038,7 +73038,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 65.16250275078023,
         "XGBoost": 77.35173655880821,
-        "LinearRegression": 46.68072306802981,
+        "LinearRegression": 46.68072306802982,
         "Prophet": 40.96989044869037
       }
     }
@@ -73210,7 +73210,7 @@
         "cumulative_total": 78
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 78
       }
     ],
@@ -73899,7 +73899,7 @@
         "cumulative_total": 10
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 10
       }
     ],
@@ -74006,7 +74006,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 88.72238422820995,
         "XGBoost": 55.45671463012696,
-        "LinearRegression": 94.08401055324418,
+        "LinearRegression": 94.08401055324425,
         "Prophet": 73.85840428488483
       }
     }
@@ -74233,7 +74233,7 @@
         "cumulative_total": 20
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 20
       }
     ],
@@ -74344,8 +74344,8 @@
         "ExponentialSmoothing": null,
         "LightGBM": 17.78846153846154,
         "XGBoost": 73.1838914255301,
-        "LinearRegression": 81.4464417113424,
-        "Prophet": 60.42615714987997
+        "LinearRegression": 81.44644171134239,
+        "Prophet": 60.426157149879955
       }
     }
   },
@@ -74551,7 +74551,7 @@
         "cumulative_total": 76
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 76
       }
     ],
@@ -75114,7 +75114,7 @@
         "cumulative_total": 22
       },
       {
-        "date": "2026-09-05T02:26:46Z",
+        "date": "2026-09-06T02:23:04Z",
         "cumulative_total": 22
       }
     ],
@@ -75225,7 +75225,7 @@
         "ExponentialSmoothing": null,
         "LightGBM": 59.42447187143266,
         "XGBoost": 86.5913381297437,
-        "LinearRegression": 95.92992671222746,
+        "LinearRegression": 95.92992671222747,
         "Prophet": 55.73166634194474
       }
     }
