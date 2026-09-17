@@ -41,6 +41,18 @@ RUNAWAY_CEILING = 8.0
 # every CNA eligible to be forecast has at least this much.
 RUNAWAY_LOOKBACK = 24
 
+# An annual 80% interval wider than this is not published. A range of "300 to
+# 150,000 CVEs next year" is technically calibrated and tells a reader nothing,
+# and the page has somewhere honest to fall back to - the model and its MASE,
+# which is what it showed before intervals existed.
+#
+# It is also the backstop against a measurement artefact. A CNA's width comes
+# from the handful of origins far enough from the end to have seen a whole year,
+# so one pathological origin moves it a long way: a model compounding a trend in
+# log space can forecast 10^13 times the actual, and the band that comes out the
+# far side is not a statement about the CNA.
+MAX_INFORMATIVE_ANNUAL_RATIO = 20.0
+
 
 class CNAForecaster(BaseForecaster):
     """
@@ -513,10 +525,23 @@ class CNAForecaster(BaseForecaster):
             shape, scales = build_shared_shape(by_cna)
             if not shape.factors:
                 continue
+            uninformative = 0
             for cna_id, scale in scales.items():
                 band = scale_bands(shape, scale)
-                if band.factors:
-                    out.setdefault(cna_id, {})[name] = band
+                if not band.factors:
+                    continue
+                low, high = band.for_horizon(1)['80']
+                if high / low > MAX_INFORMATIVE_ANNUAL_RATIO:
+                    uninformative += 1
+                    self.logger.debug(f'{cna_id}: {name} band spans {high / low:,.0f}x, too wide to publish')
+                    continue
+                out.setdefault(cna_id, {})[name] = band
+
+            if uninformative:
+                self.logger.info(
+                    f'{name}: {uninformative} CNAs have a band too wide to be worth publishing '
+                    f'(over {MAX_INFORMATIVE_ANNUAL_RATIO:.0f}x); those pages keep the model and MASE line'
+                )
 
         if out:
             self.logger.info(
