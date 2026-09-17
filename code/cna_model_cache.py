@@ -2,10 +2,16 @@
 Cached per-CNA model selection.
 
 Choosing a model for each CNA by rolling-origin backtest is the right way to do
-it, and far too slow to do daily: roughly 140 CNAs x 6 models x 8 origins is
-about 6,700 model fits, which measured at over an hour. The previous
-single-holdout approach was fast because it was cheap in the wrong way - one
-6-month split, scored on 6 points, picking winners that were mostly noise.
+it, and far too slow to do daily: 140 CNAs x 6 models x 24 origins is about
+20,000 model fits, measured at 2h17m. The previous single-holdout approach was
+fast because it was cheap in the wrong way - one 6-month split, scored on 6
+points, picking winners that were mostly noise.
+
+v0.14 made it 2.7x slower again, taking the backtest from six months to sixteen
+so it covers what the site actually publishes, and from eight origins to
+twenty-four so the long horizons have residuals to fit a band from. That is
+11.7 minutes a run against 4.3, which the cap below is what makes affordable:
+the cost of a run is set by the refresh cap, not by the population.
 
 The resolution is that model *choice* does not need to be daily. A CNA's series
 gains one observation a month; the model that suited it yesterday almost
