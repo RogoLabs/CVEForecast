@@ -303,21 +303,25 @@ main { padding: 1.75rem 0 3rem; }
 }
 .figure__value--range .to { color: var(--text-subtle); font-weight: 400; margin: 0 .15em; }
 
-.figure__side { display: flex; flex-direction: column; gap: .3rem; padding-bottom: .3rem; }
-
-/* The point estimate, kept deliberately quiet. */
-.figure__note { margin-top: .55rem; font-size: 13px; color: var(--text-muted); }
-.figure__note b { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums lining-nums; }
-
-.delta {
-    display: inline-flex; align-items: baseline; gap: .35rem; width: fit-content;
-    padding: .2rem .5rem; border-radius: 999px;
-    font-size: 13px; font-weight: 600;
-    font-variant-numeric: tabular-nums;
+/* The comparison with the prior year. Second in the hierarchy and deliberately
+   close to the headline: it is the claim that survives being quoted, because
+   it holds across the whole interval rather than at one point inside it. */
+.figure__compare {
+    margin-top: .5rem;
+    font-size: clamp(14.5px, 1.4vw, 16.5px);
+    color: var(--text-muted);
 }
-.delta small { font-weight: 500; opacity: .85; }
-.delta--up { background: var(--negative-soft); color: var(--negative); }
-.delta--down { background: var(--positive-soft); color: var(--positive); }
+.figure__compare b {
+    font-weight: 650;
+    font-variant-numeric: tabular-nums lining-nums;
+}
+.figure__compare--up b { color: var(--negative); }
+.figure__compare--down b { color: var(--positive); }
+
+/* The point estimate, kept deliberately quiet. It sits near the floor of its
+   own band, so promoting it would understate the forecast. */
+.figure__note { margin-top: .45rem; font-size: 13px; color: var(--text-subtle); }
+.figure__note b { font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums lining-nums; }
 
 .hero__meta {
     margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--border);

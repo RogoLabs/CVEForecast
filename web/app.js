@@ -24,6 +24,14 @@ let selectedYear = new Date().getFullYear();
 const root = document.documentElement;
 const $ = id => document.getElementById(id);
 
+/* Write through helpers that tolerate a missing element. index.html and app.js
+   are cached independently, so a visitor can briefly hold a new page with a
+   stale script (or the reverse) after a deploy. Addressing an element that the
+   other half has since renamed should cost that one field, not blank the whole
+   dashboard behind an error card. */
+const setText = (id, value) => { const el = $(id); if (el) el.textContent = value; };
+const setHTML = (id, value) => { const el = $(id); if (el) el.innerHTML = value; };
+
 const nf = new Intl.NumberFormat('en-US');
 const n = v => nf.format(Math.round(v));
 
@@ -160,10 +168,10 @@ function renderHero() {
     $('heroEyebrow').textContent = `Projected CVE publications · ${selectedYear}`;
 
     if (!projection) {
-        $('heroRange').textContent = '—';
-        $('heroDelta').textContent = '';
-        $('heroPoint').textContent = '';
-        $('heroMeta').innerHTML = '';
+        setText('heroRange', '—');
+        setText('heroCompare', '');
+        setText('heroPoint', '');
+        setHTML('heroMeta', '');
         return;
     }
 
@@ -171,29 +179,40 @@ function renderHero() {
        precision the model cannot deliver, so the range is the headline and the
        central estimate is a supporting line. */
     const hasBand = projection.lower_80 != null && projection.upper_80 != null;
-    $('heroRange').innerHTML = hasBand
+    setHTML('heroRange', hasBand
         ? `${approx(projection.lower_80)}<span class="to">–</span>${approx(projection.upper_80)}`
-        : approx(projection.total);
+        : approx(projection.total));
 
-    $('heroPoint').innerHTML = hasBand
+    setHTML('heroPoint', hasBand
         ? `80% prediction interval · central estimate <b>${approx(projection.total)}</b>`
-        : 'Central estimate';
+        : 'Central estimate');
 
     const prev = forecastData.yearly_forecast_totals?.[selectedYear - 1]?.Ensemble;
     const prevTotal = prev?.total ?? forecastData.summary?.previous_year_total ?? 0;
-    const delta = $('heroDelta');
-    if (prevTotal) {
-        /* Express the change as a range too — quoting a single growth figure
-           against a range forecast would put the precision straight back. */
-        const growth = v => ((v - prevTotal) / prevTotal) * 100;
-        const mid = growth(projection.total);
-        delta.innerHTML = hasBand
-            ? `${pct(growth(projection.lower_80), 0)} to ${pct(growth(projection.upper_80), 0)} <small>vs ${selectedYear - 1}</small>`
-            : `${pct(mid)} <small>vs ${selectedYear - 1}</small>`;
-        delta.className = `delta ${mid >= 0 ? 'delta--up' : 'delta--down'}`;
-    } else {
-        delta.textContent = '';
-        delta.className = 'delta';
+    const compare = $('heroCompare');
+
+    if (compare && prevTotal) {
+        /* A multiple of last year is what a reader actually carries away, and
+           it is quoted as a range for the same reason the headline is: stated
+           as a single figure it would reintroduce the precision the interval
+           exists to avoid. */
+        const low = (hasBand ? projection.lower_80 : projection.total) / prevTotal;
+        const high = (hasBand ? projection.upper_80 : projection.total) / prevTotal;
+
+        /* The year before may itself still be part forecast — 2027 is compared
+           against a 2026 that has not finished — so do not call it published. */
+        const prevSettled = (prev?.months_forecast ?? 0) === 0;
+        const prevLabel = prevSettled
+            ? `the ${n(prevTotal)} published in ${selectedYear - 1}`
+            : `the ${approx(prevTotal)} projected for ${selectedYear - 1}`;
+
+        compare.innerHTML = hasBand
+            ? `<b>${low.toFixed(1)}×</b> to <b>${high.toFixed(1)}×</b> ${prevLabel}`
+            : `<b>${low.toFixed(1)}×</b> ${prevLabel}`;
+        compare.className = `figure__compare figure__compare--${high >= 1 ? 'up' : 'down'}`;
+    } else if (compare) {
+        compare.textContent = '';
+        compare.className = 'figure__compare';
     }
 
     const parts = [];
@@ -203,7 +222,7 @@ function renderHero() {
     parts.push(`<b>${approx(projection.forecast_remainder)}</b> forecast (${projection.months_forecast} mo)`);
     parts.push(`Ensemble of <b>${(forecastData.methodology?.ensemble_members || []).length}</b> models`);
     if (prevTotal) parts.push(`Prior year <b>${n(prevTotal)}</b>`);  /* settled count, exact */
-    $('heroMeta').innerHTML = parts.map(p => `<span>${p}</span>`).join('');
+    setHTML('heroMeta', parts.map(p => `<span>${p}</span>`).join(''));
 }
 
 /* ==========================================================================

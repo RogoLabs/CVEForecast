@@ -43,7 +43,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="app.css?v=0.13">
+    <link rel="stylesheet" href="app.css?v=0.13.1">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -95,13 +95,14 @@
                 <div>
                     <p class="eyebrow" id="heroEyebrow">Projected CVE publications</p>
                     <!-- The interval leads. A single figure 16 months out implies a
-                         precision the model does not have; the range is the claim. -->
+                         precision the model does not have; the range is the claim.
+                         The comparison with last year follows it, because that is
+                         the part a reader actually carries away, and it holds true
+                         across the whole interval rather than at one point in it. -->
                     <div class="figure">
                         <div class="figure__value figure__value--range num" id="heroRange">—</div>
-                        <div class="figure__side">
-                            <span class="delta" id="heroDelta"></span>
-                        </div>
                     </div>
+                    <p class="figure__compare" id="heroCompare"></p>
                     <p class="figure__note" id="heroPoint"></p>
                 </div>
                 <div class="seg" role="group" aria-label="Forecast year">
@@ -217,6 +218,6 @@
     </div>
 </footer>
 
-<script src="app.js?v=0.13" defer></script>
+<script src="app.js?v=0.13.1" defer></script>
 </body>
 </html>
