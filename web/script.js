@@ -162,8 +162,19 @@ function renderYearButtons() {
 }
 
 function updateChartDescription() {
-    document.getElementById('chartDescription').textContent = 
-        `Cumulative growth showing actual CVE publications and ML model predictions for ${selectedYear}`;
+    const projection = forecastData?.yearly_forecast_totals?.[selectedYear]?.Ensemble;
+    const el = document.getElementById('chartDescription');
+    if (!el) return;
+
+    if (projection && projection.months_actual > 0) {
+        // Say plainly where the forecast starts: it continues from the count as of
+        // now, including the part of the current month already published.
+        el.textContent =
+            `Cumulative CVE publications for ${selectedYear}. The forecast continues from the count as of today ` +
+            `(${projection.actual_ytd.toLocaleString()} published); the shaded band is the 80% range.`;
+    } else {
+        el.textContent = `Forecast cumulative CVE publications for ${selectedYear}, with the 80% range shaded.`;
+    }
 }
 
 /**
@@ -663,14 +674,15 @@ function prepareChartData() {
     // estimates 16 months out; the band is the honest version of that claim.
     const ensembleTimeline = cumulative_timelines.Ensemble_cumulative;
     if (ensembleTimeline) {
-        const points = ensembleTimeline.filter(d => {
+        // >= so the forecast path starts at the anchor point carrying the count as
+        // of now, continuing the actuals line instead of floating a month later.
+        const inYear = d => {
             const isReset = d.date.includes('-12-31T23:59:59Z') && d.cumulative_total === 0;
-            // >= so the forecast path starts at the last complete-month boundary,
-            // visibly branching from the actuals instead of floating a month later.
             const afterActuals = !lastActualMonthDateStr || d.date >= lastActualMonthDateStr;
             return parseInt(d.date.substring(0, 4)) === selectedYear && !isReset && afterActuals;
-        });
-        const band = buildCumulativeBand(points);
+        };
+        const points = ensembleTimeline.filter(inYear);
+        const band = cumulativeBandFor(inYear);
 
         if (band) {
             datasets.push({
@@ -711,46 +723,23 @@ function prepareChartData() {
 }
 
 /**
- * Builds cumulative 80% bounds for the ensemble path.
+ * Reads the server-computed 80% cumulative band for the selected year.
  *
- * Monthly bounds accumulate alongside the point path, which assumes errors are
- * perfectly correlated month to month. That is the conservative choice: an
- * independent-errors band would be narrower and would understate a run of months
- * all landing on the same side of the forecast, which is exactly what a regime
- * shift produces.
+ * The maths lives in the pipeline, not here: deriving which month each cumulative
+ * step belongs to in the browser is easy to get off by one, and a silently
+ * mislabelled band is worse than no band at all.
  *
- * @param {Array<{date: string, cumulative_total: number}>} points Ensemble cumulative path
- * @returns {{lower: Array, upper: Array}|null} Bounds, or null when unavailable
+ * @param {(d: {date: string, cumulative_total: number}) => boolean} inYear Filter applied to the ensemble line
+ * @returns {{lower: Array, upper: Array}|null} Plottable points, or null if unavailable
  */
-function buildCumulativeBand(points) {
-    const intervals = forecastData?.monthly_intervals;
-    if (!intervals || points.length === 0) return null;
+function cumulativeBandFor(inYear) {
+    const band = forecastData?.cumulative_band;
+    if (!band?.lower?.length || !band?.upper?.length) return null;
 
-    const lower = [];
-    const upper = [];
-    let lowerAcc = 0;
-    let upperAcc = 0;
-    let previousTotal = points[0].cumulative_total;
-
-    points.forEach((point, index) => {
-        const x = new Date(point.date);
-        if (index === 0) {
-            lower.push({ x, y: point.cumulative_total });
-            upper.push({ x, y: point.cumulative_total });
-            return;
-        }
-        const step = point.cumulative_total - previousTotal;
-        const band = intervals[point.date.substring(0, 7)];
-        if (band && step > 0) {
-            lowerAcc += band.lower_80 - step;
-            upperAcc += band.upper_80 - step;
-        }
-        lower.push({ x, y: Math.round(point.cumulative_total + lowerAcc) });
-        upper.push({ x, y: Math.round(point.cumulative_total + upperAcc) });
-        previousTotal = point.cumulative_total;
-    });
-
-    return { lower, upper };
+    const toPoints = rows => rows.filter(inYear).map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
+    const lower = toPoints(band.lower);
+    const upper = toPoints(band.upper);
+    return lower.length && upper.length ? { lower, upper } : null;
 }
 
 /**

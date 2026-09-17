@@ -204,6 +204,51 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         df = series.to_dataframe()
         return {idx.strftime('%Y-%m'): float(row.iloc[0]) for idx, row in df.iterrows()}
 
+    def current_month_progress(self) -> Tuple[str, float, float]:
+        """
+        How far through the in-progress month we are, in business days.
+
+        Business days rather than calendar days because publication happens on
+        working days - by calendar day 17 of a 30-day month we may be 75% through
+        the month's publishing capacity, not 57%.
+
+        Returns:
+            Tuple of (month string, published so far, share of business days elapsed)
+        """
+        month = self.current_datetime.strftime('%Y-%m')
+        published = self.monthly_actuals(complete_only=False).get(month, 0.0)
+
+        start = pd.Timestamp(self.start_of_current_month).tz_localize(None)
+        today = pd.Timestamp(self.current_datetime).tz_localize(None).normalize()
+        total_bdays = len(pd.bdate_range(start, start + pd.offsets.MonthEnd(0)))
+        elapsed_bdays = len(pd.bdate_range(start, today))
+        share = min(elapsed_bdays / total_bdays, 1.0) if total_bdays else 1.0
+
+        return month, float(published), float(share)
+
+    def nowcast_forecasts(self, monthly: Dict[str, float]) -> Dict[str, float]:
+        """
+        Replace the in-progress month's full-month forecast with its remainder.
+
+        The chart and the year total should both start from what has actually been
+        published as of now, not from the last complete month boundary. Without
+        this the forecast line branches below the actuals and is overtaken by
+        reality within days of each run.
+
+        Args:
+            monthly: ``{'YYYY-MM': full-month forecast}``
+
+        Returns:
+            The same mapping with the current month scaled to the days remaining
+        """
+        month, _published, share = self.current_month_progress()
+        if month not in monthly:
+            return dict(monthly)
+
+        adjusted = dict(monthly)
+        adjusted[month] = monthly[month] * max(0.0, 1.0 - share)
+        return adjusted
+
     def get_model_list(self) -> List[str]:
         """
         Get list of enabled CVE models.
@@ -366,9 +411,23 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Generate cumulative forecast timelines with year boundary handling.
+
+        The path starts from the cumulative count *as of now* - published months
+        plus the part of the current month already published - and the current
+        month contributes only its remaining days. Anchoring on the last complete
+        month instead makes the forecast branch below the actuals and get
+        overtaken by reality within days of each run.
+
+        Args:
+            forecasts: Per-model forecasts
+            actuals_base: Cumulative published total as of now
+
+        Returns:
+            Per-model cumulative timelines keyed ``<model>_cumulative``
         """
         self.logger.info('Generating cumulative forecast timelines with year boundaries')
         cumulative_timelines = {}
+        partial_month, _published, _share = self.current_month_progress()
 
         for model_name, forecast_result in forecasts.items():
             timeline: List[Dict[str, Any]] = []
@@ -376,13 +435,27 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
                 cumulative_timelines[f'{model_name}_cumulative'] = timeline
                 continue
 
-            sorted_dates = sorted(forecast_result.forecast_values.items())
+            nowcast = self.nowcast_forecasts(
+                {pd.to_datetime(d).strftime('%Y-%m'): v for d, v in forecast_result.forecast_values.items()}
+            )
+            sorted_dates = [
+                (d, nowcast[pd.to_datetime(d).strftime('%Y-%m')]) for d in sorted(forecast_result.forecast_values)
+            ]
 
             year_total = actuals_base
             current_year = pd.to_datetime(sorted_dates[0][0]).year
 
-            # Add Jan 1 marker for the first forecast year
+            # Jan 1 marker for the first forecast year, then an anchor at "now" so
+            # the forecast line continues from where the actuals line stops rather
+            # than starting at a boundary already in the past.
             timeline.append({'date': f'{current_year}-01-01T00:00:00Z', 'cumulative_total': 0})
+            if current_year == self.current_datetime.year and actuals_base:
+                timeline.append(
+                    {
+                        'date': self.current_datetime.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                        'cumulative_total': int(round(actuals_base)),
+                    }
+                )
 
             for i, (date_str, cve_count) in enumerate(sorted_dates):
                 forecast_date = pd.to_datetime(date_str)
@@ -398,13 +471,12 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
                     current_year = forecast_year
                     year_total = 0
 
-                # Add month-start entry BEFORE adding this month's forecast
-                month_start_date = f'{forecast_date.year}-{forecast_date.month:02d}-01T00:00:00Z'
-
-                # Check if this date already exists (e.g., Jan 1 from year boundary)
-                existing_entry = next((entry for entry in timeline if entry['date'] == month_start_date), None)
-                if not existing_entry:
-                    timeline.append({'date': month_start_date, 'cumulative_total': int(round(year_total))})
+                # Month-start marker, except for the month already in progress -
+                # that boundary is in the past and the actuals line already covers it.
+                if forecast_date.strftime('%Y-%m') != partial_month:
+                    month_start_date = f'{forecast_date.year}-{forecast_date.month:02d}-01T00:00:00Z'
+                    if not any(entry['date'] == month_start_date for entry in timeline):
+                        timeline.append({'date': month_start_date, 'cumulative_total': int(round(year_total))})
 
                 # Now add this month's forecast to the running total
                 year_total += cve_count
@@ -426,6 +498,64 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
 
         self.logger.info(f'Generated {len(cumulative_timelines)} cumulative timelines')
         return cumulative_timelines
+
+    def _generate_cumulative_band(
+        self, timeline: List[Dict[str, Any]], step_intervals: Dict[str, Dict[str, float]]
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Cumulative 80% bounds aligned to the ensemble timeline.
+
+        Computed here rather than in the browser: the front-end would have to
+        re-derive which month each cumulative step belongs to, and getting that
+        off by one silently mislabels every band on the chart.
+
+        Bounds accumulate month by month, which assumes errors are perfectly
+        correlated across months. That is the conservative choice - independent
+        errors would give a narrower band and would understate a run of months all
+        landing the same side of the forecast, which is what a regime shift does.
+
+        Args:
+            timeline: The ensemble cumulative timeline
+            step_intervals: Per-month bands on what each month adds
+
+        Returns:
+            ``{'lower': [{date, cumulative_total}], 'upper': [...]}``
+        """
+        if not timeline or not step_intervals:
+            return {}
+
+        lower: List[Dict[str, Any]] = []
+        upper: List[Dict[str, Any]] = []
+        lower_offset = 0.0
+        upper_offset = 0.0
+        previous: Optional[Dict[str, Any]] = None
+
+        for entry in timeline:
+            if previous is None or entry['cumulative_total'] == 0:
+                # Start of the path, or a year reset: no accumulated uncertainty yet.
+                lower_offset = upper_offset = 0.0
+                lower.append(dict(entry))
+                upper.append(dict(entry))
+                previous = entry
+                continue
+
+            step = entry['cumulative_total'] - previous['cumulative_total']
+            # A step INTO this marker covers the period since the previous one, so
+            # the band belongs to the previous marker's month.
+            band = step_intervals.get(previous['date'][:7])
+            if band and step > 0:
+                lower_offset += band['lower_80'] - step
+                upper_offset += band['upper_80'] - step
+
+            lower.append(
+                {'date': entry['date'], 'cumulative_total': int(round(entry['cumulative_total'] + lower_offset))}
+            )
+            upper.append(
+                {'date': entry['date'], 'cumulative_total': int(round(entry['cumulative_total'] + upper_offset))}
+            )
+            previous = entry
+
+        return {'lower': lower, 'upper': upper}
 
     def run_backtest(self) -> Dict[str, Any]:
         """
@@ -518,7 +648,7 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         return rankings
 
     def _calculate_yearly_totals(
-        self, forecasts: Dict[str, ForecastResult], monthly_intervals: Dict[str, Dict[str, float]]
+        self, forecasts: Dict[str, ForecastResult], step_intervals: Dict[str, Dict[str, float]]
     ) -> Dict[str, Dict[str, Any]]:
         """
         Year-end totals as published months plus forecast months.
@@ -529,20 +659,27 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
 
         Args:
             forecasts: Per-model forecasts
-            monthly_intervals: Interval bounds for the ensemble path
+            step_intervals: Bounds on what each month still adds (not the published
+                monthly figure, whose band for the current month also covers days
+                already counted in actual_ytd)
 
         Returns:
             ``{year_string: {model_name: projection_dict}}`` - string keys, because
             v0.11 built integer keys here and then tested ``str(year) in ...``,
             which was never true and silently disabled the year-end marker.
         """
-        actuals = self.monthly_actuals()
+        # Includes the in-progress month, whose forecast entry is a remainder.
+        actuals = self.monthly_actuals(complete_only=False)
+        partial_month, _published, _share = self.current_month_progress()
         yearly: Dict[str, Dict[str, Any]] = {}
 
         for model_name, result in forecasts.items():
-            monthly = {pd.to_datetime(d).strftime('%Y-%m'): v for d, v in result.forecast_values.items()}
-            intervals = monthly_intervals if model_name == ENSEMBLE_KEY else None
-            for year, projection in build_year_projections(actuals, monthly, intervals).items():
+            monthly = self.nowcast_forecasts(
+                {pd.to_datetime(d).strftime('%Y-%m'): v for d, v in result.forecast_values.items()}
+            )
+            intervals = step_intervals if model_name == ENSEMBLE_KEY else None
+            projections = build_year_projections(actuals, monthly, intervals, partial_month=partial_month)
+            for year, projection in projections.items():
                 yearly.setdefault(str(year), {})[model_name] = projection.to_dict()
 
         self.logger.info(f'Calculated year projections for {sorted(yearly)}')
@@ -727,11 +864,32 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         output_path.parent.mkdir(parents=True, exist_ok=True)
         self.logger.info(f'Saving CVE forecast data to {output_path}')
 
+        partial_month, partial_published, _share = self.current_month_progress()
         ensemble = forecasts.get(ENSEMBLE_KEY)
-        monthly_intervals = {}
+
+        # Two related but distinct quantities, kept explicitly separate because
+        # conflating them is how the September band stopped containing the
+        # September forecast:
+        #   step_intervals      - bands on what each month still ADDS (the current
+        #                         month's remainder). Used for cumulative maths.
+        #   monthly_intervals   - bands on the figure we publish for that month
+        #                         (the current month's full-month nowcast).
+        step_intervals: Dict[str, Dict[str, float]] = {}
+        monthly_intervals: Dict[str, Dict[str, float]] = {}
         if ensemble is not None and self.interval_bands is not None:
-            monthly_intervals = apply_intervals(ensemble.forecast_values, self.interval_bands)
-            monthly_intervals = {pd.to_datetime(d).strftime('%Y-%m'): v for d, v in monthly_intervals.items()}
+            remainder_by_date = {
+                d: self.nowcast_forecasts({pd.to_datetime(d).strftime('%Y-%m'): v})[pd.to_datetime(d).strftime('%Y-%m')]
+                for d, v in ensemble.forecast_values.items()
+            }
+            raw = apply_intervals(remainder_by_date, self.interval_bands)
+            step_intervals = {pd.to_datetime(d).strftime('%Y-%m'): v for d, v in raw.items()}
+            monthly_intervals = {m: dict(v) for m, v in step_intervals.items()}
+            if partial_month in monthly_intervals:
+                # The published September figure is what is already out plus the
+                # remainder, so its band shifts by the same amount.
+                monthly_intervals[partial_month] = {
+                    k: round(v + partial_published, 2) for k, v in step_intervals[partial_month].items()
+                }
             ensemble.confidence_intervals = monthly_intervals
 
         model_rankings = self._generate_model_rankings()
@@ -743,16 +901,19 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
             forecast_vs_published[model_name] = {'table_data': table_data, 'summary_stats': summary_stats}
 
         actuals_cumulative = self._get_actuals_cumulative()
-        actuals_base = 0
-        for entry in reversed(actuals_cumulative):
-            if entry['date'].endswith('-01T00:00:00Z'):
-                actuals_base = entry['cumulative_total']
-                break
-        if actuals_base == 0 and actuals_cumulative:
-            actuals_base = actuals_cumulative[-1]['cumulative_total']
+        # Anchor the forecast on the count as of now, including the part of the
+        # current month already published - not the last complete month boundary.
+        actuals_base = actuals_cumulative[-1]['cumulative_total'] if actuals_cumulative else 0
+        self.logger.info(f'Forecast anchored at {actuals_base:,} CVEs (as of {self.current_datetime:%Y-%m-%d})')
 
         cumulative_timelines = self._generate_cumulative_timelines(forecasts, actuals_base)
-        yearly_forecast_totals = self._calculate_yearly_totals(forecasts, monthly_intervals)
+        cumulative_band = self._generate_cumulative_band(
+            cumulative_timelines.get(f'{ENSEMBLE_KEY}_cumulative', []), step_intervals
+        )
+        # Step bands, not published bands: actual_ytd already contains the current
+        # month's published portion, so the year band must add only what each
+        # month still contributes.
+        yearly_forecast_totals = self._calculate_yearly_totals(forecasts, step_intervals)
 
         # Deliberately NOT appending a Dec 31 projection to actuals_cumulative.
         # v0.11 intended to, but a str/int key mismatch meant the code never ran.
@@ -761,11 +922,18 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         # The year-end total already lives on the Ensemble forecast timeline;
         # the actuals series stops at the last real observation.
 
+        # Publish the current month as a full-month nowcast (already published +
+        # model expectation for the days left), so the figure and its band describe
+        # the same quantity.
         forecasts_simple = {}
         for model_name, result in forecasts.items():
+            nowcast = self.nowcast_forecasts(
+                {pd.to_datetime(d).strftime('%Y-%m'): v for d, v in result.forecast_values.items()}
+            )
+            if partial_month in nowcast:
+                nowcast[partial_month] += partial_published
             forecasts_simple[model_name] = [
-                {'date': pd.to_datetime(d).strftime('%Y-%m'), 'cve_count': int(round(v))}
-                for d, v in sorted(result.forecast_values.items())
+                {'date': month, 'cve_count': int(round(value))} for month, value in sorted(nowcast.items())
             ]
 
         df = self.series.to_dataframe()
@@ -793,6 +961,7 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
             'model_rankings': model_rankings,
             'yearly_forecast_totals': yearly_forecast_totals,
             'monthly_intervals': monthly_intervals,
+            'cumulative_band': cumulative_band,
             'current_month_actual': current_month_actual,
             'actuals_cumulative': actuals_cumulative,
             'cumulative_timelines': cumulative_timelines,

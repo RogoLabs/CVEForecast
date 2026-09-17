@@ -257,6 +257,10 @@
                                     after MAPE rendered one column left of its heading.</li>
                                 <li><strong>Year selector</strong> restored (the buttons the code looked for did not exist), and
                                     the year-end projection no longer renders as part of the actuals line.</li>
+                                <li><strong>Forecast anchored on the live count.</strong> The projection continues from the total
+                                    published as of now &mdash; the month in progress is a nowcast of what is already out plus the
+                                    model's expectation for the working days that remain &mdash; rather than restarting from the
+                                    last complete month, where it branched below the actuals and was overtaken within days.</li>
                             </ul>
                         </div>
                         <div>
@@ -276,6 +280,9 @@
                                 <li><strong>Conformal prediction intervals</strong> with published empirical coverage.</li>
                                 <li><strong>Curated ensemble</strong> &mdash; a trimmed mean over models that clear the baseline.</li>
                                 <li><strong>Data vintage logging</strong>, to measure how much counts get revised after publication.</li>
+                                <li><strong>Output validation</strong> in CI now checks what actually broke before: year totals that
+                                    do not reconcile, projections leaking into the actuals series, models collapsing onto one number,
+                                    and intervals that fail to contain their own forecast.</li>
                             </ul>
                         </div>
                     </div>

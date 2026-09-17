@@ -166,6 +166,7 @@ def build_year_projections(
     monthly_actuals: Dict[str, float],
     monthly_forecasts: Dict[str, float],
     intervals: Optional[Dict[str, Dict[str, float]]] = None,
+    partial_month: Optional[str] = None,
 ) -> Dict[int, YearProjection]:
     """
     Combine published months with forecast months into per-year totals.
@@ -175,7 +176,11 @@ def build_year_projections(
     output, by September most of it is fact.
 
     Where a month appears in both inputs the actual wins - a published month is
-    never overwritten by a forecast of itself.
+    never overwritten by a forecast of itself. The one exception is
+    ``partial_month``: the month currently in progress, where the actual covers
+    only the days so far and the forecast value is the *remainder*. Both are
+    counted, so the running month is a nowcast rather than either a stale partial
+    count or a forecast that ignores what has already been published.
 
     Args:
         monthly_actuals: ``{'YYYY-MM': count}`` for published months
@@ -184,6 +189,8 @@ def build_year_projections(
             year's band is the actual YTD plus the summed monthly bounds, which
             assumes errors are perfectly correlated across months and so is the
             conservative (wider) of the reasonable choices
+        partial_month: ``'YYYY-MM'`` of the in-progress month, whose forecast
+            entry is a remainder to add on top of its partial actual
 
     Returns:
         ``{year: YearProjection}``
@@ -200,12 +207,15 @@ def build_year_projections(
     upper_acc: Dict[int, float] = {}
 
     for month, value in sorted(monthly_forecasts.items()):
-        if month in monthly_actuals:
+        if month in monthly_actuals and month != partial_month:
             continue
         year = int(month[:4])
         proj = projections.setdefault(year, YearProjection(year=year))
         proj.forecast_remainder += int(round(value))
-        proj.months_forecast += 1
+        # The partial month is already counted in months_actual; counting it as a
+        # forecast month too would overstate how much of the year is modelled.
+        if month != partial_month:
+            proj.months_forecast += 1
 
         if intervals and month in intervals:
             band = intervals[month]

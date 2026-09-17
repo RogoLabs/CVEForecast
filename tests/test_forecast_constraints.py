@@ -70,6 +70,51 @@ class TestYearProjections:
     def test_empty_inputs(self):
         assert build_year_projections({}, {}) == {}
 
+    def test_partial_month_counts_actual_plus_remainder(self):
+        """The in-progress month is a nowcast: published so far + days remaining."""
+        result = build_year_projections(
+            {'2026-01': 4302, '2026-02': 2000},  # Feb still running
+            {'2026-02': 900, '2026-03': 5000},  # Feb entry is the remainder
+            partial_month='2026-02',
+        )
+        proj = result[2026]
+        assert proj.actual_ytd == 6302
+        assert proj.forecast_remainder == 5900
+        assert proj.total == 12202
+        # Feb is counted once as an actual month, not twice
+        assert proj.months_actual == 2
+        assert proj.months_forecast == 1
+
+    def test_partial_month_band_must_not_double_count_published_days(self):
+        """
+        The year band adds what each month still CONTRIBUTES. Feeding it the
+        current month's published figure instead of its remainder pushes the lower
+        bound above the total, because actual_ytd already holds those days.
+        """
+        result = build_year_projections(
+            {'2026-01': 4000, '2026-02': 2000},
+            {'2026-02': 900, '2026-03': 5000},
+            intervals={
+                # remainder bands, not full-month bands
+                '2026-02': {'lower_80': 700, 'upper_80': 1200},
+                '2026-03': {'lower_80': 4200, 'upper_80': 6100},
+            },
+            partial_month='2026-02',
+        )
+        proj = result[2026]
+        assert proj.total == 11900
+        assert proj.lower_80 == 6000 + 700 + 4200
+        assert proj.upper_80 == 6000 + 1200 + 6100
+        assert proj.lower_80 <= proj.total <= proj.upper_80
+
+    def test_without_partial_month_the_forecast_is_still_discarded(self):
+        result = build_year_projections(
+            {'2026-01': 4302, '2026-02': 2000},
+            {'2026-02': 900, '2026-03': 5000},
+        )
+        assert result[2026].forecast_remainder == 5000
+        assert result[2026].total == 11302
+
 
 class TestSanityGuards:
     def test_plausible_forecast_passes_silently(self, constraints):

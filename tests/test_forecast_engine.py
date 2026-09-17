@@ -235,3 +235,79 @@ class TestIntervals:
         per_model = {'a': {1: [0.1, 0.2]}, 'b': {1: [0.3]}}
         assert sorted(pooled_residuals(per_model, ['a'])[1]) == [0.1, 0.2]
         assert len(pooled_residuals(per_model)[1]) == 3
+
+
+class TestCumulativeBand:
+    """
+    The shaded chart band is computed server-side so the month each cumulative
+    step belongs to cannot drift. These pin that alignment.
+    """
+
+    @staticmethod
+    def band(timeline, step_intervals):
+        from adapters.cve_adapter import CVEForecaster
+
+        # The method touches no instance state; call it unbound to avoid needing
+        # a configured forecaster (and a cvelistV5 checkout) for a pure-maths test.
+        return CVEForecaster._generate_cumulative_band(None, timeline, step_intervals)
+
+    def test_band_brackets_the_line(self):
+        timeline = [
+            {'date': '2026-01-01T00:00:00Z', 'cumulative_total': 0},
+            {'date': '2026-09-17T12:00:00Z', 'cumulative_total': 66401},
+            {'date': '2026-10-01T00:00:00Z', 'cumulative_total': 70047},
+            {'date': '2026-11-01T00:00:00Z', 'cumulative_total': 79445},
+        ]
+        steps = {
+            '2026-09': {'lower_80': 3121, 'upper_80': 5179},
+            '2026-10': {'lower_80': 8043, 'upper_80': 14350},
+        }
+        result = self.band(timeline, steps)
+        lower = {e['date']: e['cumulative_total'] for e in result['lower']}
+        upper = {e['date']: e['cumulative_total'] for e in result['upper']}
+
+        for entry in timeline:
+            assert lower[entry['date']] <= entry['cumulative_total'] <= upper[entry['date']]
+
+    def test_anchor_point_carries_no_uncertainty(self):
+        """The anchor is an observed count, not a forecast."""
+        timeline = [
+            {'date': '2026-01-01T00:00:00Z', 'cumulative_total': 0},
+            {'date': '2026-09-17T12:00:00Z', 'cumulative_total': 66401},
+            {'date': '2026-10-01T00:00:00Z', 'cumulative_total': 70047},
+        ]
+        result = self.band(timeline, {'2026-09': {'lower_80': 3121, 'upper_80': 5179}})
+        assert result['lower'][1]['cumulative_total'] == 66401
+        assert result['upper'][1]['cumulative_total'] == 66401
+
+    def test_step_uses_the_month_it_came_from(self):
+        """Sep 17 -> Oct 1 is September's remainder, not October's forecast."""
+        timeline = [
+            {'date': '2026-01-01T00:00:00Z', 'cumulative_total': 0},
+            {'date': '2026-09-17T12:00:00Z', 'cumulative_total': 66401},
+            {'date': '2026-10-01T00:00:00Z', 'cumulative_total': 70047},
+        ]
+        steps = {'2026-09': {'lower_80': 3000, 'upper_80': 5000}, '2026-10': {'lower_80': 0, 'upper_80': 99999}}
+        result = self.band(timeline, steps)
+        step = 70047 - 66401
+        assert result['lower'][2]['cumulative_total'] == 70047 + (3000 - step)
+        assert result['upper'][2]['cumulative_total'] == 70047 + (5000 - step)
+
+    def test_year_boundary_resets_accumulated_uncertainty(self):
+        timeline = [
+            {'date': '2026-12-01T00:00:00Z', 'cumulative_total': 88450},
+            {'date': '2026-12-31T23:59:59Z', 'cumulative_total': 97885},
+            {'date': '2027-01-01T00:00:00Z', 'cumulative_total': 0},
+            {'date': '2027-02-01T00:00:00Z', 'cumulative_total': 9000},
+        ]
+        steps = {
+            '2026-12': {'lower_80': 8000, 'upper_80': 12000},
+            '2027-01': {'lower_80': 7000, 'upper_80': 11000},
+        }
+        result = self.band(timeline, steps)
+        lower = {e['date']: e['cumulative_total'] for e in result['lower']}
+        assert lower['2027-01-01T00:00:00Z'] == 0
+        assert lower['2027-02-01T00:00:00Z'] == 9000 + (7000 - 9000)
+
+    def test_no_intervals_yields_no_band(self):
+        assert self.band([{'date': '2026-10-01T00:00:00Z', 'cumulative_total': 1}], {}) == {}
