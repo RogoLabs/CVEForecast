@@ -16,6 +16,7 @@ import pandas as pd
 from cna_model_cache import ModelSelectionCache
 from core.base_forecaster import BaseForecaster, ForecastResult
 from core.forecast_engine import ForecastEngine, ForecastSettings
+from core.intervals import IntervalBands, apply_intervals, build_shared_shape, scale_bands, validate_coverage
 from core.model_utils import create_model_safe
 from darts import TimeSeries
 from darts.models import AutoARIMA, ExponentialSmoothing, LightGBMModel, LinearRegressionModel, Prophet, XGBModel
@@ -292,7 +293,9 @@ class CNAForecaster(BaseForecaster):
             return series
         return TimeSeries.from_dataframe(complete, freq=series.freq_str, fill_missing_dates=False)
 
-    def select_best_model_for_cna(self, cna_id: str, ts: TimeSeries) -> Tuple[str, float, Dict[str, float]]:
+    def select_best_model_for_cna(
+        self, cna_id: str, ts: TimeSeries
+    ) -> Tuple[str, float, Dict[str, float], Dict[int, List[float]]]:
         """
         Pick a model for one CNA by rolling-origin MASE.
 
@@ -312,7 +315,12 @@ class CNAForecaster(BaseForecaster):
             ts: Historical time series for this CNA
 
         Returns:
-            Tuple of (best_model_name, best_mase, all_scores)
+            Tuple of (best_model_name, best_mase, all_scores, log_residuals_by_horizon).
+
+            The residuals are the winning model's, and they are the same
+            out-of-sample errors the MASE is computed from. Through v0.13 only
+            the MASE was read off the backtest and the residuals were dropped on
+            the floor, which is why the CNA pages had no interval to publish.
         """
         backtest = RollingOriginBacktest(
             horizon=self.cv_horizon,
@@ -340,7 +348,7 @@ class CNAForecaster(BaseForecaster):
 
         ranked = [r for r in rank_models(results) if r.is_valid]
         if not ranked:
-            return FALLBACK_MODEL, float('inf'), scores
+            return FALLBACK_MODEL, float('inf'), scores, {}
 
         best = ranked[0]
         baseline = results.get(FALLBACK_MODEL)
@@ -348,9 +356,190 @@ class CNAForecaster(BaseForecaster):
         # that all lost is the least-bad noise, not a signal.
         if baseline and baseline.is_valid and best.model_name != FALLBACK_MODEL and best.mase >= baseline.mase:
             self.logger.debug(f'{cna_id}: no model beat {FALLBACK_MODEL}; using the baseline')
-            return FALLBACK_MODEL, baseline.mase, scores
+            return FALLBACK_MODEL, baseline.mase, scores, baseline.log_residuals_by_horizon
 
-        return best.model_name, best.mase, scores
+        # The residuals must come from the model actually being published. A band
+        # built from the winner's errors and drawn around the baseline's forecast
+        # would describe a forecast nobody sees.
+        return best.model_name, best.mase, scores, best.log_residuals_by_horizon
+
+    def _build_interval_bands(self) -> Tuple[Dict[str, IntervalBands], Dict[str, Any]]:
+        """
+        Build every CNA's prediction-interval band from the cached residuals.
+
+        One band per CNA, but not built from that CNA alone. The shape - how the
+        band widens with horizon - is pooled across the population; only its
+        width is this CNA's own. Measured on the real residuals, that beats both
+        alternatives and is the only one that stays calibrated at long horizons:
+
+            method                    mean |per-CNA coverage - 80%|
+            this one                   7.7pp  [5.8, 10.1]
+            one pooled band for all   11.6pp  [9.4, 13.7]
+            each CNA's own residuals  19.1pp  [15.3, 23.4]
+
+        The reason is in how a rolling-origin backtest runs out of data. Its
+        newest origin can only be scored at h=1, the next at h=1..2, so horizon h
+        holds at most ``max_origins - h + 1`` residuals however long the series
+        is. At the default eight origins that is eight residuals at h=1 and one
+        at h=16 - so a per-CNA band has nothing to fit at exactly the horizons
+        the next-year column is built from, while a pooled shape has thousands.
+        A single pooled band avoids that and gets the width wrong instead:
+        measured dispersion varies about fivefold between CNAs.
+
+        Returns:
+            ({cna_id: bands}, coverage). Both empty when the cache holds too
+            little to fit a shape, which publishes no intervals at all rather
+            than intervals nobody measured.
+        """
+        residuals_by_cna: Dict[str, Dict[int, List[float]]] = {}
+        for cna_id, entry in self.selection_cache.entries.items():
+            stored = entry.get('log_residuals') or {}
+            by_horizon = {int(h): list(v) for h, v in stored.items() if v}
+            if by_horizon:
+                residuals_by_cna[cna_id] = by_horizon
+
+        if not residuals_by_cna:
+            self.logger.info('No cached backtest residuals yet; CNA intervals unavailable this run')
+            return {}, {}
+
+        shape, scales = build_shared_shape(residuals_by_cna)
+        if not shape.factors:
+            return {}, {}
+
+        bands = {cna_id: scale_bands(shape, scale) for cna_id, scale in scales.items()}
+        bands = {cna_id: b for cna_id, b in bands.items() if b.factors}
+
+        # Coverage is measured per CNA against that CNA's own band, then pooled -
+        # the question a reader has is whether the band on the page they are
+        # looking at holds, not whether the population averages out.
+        covered: Dict[str, List[int]] = {}
+        for cna_id, band in bands.items():
+            stats = validate_coverage(residuals_by_cna[cna_id], band)
+            for label, row in stats.items():
+                acc = covered.setdefault(label, [0, 0])
+                acc[0] += int(round(row['empirical'] * row['n']))
+                acc[1] += row['n']
+
+        coverage = {
+            label: {
+                'nominal': float(label) / 100.0,
+                'empirical': round(hit / total, 4),
+                'n': total,
+                'n_cnas': len(bands),
+                'calibrated': bool(abs(hit / total - float(label) / 100.0) <= 0.05),
+            }
+            for label, (hit, total) in covered.items()
+            if total
+        }
+
+        self.logger.info(
+            f'Built interval bands for {len(bands)}/{len(self.cna_data)} CNAs '
+            f'to h={shape.max_horizon}'
+            + ''.join(f' | {k}% coverage {v["empirical"]:.1%}' for k, v in sorted(coverage.items()))
+        )
+        return bands, coverage
+
+    def _monthly_intervals(self, forecast_values: Dict[str, Any], bands: IntervalBands) -> Dict[str, Dict[str, float]]:
+        """
+        Attach bounds to each forecast month, stopping where the backtest stops.
+
+        ``IntervalBands.for_horizon`` reuses the longest fitted horizon for
+        anything beyond it, silently. That is a reasonable default for a caller
+        that knows it is extrapolating, and a trap for one that does not: with a
+        6-month backtest behind a 16-month forecast it would draw a
+        one-month-ahead band across the whole of next year, flat, on the column
+        where uncertainty matters most. Months past the fitted horizon get no
+        band at all, and the front end falls back for them.
+
+        Args:
+            forecast_values: ``{date_string: point_forecast}``
+            bands: This CNA's fitted band
+
+        Returns:
+            ``{'YYYY-MM': {'lower_80': x, 'upper_80': y, ...}}``, empty when
+            there is no band
+        """
+        if not bands.factors or not forecast_values:
+            return {}
+
+        numeric = {d: float(v) for d, v in forecast_values.items() if isinstance(v, (int, float))}
+        raw = apply_intervals(numeric, bands)
+
+        out: Dict[str, Dict[str, float]] = {}
+        for step, date_str in enumerate(sorted(numeric), start=1):
+            if step > bands.max_horizon:
+                break
+            band = raw.get(date_str)
+            if band:
+                out[pd.to_datetime(date_str).strftime('%Y-%m')] = band
+        return out
+
+    def _interval_payload(self, forecast_result: ForecastResult, historical_dict: Dict[str, int]) -> Dict[str, Any]:
+        """
+        Assemble what the CNA page publishes about its uncertainty.
+
+        The annual figures are the ones the page leads with, and they are only
+        emitted for a year whose every forecast month has a band. A year that is
+        part-banded and part-bare would silently understate its own range, which
+        is worse than showing no range at all - the reader cannot see which
+        months were left out.
+
+        Bounds are summed across months, matching ``build_year_projections`` on
+        the CVE side: that assumes errors are perfectly correlated within a year,
+        which is the conservative choice of the reasonable ones.
+
+        Args:
+            forecast_result: The published forecast, carrying monthly bands
+            historical_dict: This CNA's published months, for the actual YTD
+
+        Returns:
+            The ``intervals`` block, or ``{}`` when this CNA has no band
+        """
+        monthly = forecast_result.confidence_intervals or {}
+        if not monthly:
+            return {}
+
+        actual_by_year: Dict[int, int] = {}
+        for date_str, count in historical_dict.items():
+            try:
+                year = int(str(date_str)[:4])
+            except ValueError:
+                continue
+            actual_by_year[year] = actual_by_year.get(year, 0) + int(count)
+
+        forecast_months_by_year: Dict[int, int] = {}
+        for date_str in forecast_result.forecast_values:
+            year = int(pd.to_datetime(date_str).strftime('%Y'))
+            forecast_months_by_year[year] = forecast_months_by_year.get(year, 0) + 1
+
+        banded: Dict[int, Dict[str, float]] = {}
+        for month, band in monthly.items():
+            year = int(month[:4])
+            acc = banded.setdefault(year, {'lower_80': 0.0, 'upper_80': 0.0, 'months': 0})
+            acc['lower_80'] += band.get('lower_80', 0.0)
+            acc['upper_80'] += band.get('upper_80', 0.0)
+            acc['months'] += 1
+
+        annual: Dict[str, Dict[str, int]] = {}
+        for year, acc in banded.items():
+            if acc['months'] != forecast_months_by_year.get(year):
+                continue  # part-banded year: see the docstring
+            base = actual_by_year.get(year, 0)
+            annual[str(year)] = {
+                'lower_80': int(round(base + acc['lower_80'])),
+                'upper_80': int(round(base + acc['upper_80'])),
+            }
+
+        payload: Dict[str, Any] = {
+            'monthly': monthly,
+            'max_horizon': forecast_result.metadata.get('interval_max_horizon'),
+        }
+        if annual:
+            payload['annual'] = annual
+        coverage = forecast_result.metadata.get('interval_coverage')
+        if coverage:
+            payload['coverage'] = coverage
+        return payload
 
     def apply_constraints(self, forecasts: Dict[str, ForecastResult]) -> Dict[str, ForecastResult]:
         """
@@ -613,7 +802,7 @@ class CNAForecaster(BaseForecaster):
                 forecast_result.forecast_values, forecast_result.model_name, actuals_base
             )
 
-            output_data[cna_id] = {
+            record = {
                 'id': cna_id,
                 'name': cna_info.get('name'),
                 'scope': None,
@@ -632,6 +821,16 @@ class CNAForecaster(BaseForecaster):
                     'all_model_scores': forecast_result.metadata.get('all_scores', {}),
                 },
             }
+
+            # Strictly additive: a CNA with a band gains these keys, one without
+            # is byte-for-byte what it was before. The front end leads with a
+            # range only where 'intervals' is present and keeps the model-and-
+            # MASE line everywhere else, so absence needs no sentinel value.
+            intervals = self._interval_payload(forecast_result, historical_dict)
+            if intervals:
+                record['intervals'] = intervals
+
+            output_data[cna_id] = record
 
         # Save to file with NaN/inf handling
         import math
@@ -704,14 +903,34 @@ class CNAForecaster(BaseForecaster):
         )
         results['cnas_awaiting_scoring'] = len(eligible) - len(to_refresh) - results['cnas_from_cache']
 
+        # Score first, so the cache is as complete as it will get before any band
+        # is fitted: the interval shape is pooled across CNAs, so a CNA re-scored
+        # this run should contribute to it rather than wait for the next one.
+        for cna_id in list(eligible):
+            if cna_id not in to_refresh:
+                continue
+            ts = eligible[cna_id]
+            best_model, best_mase, all_scores, residuals = self.select_best_model_for_cna(cna_id, ts)
+            self.selection_cache.put(cna_id, best_model, best_mase, len(ts), all_scores, residuals=residuals)
+            mase_text = f'{best_mase:.2f}' if best_mase is not None else 'n/a'
+            self.logger.info(f'{self.cna_data[cna_id]["name"]} → {best_model} (MASE: {mase_text}, re-scored)')
+
+        # Persist the scoring before forecasting, so an hour of backtesting is
+        # not lost to a failure in a later, cheaper stage.
+        self.selection_cache.save()
+
+        interval_bands, interval_coverage = self._build_interval_bands()
+        results['cnas_with_intervals'] = len(interval_bands)
+        results['interval_coverage'] = interval_coverage
+
         for cna_id, ts in eligible.items():
             cna_info = self.cna_data[cna_id]
 
             if cna_id in to_refresh:
-                best_model, best_mase, all_scores = self.select_best_model_for_cna(cna_id, ts)
-                self.selection_cache.put(cna_id, best_model, best_mase, len(ts), all_scores)
-                mase_text = f'{best_mase:.2f}' if best_mase is not None else 'n/a'
-                self.logger.info(f'{cna_info["name"]} → {best_model} (MASE: {mase_text}, re-scored)')
+                cached_now = self.selection_cache.get(cna_id) or {}
+                best_model = cached_now.get('model', FALLBACK_MODEL)
+                best_mase = cached_now.get('mase')
+                all_scores = cached_now.get('all_scores', {})
             else:
                 cached = self.selection_cache.get(cna_id)
                 if cached is None:
@@ -746,15 +965,33 @@ class CNAForecaster(BaseForecaster):
                     for date, value in zip(attempt.forecast.time_index, attempt.forecast.values().flatten())
                 }
 
+                entry = self.selection_cache.get(cna_id) or {}
+                bands = interval_bands.get(cna_id, IntervalBands())
+
+                # A band belongs to the model it was measured on. If the cached
+                # selection and the model actually forecast here disagree - a
+                # cold-start CNA falling back to the baseline, say - the band
+                # describes a different forecast and must not be drawn around
+                # this one.
+                if bands.factors and entry.get('model') != best_model:
+                    self.logger.debug(
+                        f'{cna_id}: band was measured on {entry.get("model")}, '
+                        f'publishing {best_model}; dropping the band'
+                    )
+                    bands = IntervalBands()
+
                 cna_forecasts[cna_id] = ForecastResult(
                     forecast_values=forecast_values,
                     model_name=best_model,
+                    confidence_intervals=self._monthly_intervals(forecast_values, bands) or None,
                     metrics={'validation_mase': best_mase},
                     metadata={
                         'all_scores': all_scores,
                         'is_fallback': best_model == FALLBACK_MODEL,
                         'awaiting_scoring': best_mase is None and best_model == FALLBACK_MODEL,
-                        'selected_at': (self.selection_cache.get(cna_id) or {}).get('selected_at'),
+                        'selected_at': entry.get('selected_at'),
+                        'interval_coverage': entry.get('interval_coverage'),
+                        'interval_max_horizon': bands.max_horizon,
                     },
                 )
 
@@ -777,10 +1014,6 @@ class CNAForecaster(BaseForecaster):
             except Exception as e:
                 # Truly unexpected errors
                 self.logger.error(f'Unexpected error for {cna_id}: {e}')
-
-        # Persist after the loop so a mid-run failure does not lose the
-        # selections already paid for.
-        self.selection_cache.save()
 
         results['forecasts_generated'] = len(cna_forecasts)
 

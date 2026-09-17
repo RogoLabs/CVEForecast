@@ -136,7 +136,15 @@ class ModelSelectionCache:
         )
         return selected
 
-    def put(self, cna_id: str, model: str, mase: Optional[float], n_months: int, scores: Dict[str, Any]) -> None:
+    def put(
+        self,
+        cna_id: str,
+        model: str,
+        mase: Optional[float],
+        n_months: int,
+        scores: Dict[str, Any],
+        residuals: Optional[Dict[int, List[float]]] = None,
+    ) -> None:
         """
         Record a fresh selection.
 
@@ -146,21 +154,47 @@ class ModelSelectionCache:
             mase: Its backtest MASE
             n_months: Length of history it was scored on
             scores: All candidate scores, for transparency on the site
+            residuals: ``{horizon: [log(actual / forecast), ...]}`` from the same
+                backtest that chose the model - the raw material for this CNA's
+                prediction interval.
+
+                Cached for the same reason the model choice is. Scoring runs for
+                at most a dozen CNAs per run, so residuals computed and dropped
+                would leave the other ~128 with no band, and which CNAs had one
+                would rotate daily. Stored raw rather than as a finished band
+                because the band's shape is estimated across the whole
+                population, so a CNA's own residuals are only half of what
+                building it needs.
         """
-        self.entries[cna_id] = {
+        entry = {
             'model': model,
             'mase': mase,
             'n_months': n_months,
             'selected_at': datetime.now(timezone.utc).isoformat(),
             'all_scores': scores,
         }
+        # Absent rather than null when there are none: the publishing side treats
+        # a missing key as "this CNA has no interval", and a null would have to
+        # be special-cased into meaning the same thing.
+        if residuals:
+            # 4dp is far finer than the quantiles these feed, and keeps a file
+            # that is rewritten on every run from carrying 17 digits of noise.
+            entry['log_residuals'] = {
+                str(h): [round(float(v), 4) for v in vals] for h, vals in sorted(residuals.items()) if vals
+            }
+        self.entries[cna_id] = entry
 
     def save(self) -> None:
         """Write the cache to disk, tolerating an unwritable path."""
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
             payload = {
-                'version': '1.0',
+                # 1.1 adds the per-CNA backtest residuals that build the
+                # prediction intervals. Entries written by 1.0 simply have no
+                # 'log_residuals' key, which already reads as "no band yet" -
+                # they gain one when their turn to re-score comes round, so no
+                # migration is needed.
+                'version': '1.1',
                 'updated_at': datetime.now(timezone.utc).isoformat(),
                 'refresh_days': self.refresh_days,
                 'selections': self.entries,
