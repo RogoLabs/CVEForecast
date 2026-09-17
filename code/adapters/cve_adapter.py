@@ -103,6 +103,7 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         # Populated by run_full_pipeline
         self.backtest_results: Dict[str, Any] = {}
         self.interval_bands = None
+        self.annual_bands: Dict[str, Any] = {}
         self.coverage: Dict[str, Any] = {}
         self.naive_threshold: Optional[float] = None
         self.ensemble_members: List[str] = []
@@ -592,8 +593,16 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
             Mapping of model name to BacktestResult
         """
         cv = self.config.get('cross_validation', {})
+        windows = self.publication_windows()
+        # The horizon must reach the end of what is published, or the year totals
+        # cannot be scored and the last months of the band are extrapolated from
+        # the longest horizon that was. Through v0.13 it was 12 against a
+        # 16-month forecast, so September to December of next year all carried
+        # the h=12 band, flat.
+        needed = max((last for _first, last in windows.values()), default=0)
+        horizon = max(cv.get('horizon', 12), needed)
         backtest = RollingOriginBacktest(
-            horizon=cv.get('horizon', 12),
+            horizon=horizon,
             min_train=cv.get('min_train', 48),
             step=cv.get('step', 1),
             max_origins=cv.get('max_origins', 24),
@@ -611,7 +620,7 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
                 attempt = self.engine.forecast(train, _name, _hp, horizon)
                 return attempt.forecast if attempt.ok else None
 
-            results[model_name] = backtest.evaluate(series, forecast_fn, model_name)
+            results[model_name] = backtest.evaluate(series, forecast_fn, model_name, windows=windows)
 
         self.naive_threshold = mark_naive_baselines(results)
         self.backtest_results = results
@@ -641,6 +650,26 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         residuals = pooled_residuals({m: r.log_residuals_by_horizon for m, r in results.items()}, winners)
         self.interval_bands = build_intervals(residuals)
         self.coverage = validate_coverage(residuals, self.interval_bands)
+
+        # A year's band, measured on that year's total rather than summed from
+        # its months. Summing assumes the model errs in the same direction all
+        # year; the months substantially cancel, so summing overstates the range.
+        self.annual_bands = {}
+        for name in self.publication_windows():
+            pooled = pooled_residuals(
+                {m: {1: r.log_residuals_by_window.get(name, [])} for m, r in results.items()}, winners
+            )
+            band = build_intervals(pooled)
+            if band.factors:
+                self.annual_bands[name] = band
+        if self.annual_bands:
+            self.logger.info(
+                'Annual interval bands: '
+                + ', '.join(
+                    f'{y} 80% [{b.for_horizon(1)["80"][0]:.2f}x, {b.for_horizon(1)["80"][1]:.2f}x]'
+                    for y, b in sorted(self.annual_bands.items())
+                )
+            )
 
     def _generate_model_rankings(self) -> List[Dict[str, Any]]:
         """
@@ -701,7 +730,10 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
                 {pd.to_datetime(d).strftime('%Y-%m'): v for d, v in result.forecast_values.items()}
             )
             intervals = step_intervals if model_name == ENSEMBLE_KEY else None
-            projections = build_year_projections(actuals, monthly, intervals, partial_month=partial_month)
+            annual = self.annual_bands if model_name == ENSEMBLE_KEY else None
+            projections = build_year_projections(
+                actuals, monthly, intervals, partial_month=partial_month, annual_bands=annual
+            )
             for year, projection in projections.items():
                 yearly.setdefault(str(year), {})[model_name] = projection.to_dict()
 

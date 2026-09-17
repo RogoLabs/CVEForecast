@@ -28,7 +28,7 @@ makes 9/12 of the annual figure a known quantity rather than a model output.
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
@@ -167,6 +167,7 @@ def build_year_projections(
     monthly_forecasts: Dict[str, float],
     intervals: Optional[Dict[str, Dict[str, float]]] = None,
     partial_month: Optional[str] = None,
+    annual_bands: Optional[Dict[str, Any]] = None,
 ) -> Dict[int, YearProjection]:
     """
     Combine published months with forecast months into per-year totals.
@@ -185,10 +186,16 @@ def build_year_projections(
     Args:
         monthly_actuals: ``{'YYYY-MM': count}`` for published months
         monthly_forecasts: ``{'YYYY-MM': count}`` for forecast months
-        intervals: Optional ``{'YYYY-MM': {'lower_80': x, 'upper_80': y}}``; the
-            year's band is the actual YTD plus the summed monthly bounds, which
-            assumes errors are perfectly correlated across months and so is the
-            conservative (wider) of the reasonable choices
+        intervals: Optional ``{'YYYY-MM': {'lower_80': x, 'upper_80': y}}``.
+            Summing these gives the year a band only under the assumption that
+            the model errs in the same direction every month of it. Used as a
+            fallback where no measured annual band exists.
+        annual_bands: Optional ``{'YYYY': IntervalBands}`` measured on year
+            totals directly, which is the honest quantity for a year figure and
+            is preferred wherever it is available. The months substantially
+            cancel - on the CNA series monthly residual spread runs about 3.4x
+            the spread on a 16-month sum, against 4.0x for months that cancel
+            completely - so summing bounds materially overstates the range
         partial_month: ``'YYYY-MM'`` of the in-progress month, whose forecast
             entry is a remainder to add on top of its partial actual
 
@@ -223,8 +230,15 @@ def build_year_projections(
                 lower_acc[year] = lower_acc.get(year, 0.0) + band['lower_80']
                 upper_acc[year] = upper_acc.get(year, 0.0) + band['upper_80']
 
+    forecast_by_year = {y: p.forecast_remainder for y, p in projections.items()}
     for year, proj in projections.items():
-        if year in lower_acc:
+        band = (annual_bands or {}).get(str(year))
+        factors = band.for_horizon(1).get('80') if band else None
+        if factors:
+            remainder = forecast_by_year.get(year, 0)
+            proj.lower_80 = int(round(proj.actual_ytd + remainder * factors[0]))
+            proj.upper_80 = int(round(proj.actual_ytd + remainder * factors[1]))
+        elif year in lower_acc:
             proj.lower_80 = int(round(proj.actual_ytd + lower_acc[year]))
             proj.upper_80 = int(round(proj.actual_ytd + upper_acc[year]))
 

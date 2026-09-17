@@ -144,6 +144,7 @@ class ModelSelectionCache:
         n_months: int,
         scores: Dict[str, Any],
         residuals: Optional[Dict[int, List[float]]] = None,
+        window_residuals: Optional[Dict[str, List[float]]] = None,
     ) -> None:
         """
         Record a fresh selection.
@@ -165,6 +166,17 @@ class ModelSelectionCache:
                 because the band's shape is estimated across the whole
                 population, so a CNA's own residuals are only half of what
                 building it needs.
+            window_residuals: ``{'YYYY': [log(actual total / forecast total)]}``
+                for the year totals the site publishes. A separate measurement
+                rather than something derivable from the monthly ones: summing
+                monthly bounds would assume the model errs in the same direction
+                all year, and the months largely cancel instead.
+
+                Keyed by calendar year, and the span each year covers shifts as
+                the forecast window rolls forward, so an entry more than a month
+                old describes a slightly different span than today's. Over the
+                30-day refresh cycle that is at most one month of drift on a
+                twelve-month total.
         """
         entry = {
             'model': model,
@@ -181,6 +193,10 @@ class ModelSelectionCache:
             # that is rewritten on every run from carrying 17 digits of noise.
             entry['log_residuals'] = {
                 str(h): [round(float(v), 4) for v in vals] for h, vals in sorted(residuals.items()) if vals
+            }
+        if window_residuals:
+            entry['log_residuals_by_window'] = {
+                str(name): [round(float(v), 4) for v in vals] for name, vals in sorted(window_residuals.items()) if vals
             }
         self.entries[cna_id] = entry
 
