@@ -115,6 +115,54 @@ class TestYearProjections:
         assert result[2026].forecast_remainder == 5000
         assert result[2026].total == 11302
 
+    def test_a_measured_annual_band_is_preferred_over_summing_the_months(self):
+        """
+        Summing monthly bounds assumes the model errs in the same direction all
+        year. It does not: measured on these series, monthly residual spread runs
+        about 3.4x the spread of the same model's error on a 16-month total,
+        where 4.0x would mean the months cancel completely. So a band measured on
+        the total wins wherever one exists, and it is much the narrower.
+        """
+        from core.intervals import IntervalBands
+
+        band = IntervalBands()
+        band.factors = {1: {'80': (0.9, 1.15)}}
+        band.max_horizon = 1
+
+        summed = {
+            '2026-02': {'lower_80': 300, 'upper_80': 1800},
+            '2026-03': {'lower_80': 2000, 'upper_80': 9000},
+        }
+        result = build_year_projections(
+            {'2026-01': 4000},
+            {'2026-02': 1000, '2026-03': 5000},
+            intervals=summed,
+            annual_bands={'2026': band},
+        )
+        proj = result[2026]
+        # 6000 of forecast, banded as a whole: 4000 published + [0.9x, 1.15x].
+        assert proj.lower_80 == 4000 + 5400
+        assert proj.upper_80 == 4000 + 6900
+        assert proj.lower_80 <= proj.total <= proj.upper_80
+        # Narrower than what summing the months would have produced.
+        assert (proj.upper_80 - proj.lower_80) < (summed['2026-02']['upper_80'] - summed['2026-02']['lower_80']) + (
+            summed['2026-03']['upper_80'] - summed['2026-03']['lower_80']
+        )
+
+    def test_summing_still_applies_where_no_annual_band_was_measured(self):
+        result = build_year_projections(
+            {'2026-01': 4000},
+            {'2026-02': 1000, '2026-03': 5000},
+            intervals={
+                '2026-02': {'lower_80': 800, 'upper_80': 1300},
+                '2026-03': {'lower_80': 4200, 'upper_80': 6100},
+            },
+            annual_bands={'2029': None},
+        )
+        proj = result[2026]
+        assert proj.lower_80 == 4000 + 800 + 4200
+        assert proj.upper_80 == 4000 + 1300 + 6100
+
 
 class TestSanityGuards:
     def test_plausible_forecast_passes_silently(self, constraints):
