@@ -291,6 +291,10 @@
                                     four-month total shown as a year. Per-CNA model choice now uses rolling-origin MASE against a
                                     naive baseline, and a CNA whose best model cannot beat that baseline gets the baseline, rather
                                     than reporting a 160%-error model as its best.</li>
+                                <li><strong>Model choice is cached.</strong> Scoring every CNA by backtest on every run measured at
+                                    over an hour, so selection is cached and a capped batch refreshed per run &mdash; oldest first,
+                                    with new CNAs and materially grown series jumping the queue. Forecasting still runs for every CNA
+                                    daily; only the scoring is amortised, holding the job to roughly five minutes.</li>
                             </ul>
                         </div>
                     </div>

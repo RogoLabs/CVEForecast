@@ -104,6 +104,12 @@ complete months (current month excluded)
                     └─ core/covariates.denormalise_by_business_days
 ```
 
+The CNA pipeline uses the same engine. Its per-CNA model choice is cached in
+`web/cna_model_selection.json` and refreshed a few entries at a time: scoring all
+~140 CNAs by backtest every run measured at over an hour, while the choice itself
+changes rarely. The cache is committed by CI, because runners are ephemeral and a
+cache that does not survive the run buys nothing.
+
 `core/forecast_engine.ForecastEngine` owns that pipeline.
 `validation/rolling_origin.RollingOriginBacktest` drives it from historical
 cut-offs to produce rankings and the residuals that `core/intervals` turns into
@@ -118,6 +124,7 @@ are chosen for the pipeline that actually ships.
 | `core/intervals.py` | Conformal intervals from backtest residuals, and coverage |
 | `validation/rolling_origin.py` | Multi-origin scoring, MASE, naive comparison |
 | `data_vintage.py` | Records how monthly counts get revised after publication |
+| `cna_model_cache.py` | Caches per-CNA model choice so daily runs stay bounded |
 
 ## Core Components
 

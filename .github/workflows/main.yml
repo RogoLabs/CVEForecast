@@ -96,7 +96,7 @@ jobs:
       - name: Check for changes
         id: verify-changed-files
         run: |
-          if [ -n "$(git status --porcelain -- web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json web/validation.json web/data_vintages.json)" ]; then
+          if [ -n "$(git status --porcelain -- web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json web/validation.json web/data_vintages.json web/cna_model_selection.json)" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT
@@ -109,7 +109,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          git add web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json web/validation.json web/data_vintages.json
+          git add web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json web/validation.json web/data_vintages.json web/cna_model_selection.json
           if git diff --cached --quiet; then
             echo "No tracked forecast changes to commit"
             exit 0
@@ -127,7 +127,7 @@ jobs:
             echo "Push rejected (attempt ${attempt}/${max_attempts}); resetting and retrying"
             git fetch origin "${GITHUB_REF_NAME}"
             git reset --hard "origin/${GITHUB_REF_NAME}"
-            git add web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json web/validation.json web/data_vintages.json
+            git add web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json web/validation.json web/data_vintages.json web/cna_model_selection.json
             git commit -m "Update CVE forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')" || {
               echo "No changes after reset; exiting cleanly"
               exit 0

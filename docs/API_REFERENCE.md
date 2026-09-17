@@ -818,6 +818,29 @@ a methodology block are new.
 }
 ```
 
+### CNA Model Selection Cache (cna_model_selection.json)
+
+Which model was chosen for each CNA and when. Scoring all ~140 CNAs by backtest
+every run is too slow for a daily job, so selection is cached here and refreshed
+a capped batch at a time. Committed by CI, because runners are ephemeral.
+
+```python
+{
+    "version": "1.0",
+    "updated_at": "2026-09-17T18:00:00Z",
+    "refresh_days": 30,
+    "selections": {
+        "<cna-uuid>": {
+            "model": "LightGBM",
+            "mase": 1.42,
+            "n_months": 36,          # history length when scored
+            "selected_at": "2026-09-17T18:00:00Z",
+            "all_scores": {"LightGBM": 1.42, "NaiveDrift": 2.01}
+        }
+    }
+}
+```
+
 ### Validation Detail (validation.json)
 
 Full per-model backtest results, interval factors by horizon, and coverage. Too

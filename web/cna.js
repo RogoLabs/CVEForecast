@@ -1004,7 +1004,12 @@ function updateSummary(rec) {
 
   const modelInfo = document.getElementById('summaryModelInfo');
   if (modelInfo) {
-    modelInfo.textContent = `${metrics.model || 'Unknown'} selected`;
+    // Model choice is cached and refreshed periodically, so say when it was made
+    // rather than implying it was decided on today's data.
+    const chosen = cnaData?.[metrics.id]?.model_selection?.selected_at;
+    const when = chosen ? ` · chosen ${new Date(chosen).toLocaleDateString()}` : '';
+    const mase = typeof metrics.mase === 'number' ? ` (MASE ${metrics.mase.toFixed(2)})` : '';
+    modelInfo.textContent = `${metrics.model || 'Unknown'}${mase}${when}`;
   }
 
   const growthRateElement = document.getElementById('summaryGrowthRate');

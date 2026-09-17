@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+from cna_model_cache import ModelSelectionCache
 from core.base_forecaster import BaseForecaster, ForecastResult
 from core.forecast_engine import ForecastEngine, ForecastSettings
 from core.model_utils import create_model_safe
@@ -65,6 +66,15 @@ class CNAForecaster(BaseForecaster):
         self.cv_horizon = cv.get('cna_horizon', 6)
         self.cv_min_train = cv.get('cna_min_train', 24)
         self.cv_max_origins = cv.get('cna_max_origins', 8)
+
+        # Scoring every CNA by backtest on every run measured at over an hour.
+        # Model choice is cached and refreshed a few CNAs at a time instead.
+        paths = self.config.get('file_paths', {})
+        self.selection_cache = ModelSelectionCache(
+            path=paths.get('cna_model_selection', 'web/cna_model_selection.json'),
+            refresh_days=cv.get('cna_refresh_days', 30),
+            max_refresh_per_run=cv.get('cna_max_refresh_per_run', 12),
+        )
 
         # CNA-specific attributes
         self.cna_data = {}  # {cna_id: {historical: series, name: str}}
@@ -611,6 +621,10 @@ class CNAForecaster(BaseForecaster):
                     'selected_model': forecast_result.model_name,
                     'validation_mase': forecast_result.metrics.get('validation_mase'),
                     'is_fallback': forecast_result.metadata.get('is_fallback', False),
+                    # When the model was last chosen. Selection is cached and
+                    # refreshed periodically, so a reader seeing a model name
+                    # should know it was not necessarily picked today.
+                    'selected_at': forecast_result.metadata.get('selected_at'),
                     'all_model_scores': forecast_result.metadata.get('all_scores', {}),
                 },
             }
@@ -667,20 +681,46 @@ class CNAForecaster(BaseForecaster):
         # 2. Forecast each CNA
         cna_forecasts = {}
 
+        # Work out the series once, then decide which CNAs need re-scoring before
+        # touching a model. Scoring is the expensive step; forecasting is not.
+        eligible: Dict[str, TimeSeries] = {}
         for cna_id, cna_info in self.cna_data.items():
             # ForecastEngine does not strip the incomplete current month - the CVE
             # adapter does that before calling it - so do the same here. Training
             # on a part-published month drags the level down and shifts the whole
             # forecast a month late.
             ts = self._complete_months(cna_info['historical'])
-            if ts is None or len(ts) < 24:
-                self.logger.debug(f'Skipping {cna_id}: only {0 if ts is None else len(ts)} complete months')
-                continue
+            if ts is not None and len(ts) >= 24:
+                eligible[cna_id] = ts
 
-            # Select best model for this CNA
-            best_model, best_mase, all_scores = self.select_best_model_for_cna(cna_id, ts)
+        to_refresh = set(self.selection_cache.plan_refresh({cid: len(ts) for cid, ts in eligible.items()}))
+        results['cnas_rescored'] = len(to_refresh)
+        results['cnas_from_cache'] = sum(
+            1 for cid in eligible if cid not in to_refresh and self.selection_cache.get(cid) is not None
+        )
+        results['cnas_awaiting_scoring'] = len(eligible) - len(to_refresh) - results['cnas_from_cache']
 
-            self.logger.info(f'{cna_info["name"]} → {best_model} (MASE: {best_mase:.2f})')
+        for cna_id, ts in eligible.items():
+            cna_info = self.cna_data[cna_id]
+
+            if cna_id in to_refresh:
+                best_model, best_mase, all_scores = self.select_best_model_for_cna(cna_id, ts)
+                self.selection_cache.put(cna_id, best_model, best_mase, len(ts), all_scores)
+                self.logger.info(f'{cna_info["name"]} → {best_model} (MASE: {best_mase:.2f}, re-scored)')
+            else:
+                cached = self.selection_cache.get(cna_id)
+                if cached is None:
+                    # Cold start: the refresh cap means most CNAs have no
+                    # selection on the first run. Forecast with the baseline
+                    # rather than skipping them - it is a defensible forecast,
+                    # and each run scores another batch until the cache is full.
+                    best_model, best_mase, all_scores = FALLBACK_MODEL, None, {}
+                    self.logger.debug(f'{cna_info["name"]} → {FALLBACK_MODEL} (awaiting first scoring)')
+                else:
+                    best_model = cached['model']
+                    best_mase = cached.get('mase')
+                    all_scores = cached.get('all_scores', {})
+                    self.logger.debug(f'{cna_info["name"]} → {best_model} (cached)')
 
             # Get forecast horizon
             start_date, end_date = self.get_forecast_horizon()
@@ -705,7 +745,12 @@ class CNAForecaster(BaseForecaster):
                     forecast_values=forecast_values,
                     model_name=best_model,
                     metrics={'validation_mase': best_mase},
-                    metadata={'all_scores': all_scores, 'is_fallback': best_model == FALLBACK_MODEL},
+                    metadata={
+                        'all_scores': all_scores,
+                        'is_fallback': best_model == FALLBACK_MODEL,
+                        'awaiting_scoring': best_mase is None and best_model == FALLBACK_MODEL,
+                        'selected_at': (self.selection_cache.get(cna_id) or {}).get('selected_at'),
+                    },
                 )
 
             except ValueError as e:
@@ -727,6 +772,10 @@ class CNAForecaster(BaseForecaster):
             except Exception as e:
                 # Truly unexpected errors
                 self.logger.error(f'Unexpected error for {cna_id}: {e}')
+
+        # Persist after the loop so a mid-run failure does not lose the
+        # selections already paid for.
+        self.selection_cache.save()
 
         results['forecasts_generated'] = len(cna_forecasts)
 
