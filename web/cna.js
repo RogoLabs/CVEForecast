@@ -344,9 +344,7 @@ function renderTable() {
         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${numberFmt.format(row.forecasted2026)}</td>
         <td class="px-4 py-3 whitespace-nowrap text-sm ${growthClass}">${growthSymbol}${row.growthRate.toFixed(1)}%</td>
         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-          <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            ${row.model}
-          </span>
+          <span class="pill pill--info pill--nodot">${row.model}</span>
         </td>
       </tr>
     `;

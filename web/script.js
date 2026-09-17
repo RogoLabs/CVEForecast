@@ -328,16 +328,16 @@ function populateModelRankings() {
 
         let badgeClass, verdict;
         if (model.is_baseline) {
-            badgeClass = 'bg-gray-100 text-gray-700';
+            badgeClass = 'pill--neutral';
             verdict = 'Baseline';
         } else if (model.mase == null) {
-            badgeClass = 'bg-red-100 text-red-800';
+            badgeClass = 'pill--bad';
             verdict = 'Failed';
         } else if (model.beats_naive) {
-            badgeClass = 'bg-green-100 text-green-800';
+            badgeClass = 'pill--good';
             verdict = 'Beats naive';
         } else {
-            badgeClass = 'bg-yellow-100 text-yellow-800';
+            badgeClass = 'pill--warn';
             verdict = 'Loses to naive';
         }
 
@@ -359,7 +359,7 @@ function populateModelRankings() {
             <td class="text-right font-mono">${fmt(model.mape, 1, '%')}</td>
             <td class="text-right font-mono">${bias}</td>
             <td class="text-center">
-                <span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${badgeClass}">${verdict}</span>
+                <span class="pill ${badgeClass}">${verdict}</span>
             </td>
             <td class="text-center">
                 <button class="expand-btn" onclick="toggleConfig(${index})" id="expandBtn${index}" aria-label="Show configuration for ${model.model_name}">
@@ -478,7 +478,7 @@ function populateForecastVsPublishedTable() {
                     <td class="text-right font-mono">${row.PUBLISHED.toLocaleString()}</td>
                     <td class="text-right font-mono">${row.FORECAST.toLocaleString()}</td>
                     <td class="text-right font-mono text-gray-400" colspan="2"></td>
-                    <td class="text-center font-mono"><span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full bg-gray-100 text-gray-800">In Progress</span></td>
+                    <td class="text-center"><span class="pill pill--neutral">In Progress</span></td>
                 `;
             } else {
                 const error = row.ERROR;
@@ -494,18 +494,18 @@ function populateForecastVsPublishedTable() {
                     return `${sign}${num.toFixed(2)}%`;
                 };
 
-                let badgeClass = 'bg-red-100 text-red-800';
+                let badgeClass = 'pill--bad';
                 let performanceBadge = 'Poor';
                 const absPercentError = Math.abs(percentError);
 
                 if (absPercentError < 10) {
-                    badgeClass = 'bg-green-100 text-green-800';
+                    badgeClass = 'pill--good';
                     performanceBadge = 'Excellent';
                 } else if (absPercentError < 15) {
-                    badgeClass = 'bg-blue-100 text-blue-800';
+                    badgeClass = 'pill--info';
                     performanceBadge = 'Good';
                 } else if (absPercentError < 25) {
-                    badgeClass = 'bg-yellow-100 text-yellow-800';
+                    badgeClass = 'pill--warn';
                     performanceBadge = 'Fair';
                 }
 
@@ -515,7 +515,7 @@ function populateForecastVsPublishedTable() {
                     <td class="text-right font-mono">${row.FORECAST.toLocaleString()}</td>
                     <td class="text-right font-mono">${formatNumberWithSign(error)}</td>
                     <td class="text-right font-mono">${formatPercentWithSign(percentError)}</td>
-                    <td class="text-center font-mono"><span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${badgeClass}">${performanceBadge}</span></td>
+                    <td class="text-center"><span class="pill ${badgeClass}">${performanceBadge}</span></td>
                 `;
             }
             tableBody.appendChild(dataRow);
