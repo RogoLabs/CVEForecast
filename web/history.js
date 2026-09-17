@@ -20,31 +20,11 @@ let evolutionChart = null;
 
 document.addEventListener('DOMContentLoaded', init);
 
-/** Theme toggle, matching the other pages. */
-(function initThemeToggle() {
-    document.addEventListener('DOMContentLoaded', () => {
-        const toggle = document.getElementById('themeToggle');
-        const sun = document.getElementById('themeSun');
-        const moon = document.getElementById('themeMoon');
-        const sync = () => {
-            const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-            sun?.classList.toggle('hidden', !dark);
-            moon?.classList.toggle('hidden', dark);
-        };
-        sync();
-        toggle?.addEventListener('click', () => {
-            const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            try {
-                localStorage.setItem('theme', next);
-            } catch (e) {
-                /* private browsing: the toggle still works for this page view */
-            }
-            sync();
-            if (evolutionChart) renderEvolution(document.getElementById('monthSelector').value);
-        });
-    });
-})();
+/* Chart.js bakes token colours in when a chart is built, so repaint on the
+   theme change that shell.js announces. */
+document.addEventListener('themechange', () => {
+    if (evolutionChart) renderEvolution(document.getElementById('monthSelector').value);
+});
 
 /** Loads the history file and renders the page. */
 async function init() {
@@ -58,8 +38,8 @@ async function init() {
         history = await historyResponse.json();
         vintages = vintageResponse && vintageResponse.ok ? await vintageResponse.json() : null;
 
-        document.getElementById('loadingState').classList.add('hidden');
-        document.getElementById('content').classList.remove('hidden');
+        document.getElementById('loadingState').hidden = true;
+        document.getElementById('content').hidden = false;
 
         renderSummary();
         populateMonthSelector();
@@ -68,8 +48,8 @@ async function init() {
         renderVintages();
     } catch (error) {
         console.error('Failed to load forecast history:', error);
-        document.getElementById('loadingState').classList.add('hidden');
-        document.getElementById('errorState').classList.remove('hidden');
+        document.getElementById('loadingState').hidden = true;
+        document.getElementById('errorState').hidden = false;
         document.getElementById('errorMessage').textContent = error.message;
     }
 }
@@ -165,7 +145,7 @@ function renderEvolution(month) {
         {
             label: 'Ensemble forecast',
             data: rows,
-            borderColor: token('--color-primary') || 'rgb(37, 99, 235)',
+            borderColor: token('--accent') || '#2563eb',
             backgroundColor: 'transparent',
             borderWidth: 2,
             tension: 0.1,
@@ -179,15 +159,15 @@ function renderEvolution(month) {
                 { x: rows[0].x, y: actual },
                 { x: rows[rows.length - 1].x, y: actual },
             ],
-            borderColor: token('--color-forecast') || 'rgb(220, 38, 38)',
+            borderColor: token('--text-muted') || '#596069',
             borderDash: [6, 4],
             borderWidth: 2,
             pointRadius: 0,
         });
     }
 
-    const gridColor = token('--color-border') || '#e2e8f0';
-    const textColor = token('--color-text-secondary') || '#475569';
+    const gridColor = token('--grid') || '#e7eaec';
+    const textColor = token('--text-subtle') || '#868e96';
 
     if (evolutionChart) evolutionChart.destroy();
     evolutionChart = new Chart(document.getElementById('evolutionChart'), {
@@ -216,10 +196,32 @@ function renderEvolution(month) {
                     title: { display: true, text: 'Forecast CVEs for the month', color: textColor },
                     grid: { color: gridColor },
                     ticks: { color: textColor, callback: v => v.toLocaleString() },
+                    /* Hold the axis open to at least +/-2% of the level being
+                       forecast. Left to fit the data, a revision of a fraction
+                       of a percent fills the panel and reads as a collapse —
+                       the same overstatement of precision this site is trying
+                       to avoid everywhere else. */
+                    ...axisFloor(rows),
                 },
             },
         },
     });
+}
+
+/**
+ * Minimum y-axis span for the evolution chart: at least 2% either side of the
+ * mean forecast. Returns nothing when the data already spans more than that,
+ * so genuinely large revisions still set their own scale.
+ */
+function axisFloor(rows) {
+    if (!rows.length) return {};
+    const values = rows.map(r => r.y);
+    const lo = Math.min(...values);
+    const hi = Math.max(...values);
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const margin = mean * 0.02;
+    if (hi - lo >= margin * 2) return {};
+    return { suggestedMin: mean - margin, suggestedMax: mean + margin };
 }
 
 /** Accuracy table for months that have both a forecast and an outcome. */
@@ -232,12 +234,12 @@ function renderAccuracy() {
 
     const months = Object.keys(tracking).sort().reverse();
     if (months.length === 0) {
-        empty.classList.remove('hidden');
-        wrapper.classList.add('hidden');
+        empty.hidden = false;
+        wrapper.hidden = true;
         return;
     }
-    empty.classList.add('hidden');
-    wrapper.classList.remove('hidden');
+    empty.hidden = true;
+    wrapper.hidden = false;
 
     months.forEach(month => {
         const entry = tracking[month];
@@ -252,12 +254,12 @@ function renderAccuracy() {
 
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td class="font-mono">${month}</td>
-            <td class="text-right font-mono">${entry.actual.toLocaleString()}</td>
-            <td class="text-right font-mono">${earliest.forecast.toLocaleString()}</td>
-            <td class="text-right font-mono">${earliest.error_pct >= 0 ? '+' : ''}${earliest.error_pct.toFixed(1)}%</td>
-            <td class="text-right font-mono">${earliest.weeks_ahead.toFixed(0)} wk</td>
-            <td class="text-center"><span class="pill ${verdict}">${entry.convergence_quality.replace('_', ' ')}</span></td>
+            <td class="strong">${month}</td>
+            <td class="num strong">${entry.actual.toLocaleString()}</td>
+            <td class="num">${earliest.forecast.toLocaleString()}</td>
+            <td class="num">${earliest.error_pct >= 0 ? '+' : ''}${earliest.error_pct.toFixed(1)}%</td>
+            <td class="num">${earliest.weeks_ahead.toFixed(0)} wk</td>
+            <td><span class="pill ${verdict}">${entry.convergence_quality.replace('_', ' ')}</span></td>
         `;
         body.appendChild(row);
     });
@@ -272,7 +274,7 @@ function renderStability() {
     const ranked = Object.entries(metrics).sort((a, b) => b[1].stability_score - a[1].stability_score);
     if (ranked.length === 0) {
         body.innerHTML =
-            '<tr><td colspan="4" class="text-gray-600 text-sm py-4">Needs at least two snapshots. Available after the next run.</td></tr>';
+            '<tr><td colspan="4">Needs at least two snapshots. Available after the next run.</td></tr>';
         return;
     }
 
@@ -280,10 +282,10 @@ function renderStability() {
         const verdict = m.stability_score > 0.9 ? 'pill--good' : m.stability_score > 0.7 ? 'pill--warn' : 'pill--bad';
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td class="font-medium text-gray-800">${model}</td>
-            <td class="text-right font-mono">${m.mean_revision_pct.toFixed(2)}%</td>
-            <td class="text-right font-mono">${m.max_revision_pct.toFixed(2)}%</td>
-            <td class="text-center"><span class="pill ${verdict}">${m.stability_score.toFixed(2)}</span></td>
+            <td class="strong">${model}</td>
+            <td class="num">${m.mean_revision_pct.toFixed(2)}%</td>
+            <td class="num">${m.max_revision_pct.toFixed(2)}%</td>
+            <td><span class="pill ${verdict}">${m.stability_score.toFixed(2)}</span></td>
         `;
         body.appendChild(row);
     });
@@ -315,10 +317,10 @@ function renderVintages() {
     el.innerHTML = buckets
         .map(
             ([bucket, v]) =>
-                `<div class="flex justify-between py-1 border-b border-gray-200">
+                `<div class="vintage-row">
                      <span>First observed ${bucket.replace('days_', '').replace('_', '–')} days after month end</span>
-                     <span class="font-mono font-semibold">${((v.factor - 1) * 100).toFixed(1)}% growth after first look
-                         <span class="text-gray-500 font-normal">(n=${v.n})</span></span>
+                     <span class="num"><b>${((v.factor - 1) * 100).toFixed(1)}%</b> growth after first look
+                         <span class="vintage-n">(n=${v.n})</span></span>
                  </div>`
         )
         .join('');

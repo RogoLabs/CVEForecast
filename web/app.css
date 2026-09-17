@@ -372,7 +372,8 @@ main { padding: 1.75rem 0 3rem; }
    reads flush even when one cell's text is shorter than its neighbours'.
    -------------------------------------------------------------------------- */
 .stats {
-    display: grid; grid-template-columns: repeat(4, 1fr);
+    /* auto-fit so a three-stat page does not leave a dead fourth cell. */
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     background: var(--border); gap: 1px;
     border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
 }
@@ -608,3 +609,14 @@ select:hover, input:hover { border-color: var(--border-strong); }
 .release:first-of-type { border-top: 0; padding-top: 0; }
 .release h3 { margin-top: 0; font-size: 15.5px; }
 .release .eyebrow { margin-bottom: .2rem; }
+
+/* Data-vintage rows on the history page: a definition list in all but name. */
+.vintage-row {
+    display: flex; flex-wrap: wrap; gap: .25rem 1rem;
+    justify-content: space-between;
+    padding: .45rem 0; border-bottom: 1px solid var(--border);
+    font-size: 13.5px; color: var(--text-muted);
+}
+.vintage-row:last-child { border-bottom: 0; }
+.vintage-row b { color: var(--text); font-weight: 600; }
+.vintage-n { color: var(--text-subtle); }
