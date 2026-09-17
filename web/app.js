@@ -50,43 +50,13 @@ const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(
 
 /* ==========================================================================
    Theme
+
+   Switching lives in shell.js, shared by every page. The chart bakes token
+   colours into its options when it is built and Chart.js cannot know they
+   later changed, so it repaints on the event the shell emits.
    ========================================================================== */
 
-$('themeToggle').addEventListener('click', () => {
-    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', next);
-    try { localStorage.setItem('theme', next); } catch (e) { /* storage blocked */ }
-});
-
-/* The chart reads its grid, tick and tooltip colours from the CSS tokens once,
-   when it is built, and Chart.js has no way to learn they changed afterwards.
-   The theme can move without the toggle being touched — the visitor changes
-   their OS setting, or something else stamps data-theme on the root — which
-   would leave one theme's gridlines drawn on the other theme's background
-   until an unrelated redraw happened to fix it. Watch both routes. */
-new MutationObserver(() => restyleChart())
-    .observe(root, { attributes: true, attributeFilter: ['data-theme'] });
-
-const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
-systemDark.addEventListener('change', () => {
-    let pinned = false;
-    try { pinned = !!localStorage.getItem('theme'); } catch (e) { /* storage blocked */ }
-    /* Only repaint for visitors who have not made an explicit choice; the
-       attribute is absent for them, so the CSS has already followed along and
-       just the canvas needs telling. */
-    if (!pinned) restyleChart();
-});
-
-/* ==========================================================================
-   Navigation
-   ========================================================================== */
-
-$('navToggle').addEventListener('click', () => {
-    const links = $('navLinks');
-    const open = links.dataset.open === 'true';
-    links.dataset.open = String(!open);
-    $('navToggle').setAttribute('aria-expanded', String(!open));
-});
+document.addEventListener('themechange', () => restyleChart());
 
 /* ==========================================================================
    Data

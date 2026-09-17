@@ -541,3 +541,70 @@ select:hover, input:hover { border-color: var(--border-strong); }
     font-family: var(--mono); font-size: 11.5px;
     padding: .1rem .45rem; border: 1px solid var(--border); border-radius: 4px;
 }
+
+/* --------------------------------------------------------------------------
+   Prose
+
+   Long-form pages (methodology, release history). Elements are styled by
+   descendant selectors rather than carrying a class each, so the markup stays
+   readable and the rhythm is set in one place.
+   -------------------------------------------------------------------------- */
+.prose { padding: 1.5rem 1.6rem; }
+.prose > * + * { margin-top: 1rem; }
+
+.prose h2 {
+    font-size: 19px; letter-spacing: -.018em;
+    padding-bottom: .6rem; border-bottom: 1px solid var(--border);
+}
+.prose h3 { font-size: 15px; margin-top: 1.6rem; }
+.prose h4 { font-size: 13.5px; color: var(--text); }
+.prose h2 + *, .prose h3 + *, .prose h4 + * { margin-top: .5rem; }
+
+.prose p, .prose li { color: var(--text-muted); max-width: 78ch; }
+.prose p { font-size: 14px; }
+
+.prose ul, .prose ol { margin: 0; padding-left: 1.15rem; }
+.prose li { font-size: 13.5px; margin-top: .3rem; }
+.prose li::marker { color: var(--text-subtle); }
+.prose strong { color: var(--text); font-weight: 600; }
+.prose code {
+    font-family: var(--mono); font-size: .92em;
+    background: var(--surface-sunk); border: 1px solid var(--border);
+    border-radius: 4px; padding: .05em .35em;
+}
+
+/* Columns. Collapse to one at phone width rather than shrinking. */
+.cols { display: grid; gap: 1.1rem; grid-template-columns: 1fr; }
+@media (min-width: 720px) {
+    .cols--2 { grid-template-columns: repeat(2, 1fr); }
+    .cols--3 { grid-template-columns: repeat(3, 1fr); }
+    .cols--4 { grid-template-columns: repeat(4, 1fr); }
+}
+.cols > * { min-width: 0; }
+
+/* One callout treatment, taking its accent from the page rather than from a
+   different pastel per card. */
+.callout {
+    background: var(--surface-sunk);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: .85rem 1rem;
+}
+.callout--quiet { border-left-color: var(--border-strong); }
+.callout > * + * { margin-top: .5rem; }
+.callout h3, .callout h4 { margin-top: 0; }
+
+.chip {
+    background: var(--surface-sunk);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: .5rem .65rem;
+    font-size: 13px; color: var(--text-muted);
+}
+
+/* Release history: each entry is a dated block, not a card. */
+.release { padding-top: 1.25rem; border-top: 1px solid var(--border); }
+.release:first-of-type { border-top: 0; padding-top: 0; }
+.release h3 { margin-top: 0; font-size: 15.5px; }
+.release .eyebrow { margin-bottom: .2rem; }
