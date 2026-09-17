@@ -315,8 +315,9 @@ main { padding: 1.75rem 0 3rem; }
     font-weight: 650;
     font-variant-numeric: tabular-nums lining-nums;
 }
-.figure__compare--up b { color: var(--negative); }
-.figure__compare--down b { color: var(--positive); }
+/* Accent, not red. The multiple is a finding, not a verdict — colouring it as
+   an alarm editorialises a number the page is only meant to report. */
+.figure__compare b { color: var(--accent); }
 
 /* The point estimate, kept deliberately quiet. It sits near the floor of its
    own band, so promoting it would understate the forecast. */
@@ -417,8 +418,11 @@ td.rank { color: var(--text-subtle); width: 1%; font-variant-numeric: tabular-nu
 .metric-link { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
 .metric-link:hover { color: var(--accent); }
 
+/* Reserved for a genuine quality signal — interval calibration passing or
+   failing. Direction of error is not a quality signal and is left uncoloured,
+   since the sign carries it and the grade pill carries the judgement. */
 .pos { color: var(--positive); }
-.neg { color: var(--negative); }
+.neg { color: var(--warn); }
 
 /* --------------------------------------------------------------------------
    Pills — one component for every badge on the site.

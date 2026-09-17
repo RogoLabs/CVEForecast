@@ -209,7 +209,7 @@ function renderHero() {
         compare.innerHTML = hasBand
             ? `<b>${low.toFixed(1)}×</b> to <b>${high.toFixed(1)}×</b> ${prevLabel}`
             : `<b>${low.toFixed(1)}×</b> ${prevLabel}`;
-        compare.className = `figure__compare figure__compare--${high >= 1 ? 'up' : 'down'}`;
+        compare.className = 'figure__compare';
     } else if (compare) {
         compare.textContent = '';
         compare.className = 'figure__compare';
@@ -308,7 +308,7 @@ function renderRankings() {
             <td><span class="model-name">${nameHtml}${ensembleTag}</span></td>
             <td class="num strong">${fmt(model.mase, 2)}${spread}</td>
             <td class="num">${fmt(model.mape, 1, '%')}</td>
-            <td class="num ${model.bias_pct == null ? '' : model.bias_pct < 0 ? 'neg' : 'pos'}">${model.bias_pct == null ? '—' : pct(model.bias_pct)}</td>
+            <td class="num">${model.bias_pct == null ? '—' : pct(model.bias_pct)}</td>
             <td><span class="pill ${pillClass}">${verdict}</span></td>
             <td class="center">
                 <button class="expand-btn" id="expandBtn${index}" aria-expanded="false"
@@ -508,8 +508,8 @@ function renderValidationTable() {
                 <td class="strong">${month}</td>
                 <td class="num strong">${n(row.PUBLISHED)}</td>
                 <td class="num">${n(row.FORECAST)}</td>
-                <td class="num ${row.ERROR < 0 ? 'neg' : 'pos'}">${signed(row.ERROR)}</td>
-                <td class="num ${row.PERCENT_ERROR < 0 ? 'neg' : 'pos'}">${pct(row.PERCENT_ERROR, 2)}</td>
+                <td class="num">${signed(row.ERROR)}</td>
+                <td class="num">${pct(row.PERCENT_ERROR, 2)}</td>
                 <td><span class="pill pill--${GRADE_PILL[row.PERFORMANCE] || 'neutral'}">${esc(row.PERFORMANCE)}</span></td>`;
             body.appendChild(tr);
         });
