@@ -1,16 +1,38 @@
 {
   "cve": {
-    "data_loaded": true,
     "data_periods": 117,
-    "models_loaded": 13,
-    "models_trained": 12,
-    "raw_forecasts_generated": 12,
-    "constrained_forecasts": 12,
+    "complete_periods": 116,
+    "models_backtested": 16,
+    "ensemble_members": [
+      "LinearRegression",
+      "TBATS",
+      "Prophet",
+      "AutoARIMA",
+      "KalmanFilter"
+    ],
+    "interval_coverage": {
+      "80": {
+        "nominal": 0.8,
+        "empirical": 0.8072,
+        "n": 1110,
+        "calibrated": true
+      },
+      "95": {
+        "nominal": 0.95,
+        "empirical": 0.9532,
+        "n": 1110,
+        "calibrated": true
+      }
+    },
+    "models_forecast": 16,
     "output_path": "web/data.json"
   },
   "cna": {
     "cnas_loaded": 146,
-    "forecasts_generated": 144,
+    "cnas_rescored": 1,
+    "cnas_from_cache": 139,
+    "cnas_awaiting_scoring": 0,
+    "forecasts_generated": 140,
     "output_path": "web/cna_data.json"
   }
 }
