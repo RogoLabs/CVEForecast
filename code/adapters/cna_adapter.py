@@ -554,7 +554,11 @@ class CNAForecaster(BaseForecaster):
         Returns:
             Path to saved file
         """
-        output_path = Path(self.config.get('output_path', 'web/cna_data.json'))
+        # The CVE adapter reads file_paths.output_data; this read a top-level
+        # output_path, so anything overriding the documented key silently wrote to
+        # the real web/cna_data.json instead. Accept both, preferring file_paths.
+        paths = self.config.get('file_paths', {})
+        output_path = Path(paths.get('cna_output') or self.config.get('output_path') or 'web/cna_data.json')
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         self.logger.info(f'Saving CNA forecasts to {output_path}...')
