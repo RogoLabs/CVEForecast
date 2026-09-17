@@ -250,7 +250,7 @@ CNA-specific forecasts:
     },
     "model_selection": {
       "selected_model": "LightGBM",
-      "validation_mape": 15.2
+      "validation_mase": 1.42
     }
   }
 }

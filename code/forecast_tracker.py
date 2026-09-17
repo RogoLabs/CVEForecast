@@ -26,6 +26,10 @@ logger = logging.getLogger(__name__)
 # stays reviewable in git while retaining every horizon we ever forecast at.
 MAX_SNAPSHOTS = 800
 
+# The combined forecast's key in a snapshot. Renamed from 'all_models_avg' in
+# v0.12, when it stopped being an average of every model.
+ENSEMBLE_KEY = 'Ensemble'
+
 
 def _utc_now_iso() -> str:
     """Timezone-aware UTC timestamp (datetime.utcnow() is deprecated in 3.12+)."""
@@ -206,7 +210,7 @@ class ForecastTracker:
 
                 for model, forecast_value in snapshot['forecasts'][month].items():
                     # Skip ensemble average for individual model tracking
-                    if model == 'all_models_avg':
+                    if model == ENSEMBLE_KEY:
                         continue
 
                     error = forecast_value - actual
@@ -309,7 +313,7 @@ class ForecastTracker:
                 common_models = set(prev_forecasts.keys()) & set(curr_forecasts.keys())
 
                 for model in common_models:
-                    if model == 'all_models_avg':
+                    if model == ENSEMBLE_KEY:
                         continue
 
                     prev_val = prev_forecasts[model]

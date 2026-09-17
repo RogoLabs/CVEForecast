@@ -242,7 +242,7 @@ class CNAForecaster(BaseForecaster):
                     "forecasts": {"2025-10": 123, ...},
                     "model_selection": {
                         "selected_model": "LightGBM",
-                        "validation_mape": 15.2
+                        "validation_mase": 1.42
                     },
                     "cumulative_timeline": [...]
                 }
@@ -480,7 +480,7 @@ class ForecastConstraints:
         """
         pass
 
-    def apply_growth_floor(self, forecast: int, previous_year: int) -> int:
+    def check_annual(self, projection: YearProjection, previous_year_total: Optional[int]) -> List[str]:
         """
         Ensure forecast meets minimum growth rate relative to previous year.
 
