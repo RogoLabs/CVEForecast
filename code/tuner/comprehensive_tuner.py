@@ -70,8 +70,9 @@ except (ImportError, OSError):
 # Add parent directory to path to import CVE forecast modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from core.forecast_engine import ForecastEngine, ForecastSettings
+from core.model_utils import create_model_safe
 from darts import TimeSeries
-from darts.metrics import mae, mape, mase, rmsse
 
 # Import model classes for tuning
 from darts.models import (
@@ -96,80 +97,94 @@ from darts.models import (
 )
 from darts.models.forecasting.baselines import NaiveDrift, NaiveMean, NaiveSeasonal
 from data_loader import load_cve_data
+from validation.rolling_origin import RollingOriginBacktest
 
 
-def train_and_evaluate_model(model_name, model_config, series, eval_config):
+def score_model(model_name, model_config, series, eval_config):
     """
-    Train and evaluate a model with given hyperparameters.
+    Score a hyperparameter candidate the same way production forecasts are scored.
 
-    Replacement for old model_trainer function - now uses adapter-style model creation.
+    v0.11 fitted the model directly against a single train/test split whose ratio
+    was itself part of the search space. Two problems: the tuner optimised a
+    pipeline that did not match the one that ships (no log space, no business-day
+    normalisation, no damping), and searching over the split ratio selects the
+    evaluation setup that flatters the model. With a 0.99 ratio on 117 months the
+    winning configuration was chosen on a one-point validation set, which is how
+    LightGBM came to be recorded at 0.037% MAPE.
+
+    Candidates are now scored by ``RollingOriginBacktest`` driving
+    ``ForecastEngine`` - identical code to the production path.
 
     Args:
         model_name: Name of the model
-        model_config: Dictionary with 'hyperparameters' key
-        series: Darts TimeSeries
-        eval_config: Dictionary with 'split_ratio' and other eval settings
+        model_config: Dictionary with a 'hyperparameters' key
+        series: Darts TimeSeries of monthly counts
+        eval_config: Cross-validation settings (horizon, min_train, step, max_origins)
 
     Returns:
-        Tuple of (model, train_data, val_data, predictions)
+        Dictionary of metrics plus n_origins, or None when the candidate failed
+
+    Raises:
+        ValueError: If the model name is not recognised
     """
-    # Extract configuration
     hyperparameters = model_config.get('hyperparameters', {})
-    split_ratio = eval_config.get('split_ratio', 0.8)
 
-    # Split data
-    split_point = int(split_ratio * len(series))
-    train_data = series[:split_point]
-    val_data = series[split_point:]
-
-    if len(val_data) == 0:
-        raise ValueError('No validation data available')
-
-    # Model class mapping (same as adapter)
-    model_classes = {
-        'Prophet': Prophet,
-        'ExponentialSmoothing': ExponentialSmoothing,
-        'AutoARIMA': AutoARIMA,
-        'Theta': Theta,
-        'FourTheta': FourTheta,
-        'TBATS': TBATS,
-        'Croston': Croston,
-        'KalmanForecaster': KalmanForecaster,
-        'XGBoost': XGBModel,
-        'LightGBM': LightGBMModel,
-        'CatBoost': CatBoostModel,
-        'RandomForest': RandomForestModel,
-        'LinearRegression': LinearRegressionModel,
-        'TCN': TCNModel,
-        'NBEATS': NBEATSModel,
-        'NHiTS': NHiTSModel,
-        'TiDE': TiDEModel,
-        'DLinear': DLinearModel,
-        'NaiveMean': NaiveMean,
-        'NaiveDrift': NaiveDrift,
-        'NaiveSeasonal': NaiveSeasonal,
-    }
-
-    if model_name not in model_classes:
+    if model_name not in MODEL_CLASSES:
         raise ValueError(f'Unknown model: {model_name}')
 
-    model_class = model_classes[model_name]
+    def create(name, params):
+        return create_model_safe(MODEL_CLASSES[name], name, params, logging.getLogger('tuner'))
 
-    # Create model with hyperparameters
-    try:
-        model = model_class(**hyperparameters)
-    except Exception:
-        # Try without hyperparameters if they fail
-        model = model_class()
+    engine = ForecastEngine(ForecastSettings.from_config(eval_config.get('full_config', {})), create)
+    backtest = RollingOriginBacktest(
+        horizon=eval_config.get('horizon', 12),
+        min_train=eval_config.get('min_train', 48),
+        step=eval_config.get('step', 1),
+        max_origins=eval_config.get('max_origins', 12),
+    )
 
-    # Train model
-    model.fit(train_data)
+    def forecast_fn(train, horizon):
+        attempt = engine.forecast(train, model_name, hyperparameters, horizon)
+        return attempt.forecast if attempt.ok else None
 
-    # Generate predictions
-    predictions = model.predict(len(val_data))
+    result = backtest.evaluate(series, forecast_fn, model_name)
+    if not result.is_valid:
+        return None
 
-    # Return model and data (tuner calculates metrics itself)
-    return model, train_data, val_data, predictions
+    return {
+        'mase': result.mase,
+        'mape': result.mape if result.mape is not None else float('inf'),
+        'mae': result.mae if result.mae is not None else float('inf'),
+        'rmsse': float('inf'),  # not produced by the rolling-origin backtest
+        'bias_pct': result.bias_pct,
+        'n_origins': result.n_origins,
+    }
+
+
+MODEL_CLASSES = {
+    'Prophet': Prophet,
+    'ExponentialSmoothing': ExponentialSmoothing,
+    'AutoARIMA': AutoARIMA,
+    'Theta': Theta,
+    'FourTheta': FourTheta,
+    'TBATS': TBATS,
+    'Croston': Croston,
+    'KalmanForecaster': KalmanForecaster,
+    'KalmanFilter': KalmanForecaster,
+    'XGBoost': XGBModel,
+    'LightGBM': LightGBMModel,
+    'CatBoost': CatBoostModel,
+    'RandomForest': RandomForestModel,
+    'LinearRegression': LinearRegressionModel,
+    'TCN': TCNModel,
+    'NBEATS': NBEATSModel,
+    'NHiTS': NHiTSModel,
+    'TiDE': TiDEModel,
+    'DLinear': DLinearModel,
+    'NaiveMean': NaiveMean,
+    'NaiveDrift': NaiveDrift,
+    'NaiveSeasonal': NaiveSeasonal,
+}
 
 
 def cleanup_multiprocessing():
@@ -275,7 +290,7 @@ class ThreadedModelRunner:
             # Force cleanup before starting
             cleanup_multiprocessing()
 
-            self.result = train_and_evaluate_model(model_name, temp_model_config, series, eval_config)
+            self.result = score_model(model_name, temp_model_config, series, eval_config)
             self.completed = True
 
             # Force cleanup after completion
@@ -288,7 +303,12 @@ class ThreadedModelRunner:
             cleanup_multiprocessing()
 
     def run_with_timeout(self, model_name, temp_model_config, series, eval_config, timeout_seconds):
-        """Run model training with timeout and improved resource management"""
+        """
+        Score a candidate with a wall-clock timeout.
+
+        Returns:
+            Metrics dictionary from score_model, or None on timeout/failure
+        """
         try:
             self.thread = threading.Thread(
                 target=self.run_model, args=(model_name, temp_model_config, series, eval_config), daemon=True
@@ -296,30 +316,16 @@ class ThreadedModelRunner:
             self.thread.start()
             self.thread.join(timeout=timeout_seconds)
 
-            if self.thread.is_alive():
-                # Thread is still running, meaning timeout occurred
-                # Force cleanup
+            if self.thread.is_alive() or self.exception or not self.completed:
+                # Timed out, raised, or produced nothing
                 cleanup_multiprocessing()
-                return None, None, None, None
-            elif self.exception:
-                # Thread completed with exception
-                cleanup_multiprocessing()
-                return None, None, None, None
-            elif self.completed and self.result:
-                # Thread completed successfully
-                if len(self.result) == 4:
-                    return self.result
-                else:
-                    return self.result + (None,)
-            else:
-                # Thread completed but no result
-                cleanup_multiprocessing()
-                return None, None, None, None
+                return None
+            return self.result
 
         except Exception:
             # Cleanup on any error
             cleanup_multiprocessing()
-            return None, None, None, None
+            return None
         finally:
             # Final cleanup
             cleanup_multiprocessing()
@@ -527,7 +533,7 @@ class ComprehensiveHyperparameterTuner:
         """
         return {
             'Prophet': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2 (11 months validation)
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     'changepoint_prior_scale': [0.05, 0.1],  # 2 best values
                     'seasonality_prior_scale': [1.0, 10.0],  # 2 best values
@@ -543,7 +549,7 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 4 = 4 configurations
             },
             'XGBoost': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     # Smart grid: high-impact parameters only (12-min tuning)
                     'lags': [24, 36, 48],  # 3 best values (2-4 year patterns)
@@ -558,7 +564,7 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 3×3×2×2 = 36 configurations
             },
             'LightGBM': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     # Smart grid: high-impact parameters only (12-min tuning)
                     'lags': [24, 36, 48],  # 3 best values (2-4 year patterns)
@@ -575,7 +581,7 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 3×3×2×2×2 = 72 configurations
             },
             'CatBoost': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     # Smart grid: high-impact parameters only (12-min tuning)
                     'lags': [24, 36, 48],  # 3 best values (2-4 year patterns)
@@ -588,7 +594,7 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 3×3×2×2 = 36 configurations
             },
             'RandomForest': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     # Smart grid: high-impact parameters only
                     'lags': [24, 36],  # 2 best values
@@ -603,7 +609,7 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 2×2×2 = 8 configurations
             },
             'LinearRegression': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     'lags': [18, 24, 30],  # 3 best values
                     'output_chunk_length': [1],  # FIXED: standard
@@ -618,7 +624,7 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 3 = 3 configurations
             },
             'AutoARIMA': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     'season_length': [12],  # FIXED: monthly seasonality
                     'quantiles': [None],  # FIXED: not needed
@@ -627,7 +633,7 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 1 = 1 configuration
             },
             'ExponentialSmoothing': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     'trend': [None, 'add'],  # 2 values (no trend vs additive)
                     'seasonal': [None, 'add'],  # 2 values (no seasonality vs additive)
@@ -640,7 +646,7 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 2×2 = 4 configurations
             },
             'TBATS': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     'season_length': [12],  # FIXED: monthly seasonality
                     'quantiles': [None],  # FIXED: not needed
@@ -649,7 +655,7 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 1 = 1 configuration
             },
             'Theta': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     'season_mode': ['ADDITIVE'],  # FIXED: best for CVE data
                     'theta': [1, 2, 3],  # 3 key values
@@ -657,7 +663,7 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 3 = 3 configurations
             },
             'FourTheta': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     'season_mode': ['ADDITIVE'],  # FIXED: best for CVE data
                     'theta': [1, 2, 3],  # 3 key values
@@ -665,14 +671,14 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 3 = 3 configurations
             },
             'KalmanFilter': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     'dim_x': [3, 5]  # 2 key values (low vs medium complexity)
                 },
                 # Total: 1 × 2 = 2 configurations
             },
             'Croston': {
-                'split_ratios': [0.88],  # FIXED: Optimal from Issue #2
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     'version': ['optimized'],  # FIXED: best version
                     'alpha_d': [0.1],  # FIXED: standard
@@ -683,7 +689,7 @@ class ComprehensiveHyperparameterTuner:
                 # Total: 1 × 1 = 1 configuration
             },
             'NaiveDrift': {
-                'split_ratios': [0.70, 0.75, 0.80, 0.85, 0.88, 0.90],  # Fixed: removed invalid splits >0.90 (Issue #2)
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     # NaiveDrift is a simple baseline model with minimal hyperparameters
                     'random_state': [None, 42],
@@ -691,14 +697,7 @@ class ComprehensiveHyperparameterTuner:
                 },
             },
             'TCN': {
-                'split_ratios': [
-                    0.70,
-                    0.75,
-                    0.80,
-                    0.85,
-                    0.88,
-                    0.90,
-                ],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     # Core architecture parameters optimized for 30-minute constraint
                     'input_chunk_length': [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -715,14 +714,7 @@ class ComprehensiveHyperparameterTuner:
                 },
             },
             'NBEATS': {
-                'split_ratios': [
-                    0.70,
-                    0.75,
-                    0.80,
-                    0.85,
-                    0.88,
-                    0.90,
-                ],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     # Core architecture parameters optimized for 30-minute constraint
                     'input_chunk_length': [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -741,14 +733,7 @@ class ComprehensiveHyperparameterTuner:
                 },
             },
             'NHiTS': {
-                'split_ratios': [
-                    0.70,
-                    0.75,
-                    0.80,
-                    0.85,
-                    0.88,
-                    0.90,
-                ],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     # Core architecture parameters optimized for 30-minute constraint
                     'input_chunk_length': [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -768,14 +753,7 @@ class ComprehensiveHyperparameterTuner:
                 },
             },
             'TiDE': {
-                'split_ratios': [
-                    0.70,
-                    0.75,
-                    0.80,
-                    0.85,
-                    0.88,
-                    0.90,
-                ],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     # Core architecture parameters optimized for 30-minute constraint
                     'input_chunk_length': [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -795,14 +773,7 @@ class ComprehensiveHyperparameterTuner:
                 },
             },
             'DLinear': {
-                'split_ratios': [
-                    0.70,
-                    0.75,
-                    0.80,
-                    0.85,
-                    0.88,
-                    0.90,
-                ],  # Fixed: removed invalid splits >0.90 (Issue #2)  # Keep expanded splits
+                'split_ratios': [None],  # not searched: see score_model docstring
                 'hyperparameters': {
                     # Core architecture parameters optimized for 30-minute constraint
                     'input_chunk_length': [12, 18, 24],  # Reduced from 5 to 3 key values
@@ -1020,7 +991,11 @@ class ComprehensiveHyperparameterTuner:
 
         # Use a simple configuration for testing
         test_config = self.config.copy()
-        test_config['model_evaluation']['split_ratio'] = 0.8
+        test_config['model_evaluation'] = {
+            **self.config.get('cross_validation', {}),
+            'max_origins': 4,  # a viability probe only needs to prove the model fits
+            'full_config': self.config,
+        }
 
         # Create a minimal test model config
         test_model_config = model_config.copy()
@@ -1116,7 +1091,7 @@ class ComprehensiveHyperparameterTuner:
 
                 # Use threaded model runner with short timeout
                 runner = ThreadedModelRunner()
-                model, train, val, predictions = runner.run_with_timeout(
+                metrics = runner.run_with_timeout(
                     model_name, test_model_config, series, test_config['model_evaluation'], timeout_seconds
                 )
 
@@ -1124,7 +1099,7 @@ class ComprehensiveHyperparameterTuner:
             logging.disable(logging.NOTSET)
             devnull.close()
 
-            if model is not None:
+            if metrics is not None:
                 print(f'  ✅ {model_name} is viable')
                 return True
             else:
@@ -1255,12 +1230,16 @@ class ComprehensiveHyperparameterTuner:
                 print(f'  ⏱️ {model_name} timed out before trial {trial_num} - stopping')
                 break
 
-            split_ratio = combo['split_ratio']
+            split_ratio = combo['split_ratio']  # always None; retained in the result record
             hyperparams = combo['hyperparameters']
 
-            # Create temporary config
+            # Hand the scorer the cross-validation settings and the full config, so
+            # the candidate is evaluated through the same ForecastEngine that ships.
             temp_config = self.config.copy()
-            temp_config['model_evaluation']['split_ratio'] = split_ratio
+            temp_config['model_evaluation'] = {
+                **self.config.get('cross_validation', {}),
+                'full_config': self.config,
+            }
 
             # Merge hyperparameters
             temp_model_config = model_config.copy()
@@ -1316,7 +1295,7 @@ class ComprehensiveHyperparameterTuner:
 
                     # Use threaded model runner with timeout
                     runner = ThreadedModelRunner()
-                    model, train, val, predictions = runner.run_with_timeout(
+                    metrics = runner.run_with_timeout(
                         model_name, temp_model_config, series, temp_config['model_evaluation'], trial_timeout
                     )
 
@@ -1326,20 +1305,8 @@ class ComprehensiveHyperparameterTuner:
 
                 training_time = time.time() - start_time
 
-                if model and predictions:
-                    # Calculate comprehensive metrics for model performance evaluation
-                    metrics = {}
-                    metric_funcs = [('mape', mape), ('mae', mae), ('mase', mase), ('rmsse', rmsse)]
-
-                    for metric_name, metric_func in metric_funcs:
-                        try:
-                            if metric_name in ['mase', 'rmsse']:
-                                metrics[metric_name] = metric_func(val, predictions, train)
-                            else:
-                                metrics[metric_name] = metric_func(val, predictions)
-                        except Exception:
-                            metrics[metric_name] = float('inf')
-
+                if metrics:
+                    # Metrics come back from the rolling-origin backtest already.
                     result = HyperparameterResult(
                         model_name=model_name,
                         split_ratio=split_ratio,
@@ -1475,15 +1442,27 @@ class ComprehensiveHyperparameterTuner:
     def find_best_configurations(
         self, results: List[HyperparameterResult], top_n: int = 5
     ) -> List[HyperparameterResult]:
-        """Find the top N best configurations from results"""
-        successful_results = [r for r in results if r.success and not np.isinf(r.mape)]
+        """
+        Find the top N configurations, ranked by MASE.
+
+        MASE rather than MAPE, matching the production ranking: MAPE penalises
+        over-forecasting more than under-forecasting, which biases selection low
+        on a growing series - the exact bias the old growth-floor hack existed to
+        paper over.
+
+        Args:
+            results: All trial results for a model
+            top_n: How many to keep
+
+        Returns:
+            Best configurations, best first
+        """
+        successful_results = [r for r in results if r.success and not np.isinf(r.mase)]
 
         if not successful_results:
             return []
 
-        # Sort by MAPE (lower is better) and return top N
-        best_results = sorted(successful_results, key=lambda x: x.mape)[:top_n]
-        return best_results
+        return sorted(successful_results, key=lambda x: x.mase)[:top_n]
 
     def _convert_numpy_types(self, obj: Any) -> Any:
         """Convert numpy types to native Python types for JSON serialization"""
@@ -1589,19 +1568,19 @@ class ComprehensiveHyperparameterTuner:
             if model_name in current_config['models']:
                 # Check if this model has previous tuning results
                 existing_results = current_config['models'][model_name].get('tuning_results', {})
-                existing_mape = existing_results.get('mape', float('inf'))
+                existing_mase = existing_results.get('mase', float('inf'))
 
-                # Only update if we found better results
-                if best_config['mape'] < existing_mape:
+                # Only update if we found better results, judged on MASE
+                if best_config['mase'] < existing_mase:
                     should_update = True
-                    improvement = existing_mape - best_config['mape']
-                    models_improved.append((model_name, best_config['mape'], existing_mape, improvement))
+                    improvement = existing_mase - best_config['mase']
+                    models_improved.append((model_name, best_config['mase'], existing_mase, improvement))
                 else:
-                    models_unchanged.append((model_name, best_config['mape'], existing_mape))
+                    models_unchanged.append((model_name, best_config['mase'], existing_mase))
             else:
                 # New model, always update
                 should_update = True
-                models_improved.append((model_name, best_config['mape'], float('inf'), float('inf')))
+                models_improved.append((model_name, best_config['mase'], float('inf'), float('inf')))
 
             if should_update:
                 updates_made = True
@@ -1610,22 +1589,22 @@ class ComprehensiveHyperparameterTuner:
         if models_improved:
             print('🚀 IMPROVEMENTS FOUND:')
             print('-' * 80)
-            print(f'{"Model":<15} {"New MAPE":<10} {"Old MAPE":<10} {"Improvement":<12}')
+            print(f'{"Model":<15} {"New MASE":<10} {"Old MASE":<10} {"Improvement":<12}')
             print('-' * 80)
-            for model_name, new_mape, old_mape, improvement in models_improved:
-                if old_mape == float('inf'):
-                    print(f'{model_name:<15} {new_mape:<10.3f} {"N/A":<10} {"New model":<12}')
+            for model_name, new_mase, old_mase, improvement in models_improved:
+                if old_mase == float('inf'):
+                    print(f'{model_name:<15} {new_mase:<10.3f} {"N/A":<10} {"New model":<12}')
                 else:
-                    print(f'{model_name:<15} {new_mape:<10.3f} {old_mape:<10.3f} {improvement:<12.3f}')
+                    print(f'{model_name:<15} {new_mase:<10.3f} {old_mase:<10.3f} {improvement:<12.3f}')
             print('-' * 80)
 
         if models_unchanged:
             print('📊 NO IMPROVEMENT:')
             print('-' * 60)
-            print(f'{"Model":<15} {"New MAPE":<10} {"Current MAPE":<12}')
+            print(f'{"Model":<15} {"New MASE":<10} {"Current MASE":<12}')
             print('-' * 60)
-            for model_name, new_mape, current_mape in models_unchanged:
-                print(f'{model_name:<15} {new_mape:<10.3f} {current_mape:<12.3f}')
+            for model_name, new_mase, current_mase in models_unchanged:
+                print(f'{model_name:<15} {new_mase:<10.3f} {current_mase:<12.3f}')
             print('-' * 60)
 
         # Only proceed with update if we have improvements
@@ -1656,62 +1635,46 @@ class ComprehensiveHyperparameterTuner:
             if model_name in updated_config['models']:
                 # Check if this model should be updated
                 existing_results = updated_config['models'][model_name].get('tuning_results', {})
-                existing_mape = existing_results.get('mape', float('inf'))
+                existing_mase = existing_results.get('mase', float('inf'))
 
-                if best_config['mape'] < existing_mape:
-                    # Update split ratio
-                    updated_config['models'][model_name]['optimal_split_ratio'] = best_config['split_ratio']
-
-                    # Update hyperparameters with optimal values
+                if best_config['mase'] < existing_mase:
+                    # No optimal_split_ratio: the split is no longer a tuned quantity.
                     updated_config['models'][model_name]['hyperparameters'].update(best_config['hyperparameters'])
 
-                    # Add tuning results metadata
                     updated_config['models'][model_name]['tuning_results'] = {
+                        'mase': best_config['mase'],
                         'mape': best_config['mape'],
                         'mae': best_config['mae'],
-                        'mase': best_config.get('mase', 0),
-                        'rmsse': best_config.get('rmsse', 0),
+                        'n_origins': best_config.get('n_origins'),
                         'training_time': best_config['training_time'],
                         'trial_number': best_config['trial_number'],
                         'tuned_at': datetime.now().isoformat(),
-                        'tuning_method': 'comprehensive_hyperparameter_tuning',
-                        'previous_mape': existing_mape if existing_mape != float('inf') else None,
-                        'improvement': existing_mape - best_config['mape'] if existing_mape != float('inf') else None,
+                        'tuning_method': 'rolling_origin_mase',
+                        'previous_mase': existing_mase if existing_mase != float('inf') else None,
+                        'improvement': existing_mase - best_config['mase'] if existing_mase != float('inf') else None,
                     }
 
-        # Update the global split ratio to the best performing model's split ratio (only if improved)
+        # Record which model came out on top. The global split ratio this block used
+        # to write is gone: there is no split ratio to tune any more.
         best_model_name = None
-        best_split_ratio = None
 
         if self.best_configs:
-            # Find the best overall model from the improved models only
             improved_models = {
                 name: config for name, config in self.best_configs.items() if any(name == m[0] for m in models_improved)
             }
 
             if improved_models:
-                best_model_name = min(improved_models.items(), key=lambda x: x[1]['mape'])[0]
-                best_split_ratio = improved_models[best_model_name]['split_ratio']
+                best_model_name = min(improved_models.items(), key=lambda x: x[1]['mase'])[0]
+                current_global_mase = updated_config.get('comprehensive_tuning', {}).get('best_mase', float('inf'))
 
-                # Check if global split ratio should be updated
-                current_global_mape = float('inf')
-                if 'comprehensive_tuning' in updated_config:
-                    current_global_mape = updated_config['comprehensive_tuning'].get('best_mape', float('inf'))
-
-                if improved_models[best_model_name]['mape'] < current_global_mape:
-                    updated_config['model_evaluation']['split_ratio'] = best_split_ratio
-
-                    # Add comprehensive tuning metadata
+                if improved_models[best_model_name]['mase'] < current_global_mase:
                     updated_config['comprehensive_tuning'] = {
                         'last_tuned_at': datetime.now().isoformat(),
                         'best_model': best_model_name,
-                        'best_mape': improved_models[best_model_name]['mape'],
-                        'optimal_split_ratio': best_split_ratio,
+                        'best_mase': improved_models[best_model_name]['mase'],
                         'models_tuned': list(improved_models.keys()),
-                        'previous_best_mape': current_global_mape if current_global_mape != float('inf') else None,
-                        'global_improvement': current_global_mape - improved_models[best_model_name]['mape']
-                        if current_global_mape != float('inf')
-                        else None,
+                        'previous_best_mase': current_global_mase if current_global_mase != float('inf') else None,
+                        'tuning_method': 'rolling_origin_mase',
                     }
 
         # Save updated config to the MAIN production config.json
@@ -1722,9 +1685,8 @@ class ComprehensiveHyperparameterTuner:
 
         print(f'✅ Main production config.json updated with {len(models_improved)} improved configurations')
         print(f'🎯 Updated file: {main_config_path}')
-        if best_split_ratio is not None and best_model_name is not None:
-            print(f'🎯 Global split ratio updated to: {best_split_ratio:.3f}')
-            print(f'🏆 Best model: {best_model_name} (MAPE: {self.best_configs[best_model_name]["mape"]:.3f}%)')
+        if best_model_name is not None:
+            print(f'🏆 Best model: {best_model_name} (MASE: {self.best_configs[best_model_name]["mase"]:.3f})')
         return updated_config
 
     def update_tuner_config(self):
@@ -1760,36 +1722,29 @@ class ComprehensiveHyperparameterTuner:
                 # Check if this is an improvement
                 updated_tuner_config['models'][model_name].get('hyperparameters', {})
                 current_results = updated_tuner_config['models'][model_name].get('best_results', {})
-                current_mape = current_results.get('mape', float('inf'))
+                current_mase = current_results.get('mase', float('inf'))
 
-                if best_config['mape'] < current_mape:
+                if best_config['mase'] < current_mase:
                     # Update hyperparameters with best found values
                     updated_tuner_config['models'][model_name]['hyperparameters'].update(best_config['hyperparameters'])
 
                     # Store best results for future comparison
                     updated_tuner_config['models'][model_name]['best_results'] = {
+                        'mase': best_config['mase'],
                         'mape': best_config['mape'],
                         'mae': best_config['mae'],
-                        'mase': best_config.get('mase', 0),
-                        'rmsse': best_config.get('rmsse', 0),
-                        'split_ratio': best_config['split_ratio'],
                         'training_time': best_config['training_time'],
                         'found_at': datetime.now().isoformat(),
                     }
 
                     updates_made = True
-                    improvement = current_mape - best_config['mape']
-                    models_improved.append((model_name, best_config['mape'], current_mape, improvement))
+                    improvement = current_mase - best_config['mase']
+                    models_improved.append((model_name, best_config['mase'], current_mase, improvement))
 
         if updates_made:
             # Update global tuner settings with best overall results
             if self.best_configs:
-                best_model_name = min(self.best_configs.items(), key=lambda x: x[1]['mape'])[0]
-                best_split_ratio = self.best_configs[best_model_name]['split_ratio']
-
-                # Update default split ratio if significantly better
-                updated_tuner_config['model_evaluation'].get('split_ratio', 0.75)
-                updated_tuner_config['model_evaluation']['split_ratio'] = best_split_ratio
+                best_model_name = min(self.best_configs.items(), key=lambda x: x[1]['mase'])[0]
 
                 # Add tuning history metadata
                 if 'tuning_history' not in updated_tuner_config:
@@ -1799,7 +1754,7 @@ class ComprehensiveHyperparameterTuner:
                     {
                         'timestamp': datetime.now().isoformat(),
                         'best_model': best_model_name,
-                        'best_mape': self.best_configs[best_model_name]['mape'],
+                        'best_mase': self.best_configs[best_model_name]['mase'],
                         'models_improved': len(models_improved),
                         'total_models_tested': len(self.best_configs),
                     }
@@ -1813,13 +1768,13 @@ class ComprehensiveHyperparameterTuner:
 
             print('🚀 TUNER CONFIG IMPROVEMENTS:')
             print('-' * 70)
-            print(f'{"Model":<15} {"New MAPE":<10} {"Old MAPE":<10} {"Improvement":<12}')
+            print(f'{"Model":<15} {"New MASE":<10} {"Old MASE":<10} {"Improvement":<12}')
             print('-' * 70)
-            for model_name, new_mape, old_mape, improvement in models_improved:
-                if old_mape == float('inf'):
-                    print(f'{model_name:<15} {new_mape:<10.3f} {"N/A":<10} {"New model":<12}')
+            for model_name, new_mase, old_mase, improvement in models_improved:
+                if old_mase == float('inf'):
+                    print(f'{model_name:<15} {new_mase:<10.3f} {"N/A":<10} {"New model":<12}')
                 else:
-                    print(f'{model_name:<15} {new_mape:<10.3f} {old_mape:<10.3f} {improvement:<12.3f}')
+                    print(f'{model_name:<15} {new_mase:<10.3f} {old_mase:<10.3f} {improvement:<12.3f}')
             print('-' * 70)
             print(f'✅ Tuner config updated with {len(models_improved)} improved configurations')
             print(f'🎯 Updated file: {self.config_path}')
@@ -2077,7 +2032,7 @@ class ComprehensiveHyperparameterTuner:
                 best_result = best_results[0]
 
                 # Get currently deployed model performance for comparison
-                current_deployed_mape = float('inf')  # Default if no current deployment
+                current_deployed_mase = float('inf')  # Default if no current deployment
 
                 # Load main production config to check for previous tuning results
                 main_config_path = os.path.join(os.path.dirname(os.path.dirname(self.config_path)), 'config.json')
@@ -2087,9 +2042,9 @@ class ComprehensiveHyperparameterTuner:
 
                     if model_name in main_config.get('models', {}):
                         existing_results = main_config['models'][model_name].get('tuning_results', {})
-                        current_deployed_mape = existing_results.get('mape', float('inf'))
-                        if current_deployed_mape != float('inf'):
-                            print(f'   📋 Found previous result for {model_name}: {current_deployed_mape:.3f}% MAPE')
+                        current_deployed_mase = existing_results.get('mase', float('inf'))
+                        if current_deployed_mase != float('inf'):
+                            print(f'   📋 Found previous result for {model_name}: MASE {current_deployed_mase:.3f}')
                 except Exception as e:
                     print(f'   ⚠️ Could not load main config for comparison: {e}')
 
@@ -2099,27 +2054,30 @@ class ComprehensiveHyperparameterTuner:
                 self.best_configs[model_name] = {
                     'split_ratio': best_result.split_ratio,
                     'hyperparameters': best_result.hyperparameters,
+                    'mase': best_result.mase,
                     'mape': best_result.mape,
                     'mae': best_result.mae,
                     'training_time': best_result.training_time,
                     'trial_number': best_result.trial_number,
                     'is_partial_result': is_partial_result,
                     'trials_completed': len(model_results),
-                    'current_deployed_mape': current_deployed_mape,
+                    'current_deployed_mase': current_deployed_mase,
                 }
 
                 # Show comparison against currently deployed model
-                if current_deployed_mape != float('inf'):
-                    improvement = current_deployed_mape - best_result.mape
+                if current_deployed_mase != float('inf'):
+                    improvement = current_deployed_mase - best_result.mase
                     if improvement > 0:
                         status = '🚀 IMPROVEMENT' if not is_partial_result else '🔥 PARTIAL IMPROVEMENT'
                         print(
-                            f'{status}: {improvement:.3f}% better than deployed ({current_deployed_mape:.3f}% → {best_result.mape:.3f}%)'
+                            f'{status}: MASE {improvement:.3f} better than deployed '
+                            f'({current_deployed_mase:.3f} → {best_result.mase:.3f})'
                         )
                     else:
                         status = '📊 NO IMPROVEMENT' if not is_partial_result else '⏱️ PARTIAL NO IMPROVEMENT'
                         print(
-                            f'{status}: Current deployed is better ({current_deployed_mape:.3f}% vs {best_result.mape:.3f}%)'
+                            f'{status}: Current deployed is better '
+                            f'(MASE {current_deployed_mase:.3f} vs {best_result.mase:.3f})'
                         )
                 else:
                     status = '🆕 NEW MODEL' if not is_partial_result else '🆕 PARTIAL NEW MODEL'
@@ -2133,29 +2091,30 @@ class ComprehensiveHyperparameterTuner:
                 if model_results:
                     best_available = min(model_results, key=lambda x: x.mape if x.success else float('inf'))
                     if best_available.success:
-                        current_deployed_mape = float('inf')
+                        current_deployed_mase = float('inf')
                         if model_name in self.config['models']:
                             existing_results = self.config['models'][model_name].get('tuning_results', {})
-                            current_deployed_mape = existing_results.get('mape', float('inf'))
+                            current_deployed_mase = existing_results.get('mase', float('inf'))
 
-                        if best_available.mape < current_deployed_mape:
+                        if best_available.mase < current_deployed_mase:
                             print(
-                                f'   ✅ Found better result despite timeout: {best_available.mape:.3f}% vs {current_deployed_mape:.3f}%'
+                                f'   ✅ Found better result despite timeout: MASE {best_available.mase:.3f} vs {current_deployed_mase:.3f}'
                             )
                             self.best_configs[model_name] = {
                                 'split_ratio': best_available.split_ratio,
                                 'hyperparameters': best_available.hyperparameters,
+                                'mase': best_available.mase,
                                 'mape': best_available.mape,
                                 'mae': best_available.mae,
                                 'training_time': best_available.training_time,
                                 'trial_number': best_available.trial_number,
                                 'is_partial_result': True,
                                 'trials_completed': len(model_results),
-                                'current_deployed_mape': current_deployed_mape,
+                                'current_deployed_mase': current_deployed_mase,
                             }
                         else:
                             print(
-                                f'   📊 No improvement found: {best_available.mape:.3f}% vs {current_deployed_mape:.3f}%'
+                                f'   📊 No improvement found: MASE {best_available.mase:.3f} vs {current_deployed_mase:.3f}'
                             )
 
             if model_name in self.best_configs:
