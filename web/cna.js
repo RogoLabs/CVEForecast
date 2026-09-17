@@ -256,6 +256,16 @@ function calculateCnaMetrics(rec) {
     // over. YEARS is computed once in deriveYears().
     const { priorYear, currentYear, nextYear } = YEARS;
 
+    const selectedModel = rec.model_selection?.selected_model;
+    const modelForecasts = selectedModel ? rec.forecasts?.[selectedModel] : null;
+
+    /* The forecast begins at the month in progress and predicts the whole of
+       it, while the history holds however much of that month has been published
+       so far. Counting both counted the month twice and overstated the current
+       year by the part of it already out. A month the forecast covers is taken
+       from the forecast alone. */
+    const forecastMonths = new Set(Object.keys(modelForecasts || {}).map(m => m.slice(0, 7)));
+
     let priorTotal = 0;
     let currentPublished = 0;
 
@@ -264,7 +274,7 @@ function calculateCnaMetrics(rec) {
         if (typeof count !== 'number') return;
         const year = Number(month.slice(0, 4));
         if (year === priorYear) priorTotal += count;
-        else if (year === currentYear) currentPublished += count;
+        else if (year === currentYear && !forecastMonths.has(month.slice(0, 7))) currentPublished += count;
       });
     }
 
@@ -273,8 +283,6 @@ function calculateCnaMetrics(rec) {
     // only the next year is forecast end to end.
     let currentRemainder = 0;
     let nextForecast = 0;
-    const selectedModel = rec.model_selection?.selected_model;
-    const modelForecasts = selectedModel ? rec.forecasts?.[selectedModel] : null;
 
     if (modelForecasts) {
       Object.entries(modelForecasts).forEach(([month, value]) => {

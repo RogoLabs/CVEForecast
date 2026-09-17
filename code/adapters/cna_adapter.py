@@ -587,10 +587,19 @@ class CNAForecaster(BaseForecaster):
         if not monthly and not annual_bands:
             return {}
 
+        forecast_months = {pd.to_datetime(d).strftime('%Y-%m') for d in forecast_result.forecast_values}
+
+        # The forecast starts at the current month and predicts the whole of it,
+        # while the history holds however much of that month has been published
+        # so far. Counting both would count the month twice, so a month the
+        # forecast covers is taken from the forecast alone.
         actual_by_year: Dict[int, int] = {}
         for date_str, count in historical_dict.items():
+            month = str(date_str)[:7]
+            if month in forecast_months:
+                continue
             try:
-                year = int(str(date_str)[:4])
+                year = int(month[:4])
             except ValueError:
                 continue
             actual_by_year[year] = actual_by_year.get(year, 0) + int(count)
