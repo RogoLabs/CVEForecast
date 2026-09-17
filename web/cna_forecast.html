@@ -40,13 +40,13 @@
     })();
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=0.12">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-  <script src="cna.js" defer></script>
+  <script src="cna.js?v=0.12" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
   <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50">Skip to main content</a>
@@ -61,7 +61,8 @@
         </div>
         <nav aria-label="Main navigation" class="flex items-center space-x-4">
           <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
-          <a href="technical_details.html" class="text-gray-300 hover:text-white transition-colors">Technical Details</a>
+          <a href="forecast_history.html" class="text-gray-300 hover:text-white transition-colors">Forecast History</a>
+                    <a href="technical_details.html" class="text-gray-300 hover:text-white transition-colors">Technical Details</a>
           <button id="themeToggle" aria-label="Toggle dark mode" class="text-gray-300 hover:text-white transition-colors p-2 rounded">
               <svg id="themeSun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
@@ -107,17 +108,17 @@
               <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="name">
                 CNA Name <span class="sort-indicator">↕</span>
               </th>
-              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="total2024">
-                2024 Published <span class="sort-indicator">↕</span>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="priorTotal">
+<span id="thPriorYear">Prior year</span> <span class="sort-indicator">↕</span>
               </th>
-              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="forecasted2025">
-                2025 Forecasted <span class="sort-indicator">↕</span>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="forecastedCurrent">
+<span id="thCurrentYear">This year</span> <span class="sort-indicator">↕</span>
               </th>
-              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="forecasted2026">
-                2026 Forecasted <span class="sort-indicator">↕</span>
+              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="forecastedNext">
+<span id="thNextYear">Next year</span> <span class="sort-indicator">↕</span>
               </th>
               <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="growthRate">
-                2024→2025 Growth <span class="sort-indicator">↕</span>
+<span id="thGrowth">Growth</span> <span class="sort-indicator">↕</span>
               </th>
               <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="model">
                 Model <span class="sort-indicator">↕</span>
@@ -159,8 +160,8 @@
         <div id="yearToggleContainer" class="hidden">
           <div class="flex items-center space-x-2">
             <span class="text-sm font-medium text-gray-700">Year:</span>
-            <button id="year2025Btn" class="px-3 py-1 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">2025</button>
-            <button id="year2026Btn" class="px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">2026</button>
+            <button id="yearCurrentBtn" class="px-3 py-1 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"></button>
+            <button id="yearNextBtn" class="px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"></button>
           </div>
         </div>
       </div>
@@ -182,42 +183,40 @@
 
     <!-- Enhanced Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-      <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg card-shadow p-6 border-l-4 border-blue-500">
-        <div class="mb-2">
-          <h3 class="text-lg font-semibold text-blue-900">Selected CNA</h3>
-        </div>
-        <div class="text-2xl font-bold text-blue-900" id="summaryPanelTitle">Select a CNA</div>
-        <div class="text-sm text-blue-600 mt-1" id="summaryId">Choose from table below</div>
+      <div class="stat-card stat-card--blue card-shadow">
+        <div class="stat-card__label">Selected CNA</div>
+        <div class="stat-card__value" id="summaryPanelTitle">Select a CNA</div>
+        <div class="stat-card__detail" id="summaryId">Choose from table below</div>
       </div>
 
-      <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg card-shadow p-6 border-l-4 border-gray-500">
-        <div class="mb-2">
-          <h3 class="text-lg font-semibold text-gray-900">2024 Published</h3>
-        </div>
-        <div class="text-2xl font-bold text-gray-900" id="summary2024">-</div>
-        <div class="text-sm text-gray-600 mt-1">Historical baseline</div>
+      <div class="stat-card stat-card--neutral card-shadow">
+        <div class="stat-card__label" id="summaryPriorYearLabel">Prior year published</div>
+        <div class="stat-card__value" id="summaryPriorYear">-</div>
+        <div class="stat-card__detail">Settled total</div>
       </div>
 
-      <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg card-shadow p-6 border-l-4 border-green-500">
-        <div class="mb-2">
-          <h3 class="text-lg font-semibold text-green-900">2025 Forecasted</h3>
-        </div>
-        <div class="text-2xl font-bold text-green-900" id="summary2025">-</div>
-        <div class="text-sm text-green-600 mt-1" id="summaryModelInfo">Select CNA to see model</div>
+      <div class="stat-card stat-card--green card-shadow">
+        <div class="stat-card__label" id="summaryCurrentYearLabel">This year projected</div>
+        <div class="stat-card__value" id="summaryCurrentYear">-</div>
+        <div class="stat-card__detail" id="summaryCurrentYearSplit">Published + forecast</div>
+        <div class="stat-card__detail" id="summaryModelInfo">Select CNA to see model</div>
       </div>
 
-      <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg card-shadow p-6 border-l-4 border-purple-500">
-        <div class="mb-2">
-          <h3 class="text-lg font-semibold text-purple-900">Growth Rate</h3>
-        </div>
-        <div class="text-2xl font-bold" id="summaryGrowthRate">-</div>
-        <div class="text-sm text-purple-600 mt-1">2024 → 2025 change</div>
+      <div class="stat-card stat-card--purple card-shadow">
+        <div class="stat-card__label">Growth rate</div>
+        <div class="stat-card__value" id="summaryGrowthRate">-</div>
+        <div class="stat-card__detail" id="summaryGrowthDetail">Year on year</div>
       </div>
     </div>
 
     <!-- Model Usage Statistics Card -->
     <div class="bg-white rounded-lg card-shadow p-6 mt-8">
-      <h2 class="text-xl font-bold text-gray-800 mb-6">Model Performance Overview</h2>
+      <h2 class="text-xl font-bold text-gray-800 mb-2">Model Performance Overview</h2>
+          <p class="text-sm text-gray-600 mb-6">
+            Each CNA's model is chosen by rolling-origin backtest and scored in MASE against a naive
+            baseline. A CNA shown with a grey model pill is using that baseline, because nothing beat
+            it &mdash; the honest answer for a short or spiky series rather than the least-bad loser.
+          </p>
       
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Model Distribution -->
@@ -232,21 +231,21 @@
         <div>
           <h3 class="text-lg font-semibold text-gray-700 mb-4">Performance Metrics</h3>
           <div class="grid grid-cols-2 gap-4">
-            <div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
-              <div class="text-sm text-blue-600 font-medium">Total CNAs</div>
-              <div class="text-2xl font-bold text-blue-900" id="totalCnas">-</div>
+            <div class="stat-card stat-card--blue stat-card--compact">
+              <div class="stat-card__label">CNAs forecast</div>
+              <div class="stat-card__value" id="totalCnas">-</div>
             </div>
-            <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
-              <div class="text-sm text-green-600 font-medium">Average MAPE</div>
-              <div class="text-2xl font-bold text-green-900" id="averageMape">-</div>
+            <div class="stat-card stat-card--neutral stat-card--compact">
+              <div class="stat-card__label">Median MASE</div>
+              <div class="stat-card__value" id="averageMape">-</div>
             </div>
-            <div class="bg-yellow-50 rounded-lg p-4 border-l-4 border-yellow-500">
-              <div class="text-sm text-yellow-600 font-medium">Best MAPE</div>
-              <div class="text-2xl font-bold text-yellow-900" id="bestMape">-</div>
+            <div class="stat-card stat-card--green stat-card--compact">
+              <div class="stat-card__label">Best MASE</div>
+              <div class="stat-card__value" id="bestMape">-</div>
             </div>
-            <div class="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-500">
-              <div class="text-sm text-purple-600 font-medium">Models Used</div>
-              <div class="text-2xl font-bold text-purple-900" id="modelsUsed">-</div>
+            <div class="stat-card stat-card--purple stat-card--compact">
+              <div class="stat-card__label">Models used</div>
+              <div class="stat-card__value" id="modelsUsed">-</div>
             </div>
           </div>
         </div>
@@ -262,7 +261,7 @@
       <p class="text-gray-300 text-sm mt-2">Powered by time series forecasting models using the <a href="https://unit8co.github.io/darts/" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 transition-colors">Darts library</a></p>
       <div class="mt-4 pt-4 border-t border-gray-600">
         <div class="mt-2">
-          <span class="inline-block bg-green-600 text-white text-xs px-2 py-1 rounded-full font-mono">v0.11 Galway 🇮🇪</span>
+          <span class="inline-block bg-green-600 text-white text-xs px-2 py-1 rounded-full font-mono">v0.12 Delphi 🔮</span>
         </div>
       </div>
     </div>

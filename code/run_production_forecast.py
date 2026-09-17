@@ -47,13 +47,11 @@ def main():
 
         # Run both CVE and CNA forecasting (no validation/diagnostics)
         logger.info('Running production forecasts...')
-        results = pipeline.run_all(
-            run_cve=True,
-            run_cna=True,
-            cve_train_ratio=1.0,  # ✅ Use ALL data for production forecasts
-            cve_validation=False,  # Skip for speed
-            cve_diagnostics=False,  # Skip for speed
-        )
+        # No train_ratio or validation flags since v0.12: the pipeline always
+        # backtests before forecasting, so the published accuracy figures and the
+        # published forecast come from the same run. Passing them here was
+        # misleading - they were accepted and ignored.
+        results = pipeline.run_all(run_cve=True, run_cna=True)
 
         # Save results summary
         pipeline.save_summary('web/pipeline_results.json')

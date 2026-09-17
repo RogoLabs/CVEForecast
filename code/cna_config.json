@@ -1,7 +1,9 @@
 {
   "file_paths": {
     "cve_data": "cvelistV5",
-    "output_data": "web/cna_data.json"
+    "output_data": "web/cna_data.json",
+    "cna_model_selection": "web/cna_model_selection.json",
+    "cna_output": "web/cna_data.json"
   },
   "logging": {
     "level": "INFO",
@@ -90,13 +92,32 @@
         "seasonal_periods": 12,
         "damped_trend": false
       }
+    },
+    "NaiveDrift": {
+      "enabled": true,
+      "hyperparameters": {}
     }
   },
   "model_priority": [
     "ExponentialSmoothing",
     "Prophet",
-    "LightGBM", 
+    "LightGBM",
     "XGBoost",
     "LinearRegression"
-  ]
+  ],
+  "forecasting": {
+    "log_space": true,
+    "business_day_normalise": true,
+    "damping_phi": 0.98,
+    "training_window_months": null,
+    "use_future_covariates": false,
+    "freq": "ME"
+  },
+  "cross_validation": {
+    "cna_horizon": 6,
+    "cna_min_train": 24,
+    "cna_max_origins": 8,
+    "cna_refresh_days": 30,
+    "cna_max_refresh_per_run": 12
+  }
 }

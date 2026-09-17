@@ -40,7 +40,7 @@
             })();
         </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=0.12">
 </head>
 <body class="font-sans text-gray-800">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50">Skip to main content</a>
@@ -52,11 +52,12 @@
                     <h1 class="text-3xl font-bold">
                         <span class="text-white">CVE</span><span class="rogo-blue">Forecast</span>
                     </h1>
-                    <p class="text-gray-300 mt-1">Technical Details - v0.11 "Galway" 🇮🇪</p>
+                    <p class="text-gray-300 mt-1">Technical Details - v0.12 "Delphi" 🔮</p>
                 </div>
                 <nav aria-label="Main navigation" class="flex items-center space-x-4">
                     <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
                     <a href="cna_forecast.html" class="text-gray-300 hover:text-white transition-colors">CNA Forecasts</a>
+                    <a href="forecast_history.html" class="text-gray-300 hover:text-white transition-colors">Forecast History</a>
                     <button id="themeToggle" aria-label="Toggle dark mode" class="text-gray-300 hover:text-white transition-colors p-2 rounded">
                         <svg id="themeSun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
@@ -78,7 +79,7 @@
             <div class="grid md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
                     <h4 class="font-semibold mb-2">📊 Real-World Validation</h4>
-                    <p class="text-sm text-gray-700">Historical backtest on 2025 data (Jan-Sep) with actual vs. predicted comparisons. MAPE ranging from 6.22% (LightGBM) to 21.65% (Croston).</p>
+                    <p class="text-sm text-gray-700">Historical backtest on 2025 data (Jan-Sep) with actual vs. predicted comparisons. ranked by MASE over rolling forecast origins &mdash; see the dashboard for current figures.</p>
                 </div>
                 <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
                     <h4 class="font-semibold mb-2">🔄 Unified Pipeline</h4>
@@ -112,7 +113,7 @@
                     </ul>
                 </div>
                 <div>
-                    <h3 class="text-lg font-semibold mb-3">📊 Production Models (13 Optimized)</h3>
+                    <h3 class="text-lg font-semibold mb-3">📊 Production Models (16, incl. naive baselines)</h3>
                     <div class="grid grid-cols-2 gap-2 text-sm">
                         <div class="bg-blue-50 p-2 rounded">
                             <strong>Statistical (8):</strong> Prophet, AutoARIMA, TBATS, Theta, FourTheta, ExponentialSmoothing, KalmanFilter, Croston
@@ -121,11 +122,11 @@
                             <strong>ML/Tree (5):</strong> XGBoost, LightGBM, CatBoost, RandomForest, LinearRegression
                         </div>
                     </div>
-                    <p class="text-xs text-gray-600 mt-2"><strong>Top Performers (2025 Backtest):</strong> LightGBM (6.22% MAPE), KalmanFilter (6.26%), TBATS (7.21%)</p>
+                    <p class="text-xs text-gray-600 mt-2"><strong>Ranking:</strong> by MASE over rolling forecast origins, with naive baselines scored alongside. Current figures are on the <a href="index.html" class="text-blue-600 hover:underline">dashboard</a> &mdash; they are not duplicated here because they move as data arrives.</p>
                 </div>
             </div>
             
-            <h3 class="text-lg font-semibold mb-3">🎯 Historical Backtest Validation</h3>
+            <h3 class="text-lg font-semibold mb-3">🎯 Rolling-Origin Validation</h3>
             <div class="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border-l-4 border-blue-400 mb-4">
                 <p class="text-gray-800 mb-2"><strong>Real-World Accuracy Testing:</strong> Each model is backtested by training on data through 2024 and forecasting Jan-Sep 2025, then comparing predictions against actual published CVE counts.</p>
                 <ul class="list-disc list-inside space-y-1 text-sm text-gray-700">
@@ -236,8 +237,71 @@
 
         <div class="content-section">
             <h2 class="text-2xl font-bold mb-4">Release History</h2>
+                <div class="mb-6 p-4 rounded-lg border border-blue-200 bg-blue-50">
+                    <h3 class="font-bold text-blue-800 text-lg mb-2">🔮 v0.12 - Delphi 🔮 (September 2026)</h3>
+                    <p class="text-sm text-blue-900 mb-3">
+                        <strong>Calibration &amp; Correction</strong> &mdash; the forecast now reflects the data,
+                        the accuracy figures describe the published forecast, and the uncertainty is visible.
+                    </p>
+                    <div class="text-sm text-gray-800 space-y-3">
+                        <div>
+                            <p class="font-semibold">Corrected</p>
+                            <ul class="list-disc ml-5 space-y-1">
+                                <li><strong>Growth floor removed.</strong> It compared a partial-year forecast remainder
+                                    against a full prior year and inflated it to clear an annual growth bar, collapsing all
+                                    twelve models into a five-CVE band. Bias is now handled by log-space modelling instead.</li>
+                                <li><strong>Constraint config wired up.</strong> The whole config document was being passed to a
+                                    class that read flat keys, so every configured value was silently ignored.</li>
+                                <li><strong>Forecast tracker fixed.</strong> A schema key mismatch raised KeyError on every run
+                                    behind a bare <code>except</code>; roughly nine months of daily forecast vintages were lost.</li>
+                                <li><strong>Rankings table alignment.</strong> Seven column headers, six cells &mdash; every value
+                                    after MAPE rendered one column left of its heading.</li>
+                                <li><strong>Year selector</strong> restored (the buttons the code looked for did not exist), and
+                                    the year-end projection no longer renders as part of the actuals line.</li>
+                                <li><strong>Forecast anchored on the live count.</strong> The projection continues from the total
+                                    published as of now &mdash; the month in progress is a nowcast of what is already out plus the
+                                    model's expectation for the working days that remain &mdash; rather than restarting from the
+                                    last complete month, where it branched below the actuals and was overtaken within days.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <p class="font-semibold">Measurement</p>
+                            <ul class="list-disc ml-5 space-y-1">
+                                <li><strong>Rolling-origin backtesting</strong> across 24 origins replaces a single-origin score.</li>
+                                <li><strong>MASE is the ranking metric</strong>, with naive baselines ranked alongside every model.</li>
+                                <li><strong>One forecast path.</strong> Backtest and production run identical code, so the accuracy
+                                    figures describe the forecast actually published.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <p class="font-semibold">Methodology</p>
+                            <ul class="list-disc ml-5 space-y-1">
+                                <li><strong>Log-space modelling</strong> with mild trend damping (φ = 0.98).</li>
+                                <li><strong>Business-day normalisation</strong> &mdash; months carry 20–23 business days.</li>
+                                <li><strong>Conformal prediction intervals</strong> with published empirical coverage.</li>
+                                <li><strong>Curated ensemble</strong> &mdash; a trimmed mean over models that clear the baseline.</li>
+                                <li><strong>One forecast path for both halves of the site.</strong> CNA forecasts now run through the
+                                    same engine as the CVE forecast, rather than fitting models raw.</li>
+                                <li><strong>Data vintage logging</strong>, to measure how much counts get revised after publication.</li>
+                                <li><strong>Output validation</strong> in CI now checks what actually broke before: year totals that
+                                    do not reconcile, projections leaking into the actuals series, models collapsing onto one number,
+                                    and intervals that fail to contain their own forecast.</li>
+                                <li><strong>CNA page rebuilt.</strong> Years were hard-coded, so by September 2026 the settled 2025
+                                    total was labelled a forecast. The "2026 Forecasted" figure summed only forecast months &mdash; a
+                                    four-month total shown as a year. Per-CNA model choice now uses rolling-origin MASE against a
+                                    naive baseline, and a CNA whose best model cannot beat that baseline gets the baseline, rather
+                                    than reporting a 160%-error model as its best.</li>
+                                <li><strong>Model choice is cached.</strong> Scoring every CNA by backtest on every run measured at
+                                    over an hour, so selection is cached and a capped batch refreshed per run &mdash; oldest first,
+                                    with new CNAs and materially grown series jumping the queue. Forecasting still runs for every CNA
+                                    daily; only the scoring is amortised, holding the job to roughly five minutes.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
             <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-300 shadow-md">
-                <h3 class="font-bold text-blue-800 text-lg mb-2">🇮🇪 v0.11 - Galway 🇮🇪 (March 2026)</h3>
+                <h3 class="font-semibold text-gray-800 text-lg mb-2">🇮🇪 v0.11 - Galway 🇮🇪 (March 2026)</h3>
                 <p class="text-blue-700 font-medium mb-3">Comprehensive Spring Cleaning - Code quality, web overhaul, CI/CD hardening, and accessibility</p>
                 <div class="mt-4">
                     <h4 class="font-semibold text-blue-800 mb-2">Code Quality</h4>
@@ -289,7 +353,7 @@
                         <li><strong>Unified Pipeline:</strong> Single command (run_production_forecast.py) for CVE + CNA forecasting</li>
                         <li><strong>Historical Backtest:</strong> Real-world validation on 2025 data (Jan-Sep) with actual vs. predicted comparisons</li>
                         <li><strong>Forecast Tracking:</strong> ForecastTracker accumulates prediction snapshots for long-term accuracy analysis</li>
-                        <li><strong>Model Rankings:</strong> Real-time leaderboard based on backtest MAPE (LightGBM: 6.22%, KalmanFilter: 6.26%)</li>
+                        <li><strong>Model Rankings:</strong> Real-time leaderboard based on backtest MASE, compared against a naive benchmark</li>
                         <li><strong>Forecast vs Published Table:</strong> Month-by-month comparison with error percentages and performance ratings</li>
                     </ul>
                 </div>
@@ -466,7 +530,7 @@
             <p class="text-gray-300 text-sm mt-2">Powered by time series forecasting models using the <a href="https://unit8co.github.io/darts/" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 transition-colors">Darts library</a></p>
             <div class="mt-4 pt-4 border-t border-gray-600">
                 <div class="mt-2">
-                    <span class="inline-block bg-green-600 text-white text-xs px-2 py-1 rounded-full font-mono">v0.11 Galway 🇮🇪</span>
+                    <span class="inline-block bg-green-600 text-white text-xs px-2 py-1 rounded-full font-mono">v0.12 Delphi 🔮</span>
                 </div>
             </div>
         </div>

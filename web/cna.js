@@ -54,8 +54,55 @@ let tableData = [];
 let filteredData = [];
 let currentPage = 1;
 let pageSize = 10;
-let sortColumn = 'forecasted2025';
+let sortColumn = 'forecastedCurrent';
 let sortDirection = 'desc';
+
+/**
+ * Years this page talks about, derived from the data rather than hard-coded.
+ * Populated by deriveYears() once the payload loads.
+ */
+let YEARS = { priorYear: 0, currentYear: 0, nextYear: 0 };
+
+/**
+ * Works out which year is "current" from the data itself.
+ *
+ * Anchored on the most recent *historical* month across all CNAs, not on the
+ * earliest forecast month: a CNA that has stopped publishing gets a forecast
+ * starting from its own last data point, and four of them currently reach back
+ * to 2022. Taking a global minimum over those put the whole page in 2022.
+ *
+ * @param {Object} payload Parsed cna_data.json
+ * @returns {{priorYear: number, currentYear: number, nextYear: number}}
+ */
+function deriveYears(payload) {
+  let latest = '';
+  Object.values(payload || {}).forEach(rec => {
+    Object.keys(rec?.historical || {}).forEach(month => {
+      if (month > latest) latest = month;
+    });
+  });
+
+  const currentYear = latest ? Number(latest.slice(0, 4)) : new Date().getFullYear();
+  return { priorYear: currentYear - 1, currentYear, nextYear: currentYear + 1 };
+}
+
+/** Writes the derived years into every label that names one. */
+function applyYearLabels() {
+  const { priorYear, currentYear, nextYear } = YEARS;
+  const set = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+  set('summaryPriorYearLabel', `${priorYear} published`);
+  set('summaryCurrentYearLabel', `${currentYear} projected`);
+  set('summaryGrowthDetail', `${priorYear} → ${currentYear} change`);
+  set('thPriorYear', `${priorYear} Published`);
+  set('thCurrentYear', `${currentYear} Projected`);
+  set('thNextYear', `${nextYear} Forecast`);
+  set('thGrowth', `${priorYear}→${currentYear} Growth`);
+  set('yearCurrentBtn', String(currentYear));
+  set('yearNextBtn', String(nextYear));
+}
 
 // Formatting
 const numberFmt = new Intl.NumberFormat();
@@ -75,7 +122,13 @@ async function loadCnaData() {
       
       try {
         cnaData = JSON.parse(text);
-        
+
+        // Must run before any row is processed: every year label and every
+        // year-scoped total reads from YEARS.
+        YEARS = deriveYears(cnaData);
+        currentYear = YEARS.currentYear;
+        applyYearLabels();
+
         // Sort CNAs by total historical CVE count
         sortedCnaIds = sortCnasByTotal(cnaData);
         
@@ -200,66 +253,61 @@ function calculateCnaMetrics(rec) {
     const displayName = getCnaDisplayName(rec.id, rec.name);
     const shortName = getCnaShortName(rec.id, rec.name);
     
-    let total2024 = 0;
-    let total2025 = 0;
-    let predicted2025 = 0;
-    
+    // Years are derived from the data, never hard-coded. The page previously
+    // pinned 2024/2025/2026 into the markup, so by September 2026 it labelled the
+    // settled 2025 total as a forecast and showed the current year one column
+    // over. YEARS is computed once in deriveYears().
+    const { priorYear, currentYear, nextYear } = YEARS;
+
+    let priorTotal = 0;
+    let currentPublished = 0;
+
     if (rec.historical) {
       Object.entries(rec.historical).forEach(([month, count]) => {
-        if (typeof count !== 'number') {
-          return;
-        }
-        if (month.startsWith('2024-')) {
-          total2024 += count;
-        } else if (month.startsWith('2025-')) {
-          total2025 += count;
-        }
+        if (typeof count !== 'number') return;
+        const year = Number(month.slice(0, 4));
+        if (year === priorYear) priorTotal += count;
+        else if (year === currentYear) currentPublished += count;
       });
     }
-    
-    // Calculate predicted 2025 and 2026 values from forecast
-    let predicted2026 = 0;
-    if (rec.forecasts && rec.model_selection) {
-      const selectedModel = rec.model_selection.selected_model;
-      const modelForecasts = rec.forecasts[selectedModel];
-      if (modelForecasts) {
-        // 2025 remaining months
-        const remainingMonths2025 = Object.keys(modelForecasts).filter(month => month.startsWith('2025-'));
-        remainingMonths2025.forEach(month => {
-          const forecastValue = modelForecasts[month] || 0;
-          if (typeof forecastValue === 'number') {
-            predicted2025 += forecastValue;
-          }
-        });
-        
-        // 2026 forecast months
-        const months2026 = Object.keys(modelForecasts).filter(month => month.startsWith('2026-'));
-        months2026.forEach(month => {
-          const forecastValue = modelForecasts[month] || 0;
-          if (typeof forecastValue === 'number') {
-            predicted2026 += forecastValue;
-          }
-        });
-      }
+
+    // The forecast starts mid-year, so summing only its months gives a partial
+    // year. The current year is published-to-date plus the forecast remainder;
+    // only the next year is forecast end to end.
+    let currentRemainder = 0;
+    let nextForecast = 0;
+    const selectedModel = rec.model_selection?.selected_model;
+    const modelForecasts = selectedModel ? rec.forecasts?.[selectedModel] : null;
+
+    if (modelForecasts) {
+      Object.entries(modelForecasts).forEach(([month, value]) => {
+        if (typeof value !== 'number') return;
+        const year = Number(month.slice(0, 4));
+        if (year === currentYear) currentRemainder += value;
+        else if (year === nextYear) nextForecast += value;
+      });
     }
-    
-    const growthRate = total2024 > 0 ? ((total2025 + predicted2025 - total2024) / total2024 * 100) : 0;
-    
-    const forecasted2025 = total2025 + Math.round(predicted2025);
-    const forecasted2026 = Math.round(predicted2026);
-    
+
+    const forecastedCurrent = currentPublished + Math.round(currentRemainder);
+    const forecastedNext = Math.round(nextForecast);
+    const growthRate = priorTotal > 0 ? ((forecastedCurrent - priorTotal) / priorTotal) * 100 : 0;
+
     const result = {
       id: rec.id,
       name: displayName,
       shortName: shortName,
-      total2024: total2024,
-      forecasted2025: forecasted2025,
-      forecasted2026: forecasted2026,
+      priorTotal: priorTotal,
+      currentPublished: currentPublished,
+      currentRemainder: Math.round(currentRemainder),
+      forecastedCurrent: forecastedCurrent,
+      forecastedNext: forecastedNext,
       growthRate: growthRate,
       model: rec.model_selection?.selected_model || 'N/A',
-      mape: rec.model_selection?.validation_mape || 0
+      mase: rec.model_selection?.validation_mase ?? null,
+      isFallback: rec.model_selection?.is_fallback === true,
+      awaitingScoring: rec.model_selection?.awaiting_scoring === true
     };
-    
+
     return result;
   } catch (error) {
     throw error;
@@ -339,14 +387,13 @@ function renderTable() {
     return `
       <tr class="hover:bg-gray-50 cursor-pointer" onclick="selectCnaFromTable('${row.id}')">
         <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${row.name || 'Unknown CNA'}</td>
-        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${numberFmt.format(row.total2024)}</td>
-        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${numberFmt.format(row.forecasted2025)}</td>
-        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${numberFmt.format(row.forecasted2026)}</td>
+        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${numberFmt.format(row.priorTotal)}</td>
+        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${numberFmt.format(row.forecastedCurrent)}</td>
+        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${numberFmt.format(row.forecastedNext)}</td>
         <td class="px-4 py-3 whitespace-nowrap text-sm ${growthClass}">${growthSymbol}${row.growthRate.toFixed(1)}%</td>
         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-          <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            ${row.model}
-          </span>
+          <span class="pill ${row.isFallback ? 'pill--neutral' : 'pill--info'} pill--nodot"
+                title="${row.isFallback ? 'No model beat the naive baseline for this CNA' : 'Selected by rolling-origin backtest'}">${row.model}</span>
         </td>
       </tr>
     `;
@@ -918,16 +965,14 @@ function renderChart(rec) {
 }
 
 function updateYearToggleUI() {
-  const btn2025 = document.getElementById('year2025Btn');
-  const btn2026 = document.getElementById('year2026Btn');
+  const btn2025 = document.getElementById('yearCurrentBtn');
+  const btn2026 = document.getElementById('yearNextBtn');
   
-  if (currentYear === 2025) {
-    btn2025.className = 'px-3 py-1 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors';
-    btn2026.className = 'px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors';
-  } else {
-    btn2025.className = 'px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors';
-    btn2026.className = 'px-3 py-1 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors';
-  }
+  const active = 'px-3 py-1 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors';
+  const idle = 'px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors';
+  const showingCurrent = currentYear === YEARS.currentYear;
+  if (btn2025) btn2025.className = showingCurrent ? active : idle;
+  if (btn2026) btn2026.className = showingCurrent ? idle : active;
 }
 
 // =============================================================================
@@ -946,49 +991,43 @@ function updateSummary(rec) {
   document.getElementById('summaryId').textContent = shortName;
   
   // Update 2024 card
-  document.getElementById('summary2024').textContent = numberFmt.format(metrics.total2024);
-  
-  // Update 2025 forecast card
-  document.getElementById('summary2025').textContent = numberFmt.format(metrics.forecasted2025);
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+
+  setText('summaryPriorYear', numberFmt.format(metrics.priorTotal));
+  setText('summaryCurrentYear', numberFmt.format(metrics.forecastedCurrent));
+  // Say plainly how much of the projection is already fact.
+  setText(
+    'summaryCurrentYearSplit',
+    `${numberFmt.format(metrics.currentPublished)} published + ${numberFmt.format(metrics.currentRemainder)} forecast`
+  );
+
   const modelInfo = document.getElementById('summaryModelInfo');
   if (modelInfo) {
-    const selectedModel = metrics.model || 'Unknown';
-    const mape = metrics.mape || 0;
-    modelInfo.textContent = `${selectedModel} (MAPE: ${mape.toFixed(1)}%)`;
+    // Model choice is cached and refreshed periodically, so say when it was made
+    // rather than implying it was decided on today's data.
+    const chosen = cnaData?.[metrics.id]?.model_selection?.selected_at;
+    const when = chosen ? ` · chosen ${new Date(chosen).toLocaleDateString()}` : '';
+    const mase = typeof metrics.mase === 'number' ? ` (MASE ${metrics.mase.toFixed(2)})` : '';
+    modelInfo.textContent = `${metrics.model || 'Unknown'}${mase}${when}`;
   }
-  
-  // Update growth rate card with dynamic styling
+
   const growthRateElement = document.getElementById('summaryGrowthRate');
   if (growthRateElement) {
     const growthRate = metrics.growthRate;
-    const growthSymbol = growthRate > 0 ? '+' : '';
-    growthRateElement.textContent = `${growthSymbol}${growthRate.toFixed(1)}%`;
-    
-    // Dynamic color based on growth
-    const parentCard = growthRateElement.closest('.bg-gradient-to-br');
-    if (parentCard) {
-      // Remove existing color classes
-      parentCard.className = parentCard.className.replace(/from-\w+-\d+|to-\w+-\d+|border-\w+-\d+/g, '');
-      
-      if (growthRate > 0) {
-        // Positive growth - green
-        parentCard.classList.add('from-green-50', 'to-green-100', 'border-green-500');
-        growthRateElement.classList.remove('text-red-900', 'text-gray-900');
-        growthRateElement.classList.add('text-green-900');
-      } else if (growthRate < 0) {
-        // Negative growth - red
-        parentCard.classList.add('from-red-50', 'to-red-100', 'border-red-500');
-        growthRateElement.classList.remove('text-green-900', 'text-gray-900');
-        growthRateElement.classList.add('text-red-900');
-      } else {
-        // No growth - gray
-        parentCard.classList.add('from-gray-50', 'to-gray-100', 'border-gray-500');
-        growthRateElement.classList.remove('text-green-900', 'text-red-900');
-        growthRateElement.classList.add('text-gray-900');
-      }
+    growthRateElement.textContent = `${growthRate > 0 ? '+' : ''}${growthRate.toFixed(1)}%`;
+
+    // Recolour the whole card through the stat-card variants, rather than
+    // swapping Tailwind gradient utilities that are only half-themed for dark mode.
+    const card = growthRateElement.closest('.stat-card');
+    if (card) {
+      card.classList.remove('stat-card--green', 'stat-card--bad', 'stat-card--neutral', 'stat-card--purple');
+      card.classList.add(growthRate > 0 ? 'stat-card--green' : growthRate < 0 ? 'stat-card--amber' : 'stat-card--neutral');
     }
   }
-  
+
   // Update page title
   const titleText = `${displayName} - CVE Forecast`;
   const panelTitleElement = document.getElementById('panelTitle');
@@ -1011,14 +1050,14 @@ function setYear(year) {
 
 // Add event listeners when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-  const btn2025 = document.getElementById('year2025Btn');
-  const btn2026 = document.getElementById('year2026Btn');
+  const btn2025 = document.getElementById('yearCurrentBtn');
+  const btn2026 = document.getElementById('yearNextBtn');
   
   if (btn2025) {
-    btn2025.addEventListener('click', () => setYear(2025));
+    btn2025.addEventListener('click', () => setYear(YEARS.currentYear));
   }
   if (btn2026) {
-    btn2026.addEventListener('click', () => setYear(2026));
+    btn2026.addEventListener('click', () => setYear(YEARS.nextYear));
   }
   
   // Initialize the application
@@ -1083,15 +1122,15 @@ function updateModelStatistics() {
     if (cna.model_selection) {
       cnasWithModelSelection++;
       const model = cna.model_selection.selected_model;
-      const mape = cna.model_selection.validation_mape;
+      const mase = cna.model_selection.validation_mase;
       
       if (index < 3) { // Log first 3 for debugging
-        console.log(`updateModelStatistics: CNA ${index + 1} - Model: ${model}, MAPE: ${mape}`);
+        console.log(`updateModelStatistics: CNA ${index + 1} - Model: ${model}, MASE: ${mase}`);
       }
       
       modelCounts[model] = (modelCounts[model] || 0) + 1;
-      if (mape && mape < 999) { // Filter out fallback high MAPE values
-        mapeScores.push(mape);
+      if (typeof mase === 'number' && isFinite(mase)) {
+        mapeScores.push(mase);
       }
       totalCnas++;
     }
@@ -1113,16 +1152,16 @@ function updateModelStatistics() {
   console.log('updateModelStatistics: Set modelsUsed to:', Object.keys(modelCounts).length);
   
   if (mapeScores.length > 0) {
-    const avgMape = mapeScores.reduce((a, b) => a + b, 0) / mapeScores.length;
-    const bestMape = Math.min(...mapeScores);
-    
-    averageMapeEl.textContent = `${avgMape.toFixed(1)}%`;
-    bestMapeEl.textContent = `${bestMape.toFixed(1)}%`;
-    
-    console.log('updateModelStatistics: Set averageMape to:', `${avgMape.toFixed(1)}%`);
-    console.log('updateModelStatistics: Set bestMape to:', `${bestMape.toFixed(1)}%`);
+    // Median, not mean: a handful of CNAs score 160-240% and drag an average to
+    // a number no individual CNA is anywhere near.
+    const sorted = [...mapeScores].sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+
+    averageMapeEl.textContent = median.toFixed(2);
+    bestMapeEl.textContent = sorted[0].toFixed(2);
   } else {
-    console.log('updateModelStatistics: No valid MAPE scores found');
+    averageMapeEl.textContent = '—';
+    bestMapeEl.textContent = '—';
   }
 
   // Update model distribution bars

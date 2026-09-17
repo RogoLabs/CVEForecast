@@ -108,7 +108,9 @@ async function loadForecastData() {
  * Initializes all dashboard components with the loaded data.
  */
 function initializeDashboard() {
+    renderYearButtons();
     updateSummaryCards();
+    renderMethodology();
     populateModelSelector();
     populateModelRankings();
     populateForecastVsPublishedTable(); // Initially populate with the best model
@@ -123,99 +125,178 @@ function initializeDashboard() {
 }
 
 /**
- * Switches the chart to display a specific year.
- * @param {number} year - The year to display
+ * Switches the chart and summary cards to a given forecast year.
+ * @param {number} year
  */
 function switchYear(year) {
     selectedYear = year;
-    
-    // Update button styles (buttons may not exist in all versions)
-    const currentYear = new Date().getFullYear();
-    const btnCurrent = document.getElementById(`yearBtn${currentYear}`);
-    const btnNext = document.getElementById(`yearBtn${currentYear + 1}`);
-    
-    if (btnCurrent && btnNext) {
-        if (year === currentYear) {
-            btnCurrent.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700';
-            btnNext.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
-        } else {
-            btnCurrent.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
-            btnNext.className = 'px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700';
-        }
-    }
-    
+    renderYearButtons();
     updateChartDescription();
-    updateSummaryCards();  // Update cards for selected year
+    updateSummaryCards();
     createOrUpdateChart();
 }
 
 /**
- * Updates the chart description with the selected year.
+ * Renders the year toggle. v0.11 looked for buttons that did not exist in the
+ * markup, so the next year could never be viewed at all.
  */
+function renderYearButtons() {
+    const years = Object.keys(forecastData?.yearly_forecast_totals || {})
+        .map(Number)
+        .filter(y => (forecastData.yearly_forecast_totals[y]?.Ensemble?.months_forecast ?? 0) > 0)
+        .sort((a, b) => a - b);
+    if (years.length === 0) return;
+
+    const active = 'bg-blue-600 text-white hover:bg-blue-700';
+    const idle = 'bg-gray-200 text-gray-700 hover:bg-gray-300';
+    [['yearBtnCurrent', years[0]], ['yearBtnNext', years[1]]].forEach(([id, year]) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        if (year === undefined) { btn.classList.add('hidden'); return; }
+        btn.classList.remove('hidden');
+        btn.textContent = year;
+        btn.className = `year-btn px-4 py-2 rounded-lg font-semibold transition-colors ${year === selectedYear ? active : idle}`;
+        btn.setAttribute('aria-pressed', String(year === selectedYear));
+        btn.onclick = () => switchYear(year);
+    });
+}
+
 function updateChartDescription() {
-    document.getElementById('chartDescription').textContent = 
-        `Cumulative growth showing actual CVE publications and ML model predictions for ${selectedYear}`;
+    const projection = forecastData?.yearly_forecast_totals?.[selectedYear]?.Ensemble;
+    const el = document.getElementById('chartDescription');
+    if (!el) return;
+
+    if (projection && projection.months_actual > 0) {
+        // Say plainly where the forecast starts: it continues from the count as of
+        // now, including the part of the current month already published.
+        el.textContent =
+            `Cumulative CVE publications for ${selectedYear}. The forecast continues from the count as of today ` +
+            `(${projection.actual_ytd.toLocaleString()} published); the shaded band is the 80% range.`;
+    } else {
+        el.textContent = `Forecast cumulative CVE publications for ${selectedYear}, with the 80% range shaded.`;
+    }
 }
 
 /**
- * Updates the summary cards at the top of the dashboard.
+ * Updates the summary cards.
+ *
+ * The headline is no longer a pure model output: published months are counted as
+ * facts and only the remainder is forecast, so the number tightens as the year
+ * fills in. The 80% band is shown alongside it rather than a bare point estimate.
  */
 function updateSummaryCards() {
     if (!forecastData) return;
 
-    document.getElementById('lastUpdated').textContent = `Last Updated: ${new Date(forecastData.generated_at).toLocaleString()}`;
+    document.getElementById('lastUpdated').textContent =
+        `Last Updated: ${new Date(forecastData.generated_at).toLocaleString()}`;
 
-    const bestModelName = forecastData.model_rankings?.[0]?.model_name || 'N/A';
-    const yearlyTotals = forecastData.yearly_forecast_totals || {};
-    const yearTotals = yearlyTotals[selectedYear] || {};
-    const bestModelTotal = yearTotals[bestModelName] || 0;
+    const rankings = forecastData.model_rankings || [];
+    const best = rankings.find(m => !m.is_baseline);
+    const projection = forecastData.yearly_forecast_totals?.[selectedYear]?.Ensemble;
 
-    document.getElementById('currentYearForecast').textContent = bestModelTotal.toLocaleString();
-    document.getElementById('forecastDescription').textContent = `Total CVEs: Published + Forecasted (${bestModelName} - Best Model)`;
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
 
-    if (forecastData.model_rankings?.length > 0) {
-        const bestModel = forecastData.model_rankings[0];
-        document.getElementById('bestModel').textContent = bestModel.model_name;
-        document.getElementById('bestAccuracy').textContent = `${(bestModel.mape || 0).toFixed(2)}%`;
-    }
-
-    document.getElementById('totalCVEs').textContent = (forecastData.summary?.total_historical_cves || 0).toLocaleString();
-
-    // Calculate year-over-year growth for selected year
-    const previousYear = selectedYear - 1;
-    const previousYearTotals = yearlyTotals[previousYear] || {};
-    let lastYearTotal = previousYearTotals[bestModelName] || 0;
-    
-    // Fallback: use actual previous year total from summary if forecast not available
-    if (!lastYearTotal) {
-        lastYearTotal = forecastData.summary?.previous_year_total || 0;
-    }
-    
-    if (bestModelTotal && lastYearTotal) {
-        const yoyGrowth = ((bestModelTotal - lastYearTotal) / lastYearTotal) * 100;
-        const growthText = yoyGrowth >= 0 ? `+${yoyGrowth.toFixed(1)}%` : `${yoyGrowth.toFixed(1)}%`;
-        const yoyGrowthEl = document.getElementById('yoyGrowth');
-        const yoyGrowthDetailEl = document.getElementById('yoyGrowthDetail');
-        if (yoyGrowthEl) yoyGrowthEl.textContent = growthText;
-        if (yoyGrowthDetailEl) yoyGrowthDetailEl.textContent = `${bestModelTotal.toLocaleString()} vs ${lastYearTotal.toLocaleString()} (${selectedYear} vs ${previousYear})`;
+    if (projection) {
+        setText('currentYearForecast', projection.total.toLocaleString());
+        setText('forecastDescription',
+            `${projection.actual_ytd.toLocaleString()} published (${projection.months_actual} mo) ` +
+            `+ ${projection.forecast_remainder.toLocaleString()} forecast (${projection.months_forecast} mo)`);
     } else {
-        const yoyGrowthEl = document.getElementById('yoyGrowth');
-        const yoyGrowthDetailEl = document.getElementById('yoyGrowthDetail');
-        if (yoyGrowthEl) yoyGrowthEl.textContent = '-';
-        if (yoyGrowthDetailEl) yoyGrowthDetailEl.textContent = 'Data unavailable';
+        setText('currentYearForecast', '-');
+        setText('forecastDescription', 'No projection for this year');
+    }
+
+    if (best) {
+        setText('bestModel', best.model_name);
+        setText('bestAccuracy', best.mase != null ? best.mase.toFixed(2) : '-');
+        const threshold = best.naive_threshold;
+        setText('accuracyDetail', threshold
+            ? `MASE over ${best.n_origins} origins · naive baseline ${threshold.toFixed(2)}`
+            : `MASE over ${best.n_origins} origins`);
+    }
+
+    setText('totalCVEs', (forecastData.summary?.total_historical_cves || 0).toLocaleString());
+
+    // Year-over-year against the previous year's settled total.
+    const prev = forecastData.yearly_forecast_totals?.[selectedYear - 1]?.Ensemble;
+    const prevTotal = prev?.total ?? forecastData.summary?.previous_year_total ?? 0;
+    if (projection && prevTotal) {
+        const growth = ((projection.total - prevTotal) / prevTotal) * 100;
+        setText('yoyGrowth', `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`);
+        const band = projection.lower_80 != null
+            ? ` · 80% range ${projection.lower_80.toLocaleString()}–${projection.upper_80.toLocaleString()}`
+            : '';
+        setText('yoyGrowthDetail',
+            `${projection.total.toLocaleString()} vs ${prevTotal.toLocaleString()} (${selectedYear} vs ${selectedYear - 1})${band}`);
+    } else {
+        setText('yoyGrowth', '-');
+        setText('yoyGrowthDetail', 'Data unavailable');
     }
 }
 
 /**
- * Populates the model selector dropdown.
+ * Renders the methodology and interval-calibration panel.
  */
+function renderMethodology() {
+    const panel = document.getElementById('methodologyPanel');
+    const meta = forecastData?.methodology;
+    if (!panel || !meta) return;
+
+    const rankings = forecastData.model_rankings || [];
+    const scored = rankings.filter(m => !m.is_baseline && m.mase != null);
+    const winners = scored.filter(m => m.beats_naive);
+
+    const coverage = meta.interval_coverage || {};
+    const coverageHtml = Object.keys(coverage).length
+        ? Object.entries(coverage).map(([level, stats]) =>
+            `<div class="flex justify-between text-sm py-1">
+                 <span class="text-gray-600">${level}% interval</span>
+                 <span class="font-mono font-semibold ${stats.calibrated ? 'text-green-700' : 'text-red-700'}">
+                     ${(stats.empirical * 100).toFixed(1)}% covered
+                 </span>
+             </div>`).join('')
+        : '<p class="text-sm text-gray-500">Not yet available</p>';
+
+    const card = (title, body, note) => `
+        <div class="border border-gray-200 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-800 mb-2">${title}</h3>
+            ${body}
+            ${note ? `<p class="text-xs text-gray-500 mt-2">${note}</p>` : ''}
+        </div>`;
+
+    panel.innerHTML = [
+        card('Models vs. naive baseline',
+             `<p class="text-2xl font-bold text-gray-900">${winners.length} of ${scored.length}</p>`,
+             `beat the naive benchmark (MASE ${meta.naive_threshold?.toFixed(2) ?? 'n/a'}). The rest are shown but not used.`),
+        card('Interval calibration', coverageHtml,
+             'How often the published band actually contained the outcome, in backtest.'),
+        card('Ensemble',
+             `<p class="text-sm text-gray-800">${(meta.ensemble_members || []).join(', ') || 'none'}</p>`,
+             'Trimmed mean over the models that cleared the baseline.'),
+    ].join('');
+
+    const s = meta.settings || {};
+    const settingsEl = document.getElementById('methodologySettings');
+    if (settingsEl) {
+        settingsEl.textContent =
+            `Pipeline: ${s.log_space ? 'log-space' : 'levels'}, ` +
+            `${s.business_day_normalise ? 'business-day normalised' : 'raw monthly'}, ` +
+            `trend damping φ=${s.damping_phi}, ` +
+            `training window ${s.training_window_months ? s.training_window_months + ' months' : 'full history'}. ` +
+            `Ranking metric: ${meta.ranking_metric}.`;
+    }
+}
+
 function populateModelSelector() {
     const selector = document.getElementById('validationModelSelector');
     if (!selector) return;
     selector.innerHTML = '';
     
     // Get the top models from the rankings
-    const topModels = forecastData.model_rankings?.slice(0, TOP_MODELS_COUNT) || [];
+    const topModels = (forecastData.model_rankings || []).filter(m => !m.is_baseline).slice(0, TOP_MODELS_COUNT);
 
     topModels.forEach(model => {
         const option = document.createElement('option');
@@ -226,54 +307,69 @@ function populateModelSelector() {
 }
 
 /**
- * Populates the model performance rankings table.
+ * Populates the model rankings table.
+ *
+ * v0.11 declared seven columns and emitted six cells, so every value after MAPE
+ * rendered one column to the left of its header.
  */
 function populateModelRankings() {
     const tableBody = document.getElementById('modelRankingsTable');
     if (!tableBody) return;
     tableBody.innerHTML = '';
 
+    const basis = document.getElementById('rankingBasis');
+    const anyModel = forecastData.model_rankings?.[0];
+    if (basis && anyModel) {
+        basis.textContent = `${anyModel.n_origins} rolling origins · lower MASE is better`;
+    }
+
     forecastData.model_rankings?.forEach((model, index) => {
         const row = document.createElement('tr');
-        const mape = model.mape || 0;
-        let badgeClass = 'bg-red-100 text-red-800';
-        let performanceBadge = 'Poor';
 
-        if (mape < 10) {
-            badgeClass = 'bg-green-100 text-green-800';
-            performanceBadge = 'Excellent';
-        } else if (mape < 15) {
-            badgeClass = 'bg-blue-100 text-blue-800';
-            performanceBadge = 'Good';
-        } else if (mape < 25) {
-            badgeClass = 'bg-yellow-100 text-yellow-800';
-            performanceBadge = 'Fair';
+        let badgeClass, verdict;
+        if (model.is_baseline) {
+            badgeClass = 'pill--neutral';
+            verdict = 'Baseline';
+        } else if (model.mase == null) {
+            badgeClass = 'pill--bad';
+            verdict = 'Failed';
+        } else if (model.beats_naive) {
+            badgeClass = 'pill--good';
+            verdict = 'Beats naive';
+        } else {
+            badgeClass = 'pill--warn';
+            verdict = 'Loses to naive';
         }
 
         const modelUrl = modelInfoData ? modelInfoData[model.model_name] : null;
-        const modelNameHtml = modelUrl 
-            ? `<a href="${modelUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${model.model_name}</a>` 
+        const modelNameHtml = modelUrl
+            ? `<a href="${modelUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${model.model_name}</a>`
             : model.model_name;
+        const ensembleTag = model.in_ensemble
+            ? ' <span class="text-xs text-green-700 font-semibold" title="Included in the published ensemble">&#9733;</span>'
+            : '';
+
+        const fmt = (v, digits, suffix = '') => (v == null ? '—' : v.toFixed(digits) + suffix);
+        const bias = model.bias_pct == null ? '—' : `${model.bias_pct >= 0 ? '+' : ''}${model.bias_pct.toFixed(1)}%`;
 
         row.innerHTML = `
             <td class="text-center font-mono">${index + 1}</td>
-            <td class="font-medium text-gray-800">${modelNameHtml}</td>
-            <td class="text-right font-mono">${(model.mape || 0).toFixed(2)}%</td>
-            <td class="text-right font-mono">${(model.mae || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="font-medium text-gray-800">${modelNameHtml}${ensembleTag}</td>
+            <td class="text-right font-mono">${fmt(model.mase, 2)}${model.mase_std != null ? ` <span class="text-gray-400 text-xs">±${model.mase_std.toFixed(2)}</span>` : ''}</td>
+            <td class="text-right font-mono">${fmt(model.mape, 1, '%')}</td>
+            <td class="text-right font-mono">${bias}</td>
             <td class="text-center">
-                <span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${badgeClass}">${performanceBadge}</span>
+                <span class="pill ${badgeClass}">${verdict}</span>
             </td>
             <td class="text-center">
-                <button class="expand-btn" onclick="toggleConfig(${index})" id="expandBtn${index}">
+                <button class="expand-btn" onclick="toggleConfig(${index})" id="expandBtn${index}" aria-label="Show configuration for ${model.model_name}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
             </td>
         `;
-        
         tableBody.appendChild(row);
-
         // Create config row (initially hidden)
         const configRow = document.createElement('tr');
         configRow.id = `configRow${index}`;
@@ -382,7 +478,7 @@ function populateForecastVsPublishedTable() {
                     <td class="text-right font-mono">${row.PUBLISHED.toLocaleString()}</td>
                     <td class="text-right font-mono">${row.FORECAST.toLocaleString()}</td>
                     <td class="text-right font-mono text-gray-400" colspan="2"></td>
-                    <td class="text-center font-mono"><span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full bg-gray-100 text-gray-800">In Progress</span></td>
+                    <td class="text-center"><span class="pill pill--neutral">In Progress</span></td>
                 `;
             } else {
                 const error = row.ERROR;
@@ -398,18 +494,18 @@ function populateForecastVsPublishedTable() {
                     return `${sign}${num.toFixed(2)}%`;
                 };
 
-                let badgeClass = 'bg-red-100 text-red-800';
+                let badgeClass = 'pill--bad';
                 let performanceBadge = 'Poor';
                 const absPercentError = Math.abs(percentError);
 
                 if (absPercentError < 10) {
-                    badgeClass = 'bg-green-100 text-green-800';
+                    badgeClass = 'pill--good';
                     performanceBadge = 'Excellent';
                 } else if (absPercentError < 15) {
-                    badgeClass = 'bg-blue-100 text-blue-800';
+                    badgeClass = 'pill--info';
                     performanceBadge = 'Good';
                 } else if (absPercentError < 25) {
-                    badgeClass = 'bg-yellow-100 text-yellow-800';
+                    badgeClass = 'pill--warn';
                     performanceBadge = 'Fair';
                 }
 
@@ -419,7 +515,7 @@ function populateForecastVsPublishedTable() {
                     <td class="text-right font-mono">${row.FORECAST.toLocaleString()}</td>
                     <td class="text-right font-mono">${formatNumberWithSign(error)}</td>
                     <td class="text-right font-mono">${formatPercentWithSign(percentError)}</td>
-                    <td class="text-center font-mono"><span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${badgeClass}">${performanceBadge}</span></td>
+                    <td class="text-center"><span class="pill ${badgeClass}">${performanceBadge}</span></td>
                 `;
             }
             tableBody.appendChild(dataRow);
@@ -530,7 +626,9 @@ function prepareChartData() {
         return `rgb(${result.join(', ')})`;
     };
 
-    const topFiveModels = model_rankings.filter(m => cumulative_timelines[m.model_name + '_cumulative']).slice(0, TOP_MODELS_COUNT);
+    const topFiveModels = model_rankings
+        .filter(m => !m.is_baseline && cumulative_timelines[m.model_name + '_cumulative'])
+        .slice(0, TOP_MODELS_COUNT);
 
     topFiveModels.forEach((model, index) => {
         const modelKey = `${model.model_name}_cumulative`;
@@ -543,7 +641,7 @@ function prepareChartData() {
                 // Exclude year boundary reset markers (Dec 31 with value 0, which belong to next year's view)
                 const isResetMarker = d.date.includes('-12-31T23:59:59Z') && d.cumulative_total === 0;
                 const entryDateStr = d.date;
-                const isAfterActuals = !lastActualMonthDateStr || entryDateStr > lastActualMonthDateStr;
+                const isAfterActuals = !lastActualMonthDateStr || entryDateStr >= lastActualMonthDateStr;
                 return isSelectedYear && !isResetMarker && isAfterActuals;
             })
             .map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
@@ -572,35 +670,76 @@ function prepareChartData() {
         });
     });
 
-    if (cumulative_timelines.all_models_cumulative) {
-        // Filter average forecast data by selected year
-        // Use UTC parsing to avoid timezone conversion issues
-        const avgData = cumulative_timelines.all_models_cumulative
-            .filter(d => {
-                const dateStr = d.date.substring(0, 4); // Extract year as string "2025"
-                const isSelectedYear = parseInt(dateStr) === selectedYear;
-                // Exclude year boundary reset markers (Dec 31 with value 0, which belong to next year's view)
-                const isResetMarker = d.date.includes('-12-31T23:59:59Z') && d.cumulative_total === 0;
-                const entryDateStr = d.date;
-                const isAfterActuals = !lastActualMonthDateStr || entryDateStr > lastActualMonthDateStr;
-                return isSelectedYear && !isResetMarker && isAfterActuals;
-            })
-            .map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
+    // Ensemble line plus its 80% prediction band. v0.11 published bare point
+    // estimates 16 months out; the band is the honest version of that claim.
+    const ensembleTimeline = cumulative_timelines.Ensemble_cumulative;
+    if (ensembleTimeline) {
+        // >= so the forecast path starts at the anchor point carrying the count as
+        // of now, continuing the actuals line instead of floating a month later.
+        const inYear = d => {
+            const isReset = d.date.includes('-12-31T23:59:59Z') && d.cumulative_total === 0;
+            const afterActuals = !lastActualMonthDateStr || d.date >= lastActualMonthDateStr;
+            return parseInt(d.date.substring(0, 4)) === selectedYear && !isReset && afterActuals;
+        };
+        const points = ensembleTimeline.filter(inYear);
+        const band = cumulativeBandFor(inYear);
+
+        if (band) {
+            datasets.push({
+                label: '80% range',
+                data: band.upper,
+                borderColor: 'rgba(239, 68, 68, 0.2)',
+                backgroundColor: 'rgba(239, 68, 68, 0.10)',
+                borderWidth: 0,
+                pointRadius: 0,
+                fill: '+1',
+                tension: 0.1,
+            });
+            datasets.push({
+                label: '80% range (lower bound)',
+                data: band.lower,
+                borderColor: 'rgba(239, 68, 68, 0.2)',
+                borderWidth: 0,
+                pointRadius: 0,
+                fill: false,
+                tension: 0.1,
+            });
+        }
+
         datasets.push({
-            label: 'Model Average (Forecast)',
-            data: avgData,
+            label: 'Ensemble (Forecast)',
+            data: points.map(d => ({ x: new Date(d.date), y: d.cumulative_total })),
             borderColor: 'rgb(239, 68, 68)',
             borderWidth: 2,
             pointBackgroundColor: 'rgb(239, 68, 68)',
             borderDash: [5, 5],
             tension: 0.1,
             fill: false,
-            hidden: false,
         });
     }
 
     console.log(`Chart prepared with ${datasets.length} datasets.`);
     return { datasets };
+}
+
+/**
+ * Reads the server-computed 80% cumulative band for the selected year.
+ *
+ * The maths lives in the pipeline, not here: deriving which month each cumulative
+ * step belongs to in the browser is easy to get off by one, and a silently
+ * mislabelled band is worse than no band at all.
+ *
+ * @param {(d: {date: string, cumulative_total: number}) => boolean} inYear Filter applied to the ensemble line
+ * @returns {{lower: Array, upper: Array}|null} Plottable points, or null if unavailable
+ */
+function cumulativeBandFor(inYear) {
+    const band = forecastData?.cumulative_band;
+    if (!band?.lower?.length || !band?.upper?.length) return null;
+
+    const toPoints = rows => rows.filter(inYear).map(d => ({ x: new Date(d.date), y: d.cumulative_total }));
+    const lower = toPoints(band.lower);
+    const upper = toPoints(band.upper);
+    return lower.length && upper.length ? { lower, upper } : null;
 }
 
 /**
@@ -611,7 +750,11 @@ function getChartOptions() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { position: 'top', labels: { usePointStyle: true, padding: 20 } },
+            legend: {
+                    position: 'top',
+                    // The band's lower bound is a fill artefact, not a series to toggle.
+                    labels: { usePointStyle: true, padding: 20, filter: item => !item.text.includes('(lower bound)') },
+                },
             tooltip: {
                 mode: 'nearest',
                 intersect: true,

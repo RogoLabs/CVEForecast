@@ -6,10 +6,11 @@ Predictive analytics platform for CVE (Common Vulnerabilities and Exposures) pub
 
 ## Features
 
-- **13+ Forecasting Models** — Statistical (Prophet, ARIMA, TBATS), ML (XGBoost, LightGBM, CatBoost), deep learning (TCN, NBEATS), and baselines
+- **16 Forecasting Models** — Statistical (Prophet, ARIMA, TBATS), ML (XGBoost, LightGBM, CatBoost), and naive baselines that are ranked alongside everything else
 - **Daily Automated Updates** — GitHub Actions pipeline generates fresh forecasts at midnight UTC
 - **120+ CNA Forecasts** — Individual predictions for CVE Numbering Authorities with per-organization model selection
-- **Real-World Validation** — Historical backtest on current year data with forecast vs. actual comparisons
+- **Rolling-Origin Validation** — Every model scored from 24 forecast origins and ranked by MASE against a naive benchmark
+- **Calibrated Prediction Intervals** — Conformal 80%/95% bands with published empirical coverage
 - **Monthly Self-Tuning** — Automated hyperparameter optimization on the 1st of each month
 - **Forecast Tracking** — Historical snapshots track prediction evolution and accuracy over time
 - **Accessible Dashboard** — WCAG AA compliant with dark mode, responsive design, and keyboard navigation
@@ -70,17 +71,26 @@ docs/                      # Documentation
 
 ## Model Performance
 
-Real-world backtest accuracy on current year data:
+Models are ranked by **MASE** over rolling forecast origins, and compared against
+naive baselines that are scored in the same run. A model that cannot beat
+`NaiveDrift` is shown on the dashboard but excluded from the published ensemble.
 
-| Rank | Model | MAPE | Performance |
-|------|-------|------|-------------|
-| 1 | LightGBM | 6.22% | Excellent |
-| 2 | KalmanFilter | 6.26% | Excellent |
-| 3 | TBATS | 7.21% | Excellent |
-| 4 | RandomForest | 9.16% | Good |
-| 5 | AutoARIMA | 9.70% | Good |
+Rankings move as data arrives, so they are not duplicated here — see the
+[live dashboard](https://cveforecast.org) for the current table, and
+`web/validation.json` for the full per-horizon breakdown.
 
-Full rankings available on the [live dashboard](https://cveforecast.org).
+### Methodology
+
+| Choice | Setting | Why |
+|---|---|---|
+| Ranking metric | MASE | MAPE penalises over-forecasting more than under-forecasting, biasing selection low on a growing series |
+| Model space | log | The series is multiplicative; levels-space modelling under-forecasts trend |
+| Calendar | business-day normalised | Months carry 20–23 business days, a 15% swing |
+| Trend damping | φ = 0.98 | Insurance against explosive 16-month extrapolation |
+| Training window | full history | Shortening measured worse at h=12 for this model set |
+| Ensemble | trimmed mean | Over the models that clear the naive baseline only |
+
+Full reasoning and the supporting numbers: [Forecast Methodology Review](docs/FORECAST_METHODOLOGY_REVIEW.md).
 
 ## Development
 
@@ -130,4 +140,4 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-**Version:** 0.11 "Galway" 🇮🇪 | **Website:** [cveforecast.org](https://cveforecast.org)
+**Version:** 0.12 "Delphi" 🔮 | **Website:** [cveforecast.org](https://cveforecast.org)
