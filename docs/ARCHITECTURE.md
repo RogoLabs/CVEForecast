@@ -38,7 +38,7 @@ CVE Forecast is built on a modular, extensible architecture that separates conce
 └──────────────┘      └──────────────┘     └──────────────┘
         │                     │                     │
         ├─ data_loader.py     ├─ base_forecaster.py├─ index.html
-        ├─ data_vintage.py    ├─ forecast_engine   ├─ script.js
+        ├─ data_vintage.py    ├─ forecast_engine   ├─ app.js    
         ├─ cve_adapter.py     ├─ covariates        ├─ cna_forecast.html
         └─ cna_adapter.py     ├─ transforms        ├─ forecast_history.html
                               ├─ intervals         ├─ history.js
