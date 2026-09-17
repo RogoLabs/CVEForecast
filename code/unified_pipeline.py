@@ -48,17 +48,11 @@ class UnifiedForecastPipeline:
 
         self.logger.info('Unified Forecast Pipeline initialized')
 
-    def run_cve_pipeline(
-        self, train_ratio: float = 0.8, run_validation: bool = True, run_diagnostics: bool = False
-    ) -> Dict[str, Any]:
+    def run_cve_pipeline(self) -> Dict[str, Any]:
         """
         Execute CVE forecasting pipeline.
 
         Args:
-            train_ratio: Train/test split ratio
-            run_validation: Whether to run validation
-            run_diagnostics: Whether to run diagnostics
-
         Returns:
             CVE pipeline results
         """
@@ -66,9 +60,7 @@ class UnifiedForecastPipeline:
         self.logger.info('EXECUTING CVE PIPELINE')
         self.logger.info('=' * 70)
 
-        results = self.cve_forecaster.run_full_pipeline(
-            train_ratio=train_ratio, run_validation=run_validation, run_diagnostics=run_diagnostics
-        )
+        results = self.cve_forecaster.run_full_pipeline()
 
         self.results['cve'] = results
 
@@ -95,10 +87,8 @@ class UnifiedForecastPipeline:
         self,
         run_cve: bool = True,
         run_cna: bool = True,
-        cve_train_ratio: float = 0.8,
-        cve_validation: bool = True,
-        cve_diagnostics: bool = False,
         retune_models: bool = False,
+        **legacy_kwargs,
     ) -> Dict[str, Any]:
         """
         Execute complete unified pipeline (both CVE and CNA).
@@ -106,10 +96,11 @@ class UnifiedForecastPipeline:
         Args:
             run_cve: Whether to run CVE forecasting
             run_cna: Whether to run CNA forecasting
-            cve_train_ratio: Train/test split for CVE
-            cve_validation: Run CVE validation
-            cve_diagnostics: Run CVE diagnostics
             retune_models: Re-optimize hyperparameters (SLOW - takes hours!)
+            **legacy_kwargs: Accepted and ignored. v0.11 callers passed
+                cve_train_ratio / cve_validation / cve_diagnostics; since v0.12
+                the pipeline always backtests before forecasting, so there is
+                nothing to switch off.
 
         Returns:
             Combined results
@@ -126,10 +117,11 @@ class UnifiedForecastPipeline:
             self.logger.info('')
             self._run_comprehensive_tuning()
 
+        if legacy_kwargs:
+            self.logger.info(f'Ignoring legacy arguments: {", ".join(sorted(legacy_kwargs))}')
+
         if run_cve:
-            cve_results = self.run_cve_pipeline(
-                train_ratio=cve_train_ratio, run_validation=cve_validation, run_diagnostics=cve_diagnostics
-            )
+            cve_results = self.run_cve_pipeline()
         else:
             self.logger.info('Skipping CVE pipeline')
             cve_results = {'skipped': True}
