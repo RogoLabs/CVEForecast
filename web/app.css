@@ -604,11 +604,35 @@ select:hover, input:hover { border-color: var(--border-strong); }
     font-size: 13px; color: var(--text-muted);
 }
 
-/* Release history: each entry is a dated block, not a card. */
-.release { padding-top: 1.25rem; border-top: 1px solid var(--border); }
-.release:first-of-type { border-top: 0; padding-top: 0; }
-.release h3 { margin-top: 0; font-size: 15.5px; }
-.release .eyebrow { margin-bottom: .2rem; }
+/* Release history: one box per version, so a long changelog reads as a stack
+   of releases rather than a single unbroken column of headings and lists. */
+.release {
+    background: var(--surface-sunk);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.15rem 1.25rem;
+}
+.release + .release { margin-top: .85rem; }
+.release > * + * { margin-top: .75rem; }
+
+/* The newest release leads, so it gets the accent and a lighter ground. */
+.release:first-of-type {
+    background: var(--surface);
+    border-color: var(--border-strong);
+    border-left: 2px solid var(--accent);
+}
+
+.release h3 {
+    margin-top: 0; font-size: 15.5px;
+    padding-bottom: .55rem; border-bottom: 1px solid var(--border);
+}
+.release h4 {
+    margin-top: 1rem; font-size: 11px; font-weight: 600;
+    letter-spacing: .07em; text-transform: uppercase; color: var(--text-subtle);
+}
+.release h4 + ul { margin-top: .4rem; }
+.release ul { padding-left: 1.05rem; }
+.release li { margin-top: .35rem; }
 
 /* Data-vintage rows on the history page: a definition list in all but name. */
 .vintage-row {

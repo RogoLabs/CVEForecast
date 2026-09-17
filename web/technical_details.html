@@ -36,7 +36,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="app.css?v=0.13.3">
+    <link rel="stylesheet" href="app.css?v=0.13.4">
 </head>
 <body>
 <a href="#main" class="skip-link">Skip to main content</a>
@@ -230,15 +230,62 @@
 
         <div class="panel prose">
             <h2>Release History</h2>
-                <div>
-                    <h3>v0.12 - Delphi (September 2026)</h3>
+<article class="release">
+<h3>v0.13 - Ockham (September 2026)</h3>
+<p><strong>The front end, rebuilt</strong> &mdash; the dashboard says what it can defend and drops what it could not.</p>
+<h4>Forecasts</h4>
+<ul>
+    <li><strong>The interval leads.</strong> The headline is the 80% range, not a point estimate. A single
+        figure twelve to sixteen months out claims a precision the models do not have, and the interval is
+        the output whose coverage is actually measured &mdash; 80.7% empirical against a nominal 80%.</li>
+    <li><strong>The comparison with last year is a range too</strong>, quoted as a multiple, because a single
+        growth figure against a range forecast puts the false precision straight back.</li>
+    <li><strong>Modelled figures round to the nearest thousand; counts do not.</strong> Published totals are
+        observed, so they stay exact, and the rounding becomes the signal for which numbers are estimated.</li>
+    <li><strong>The chart leads with the ensemble</strong> &mdash; the line, the band and the headline now all
+        describe the same thing &mdash; and closes on a labelled interval bracket rather than a single value.</li>
+</ul>
+<h4>Rebuilt</h4>
+<ul>
+    <li><strong>Tailwind's play CDN is gone.</strong> It warns in the console that it is not for production,
+        and because its <code>dark:</code> variant is unusable from the CDN, dark mode had been hand-patched
+        with roughly 470 lines of <code>!important</code> overrides &mdash; 41% of the old stylesheet, written
+        twice. app.css replaces it with tokens, and contains no <code>!important</code> at all.</li>
+    <li><strong>All four pages share one design system</strong> and one page shell, instead of duplicating the
+        header, footer, analytics snippet and theme script in each file.</li>
+    <li><strong>Numeric columns are right-aligned with tabular figures</strong>, and colour is reserved for
+        judgements rather than spent on the direction of an error.</li>
+</ul>
+<h4>Corrected</h4>
+<ul>
+    <li><strong>Forecast history table alignment.</strong> Five column headers, six cells &mdash; every value
+        after the forecast column rendered one column left of its heading, the same defect the rankings table
+        carried before v0.12.</li>
+    <li><strong>CNA sort indicators.</strong> Arrows were written into a span while <code>aria-sort</code> was
+        never set, so the visible state and the accessible one were separate facts and only one existed.</li>
+    <li><strong>Charts follow the theme.</strong> Colours were read once when a chart was built, so switching
+        theme by any route other than the toggle left one theme's gridlines on the other's background.</li>
+    <li><strong>Mobile navigation.</strong> The old nav overflowed its own header band and pushed the document
+        to 510px at a 375px viewport; no page scrolls sideways now.</li>
+    <li><strong>The evolution chart no longer dramatises small revisions.</strong> Its y-axis was fitted to the
+        data, so a change of a few tenths of a percent filled the panel and read as a collapse.</li>
+</ul>
+<h4>Known gap</h4>
+<ul>
+    <li><strong>CNA forecasts have no interval.</strong> The per-CNA pipeline emits a point forecast and a
+        validation MASE; the residuals that would build a band are computed on every run and discarded, and
+        the backtest is configured with just enough origins to sit on the minimum the interval code requires.
+        Those pages name the model and its MASE instead of implying a precision that has not been measured.</li>
+</ul>
+</article>
+
+<article class="release">
+<h3>v0.12 - Delphi (September 2026)</h3>
                     <p>
                         <strong>Calibration &amp; Correction</strong> &mdash; the forecast now reflects the data,
                         the accuracy figures describe the published forecast, and the uncertainty is visible.
                     </p>
-                    <div>
-                        <div>
-                            <p>Corrected</p>
+                            <h4>Corrected</h4>
                             <ul>
                                 <li><strong>Growth floor removed.</strong> It compared a partial-year forecast remainder
                                     against a full prior year and inflated it to clear an annual growth bar, collapsing all
@@ -256,18 +303,14 @@
                                     model's expectation for the working days that remain &mdash; rather than restarting from the
                                     last complete month, where it branched below the actuals and was overtaken within days.</li>
                             </ul>
-                        </div>
-                        <div>
-                            <p>Measurement</p>
+                            <h4>Measurement</h4>
                             <ul>
                                 <li><strong>Rolling-origin backtesting</strong> across 24 origins replaces a single-origin score.</li>
                                 <li><strong>MASE is the ranking metric</strong>, with naive baselines ranked alongside every model.</li>
                                 <li><strong>One forecast path.</strong> Backtest and production run identical code, so the accuracy
                                     figures describe the forecast actually published.</li>
                             </ul>
-                        </div>
-                        <div>
-                            <p>Methodology</p>
+                            <h4>Methodology</h4>
                             <ul>
                                 <li><strong>Log-space modelling</strong> with mild trend damping (φ = 0.98).</li>
                                 <li><strong>Business-day normalisation</strong> &mdash; months carry 20–23 business days.</li>
@@ -289,14 +332,11 @@
                                     with new CNAs and materially grown series jumping the queue. Forecasting still runs for every CNA
                                     daily; only the scoring is amortised, holding the job to roughly five minutes.</li>
                             </ul>
-                        </div>
-                    </div>
-                </div>
+</article>
 
-            <div>
-                <h3>v0.11 - Galway (March 2026)</h3>
+<article class="release">
+<h3>v0.11 - Galway (March 2026)</h3>
                 <p>Comprehensive Spring Cleaning - Code quality, web overhaul, CI/CD hardening, and accessibility</p>
-                <div>
                     <h4>Code Quality</h4>
                     <ul>
                         <li><strong>Shared Model Utilities:</strong> Extracted duplicated parameter-fixing logic from CVE/CNA adapters into <code>core/model_utils.py</code></li>
@@ -305,8 +345,6 @@
                         <li><strong>Logging:</strong> Added <code>RotatingFileHandler</code> with 10MB limit and 3 backups, request timeouts on external HTTP calls</li>
                         <li><strong>Ruff:</strong> Full codebase formatted and linted with ruff — enforced via CI</li>
                     </ul>
-                </div>
-                <div>
                     <h4>Web Dashboard</h4>
                     <ul>
                         <li><strong>Dark Mode:</strong> System preference detection with manual toggle, persisted in localStorage</li>
@@ -316,8 +354,6 @@
                         <li><strong>Tailwind v3:</strong> Upgraded from Tailwind CSS 2.2.19 to v3 CDN play version</li>
                         <li><strong>JavaScript:</strong> Deferred script loading, chart update pattern (no more destroy/recreate), named constants</li>
                     </ul>
-                </div>
-                <div>
                     <h4>CI/CD &amp; Testing</h4>
                     <ul>
                         <li><strong>Test Workflow:</strong> Automated pytest on pull requests and pushes to main</li>
@@ -327,20 +363,17 @@
                         <li><strong>Unit Tests:</strong> 20 tests covering model utilities and forecast constraints</li>
                         <li><strong>Extracted Scripts:</strong> Moved inline Python from workflows to <code>code/scripts/</code></li>
                     </ul>
-                </div>
-                <div>
                     <h4>Repository Cleanup</h4>
                     <ul>
                         <li><strong>Removed 60+ files:</strong> Empty scripts, old tuner logs/backups, unused web files, obsolete v.10 documentation</li>
                         <li><strong>Updated documentation:</strong> Architecture, deployment, development, and API reference guides refreshed for v0.11</li>
                         <li><strong>pyproject.toml:</strong> Centralized ruff and pytest configuration</li>
                     </ul>
-                </div>
-            </div>
-            <div class="callout callout--quiet">
-                <h3>v0.10 - Phoenix (October 2025)</h3>
+</article>
+
+<article class="release">
+<h3>v0.10 - Phoenix (October 2025)</h3>
                 <p>Complete Architectural Rebirth - Production-ready unified pipeline with historical validation and accuracy tracking</p>
-                <div>
                     <h4>Major Features</h4>
                     <ul>
                         <li><strong>Unified Pipeline:</strong> Single command (run_production_forecast.py) for CVE + CNA forecasting</li>
@@ -349,8 +382,6 @@
                         <li><strong>Model Rankings:</strong> Real-time leaderboard based on backtest MASE, compared against a naive benchmark</li>
                         <li><strong>Forecast vs Published Table:</strong> Month-by-month comparison with error percentages and performance ratings</li>
                     </ul>
-                </div>
-                <div>
                     <h4>Architecture Improvements</h4>
                     <ul>
                         <li><strong>Modular Design:</strong> BaseForecaster, ValidationMixin, CVEForecaster, CNAForecaster adapters</li>
@@ -358,8 +389,6 @@
                         <li><strong>Extensible Framework:</strong> Easy to add new models, data sources, or validation strategies</li>
                         <li><strong>Production-Ready:</strong> Robust error handling, comprehensive logging, and monitoring</li>
                     </ul>
-                </div>
-                <div>
                     <h4>Automated Workflows</h4>
                     <ul>
                         <li><strong>Daily Forecast:</strong> Midnight UTC execution with automatic deployment to GitHub Pages</li>
@@ -367,8 +396,6 @@
                         <li><strong>Zero Downtime:</strong> Continuous deployment with automatic rollback on failure</li>
                         <li><strong>Artifact Storage:</strong> 90-day retention of tuning results and execution logs</li>
                     </ul>
-                </div>
-                <div>
                     <h4>Documentation</h4>
                     <ul>
                         <li><strong>Architecture Guide:</strong> System design, components, and data flow</li>
@@ -377,12 +404,11 @@
                         <li><strong>Development Guide:</strong> Contributing, testing, and best practices</li>
                         <li><strong>Tuning Guide:</strong> Hyperparameter optimization workflows</li>
                     </ul>
-                </div>
-            </div>
-            <div class="callout callout--quiet">
-                <h3>v0.09 - Edinburgh (October 2025)</h3>
+</article>
+
+<article class="release">
+<h3>v0.09 - Edinburgh (October 2025)</h3>
                 <p>🔄 Year Rollover Automation & Enhanced Forecasting - Complete 2026 readiness with zero manual intervention</p>
-                <div>
                     <h4>Year Rollover Automation</h4>
                     <ul>
                         <li>Fully dynamic YoY growth calculations that automatically compare current year vs previous year</li>
@@ -391,8 +417,6 @@
                         <li>Dynamic chart descriptions and labels that update based on current year</li>
                         <li>Backend time series processing fully dynamic with current_datetime.year throughout</li>
                     </ul>
-                </div>
-                <div>
                     <h4>Enhanced Dashboard Features</h4>
                     <ul>
                         <li>Improved "Projected Full Year Growth" card with explicit year comparisons (e.g., "2025 vs 2024")</li>
@@ -400,8 +424,6 @@
                         <li>Chart x-axis automatically spans from Jan of current year to Jan of next year</li>
                         <li>All summary statistics and cumulative timelines update dynamically</li>
                     </ul>
-                </div>
-                <div>
                     <h4>Code Quality & Maintenance</h4>
                     <ul>
                         <li>Comprehensive year rollover audit identifying all hardcoded year references</li>
@@ -410,12 +432,11 @@
                         <li>Annual maintenance checklist added to README for December 31, 2025</li>
                         <li>Consolidated documentation for better repository organization</li>
                     </ul>
-                </div>
-            </div>
-            <div class="callout callout--quiet">
-                <h3>v.08 - Opening Drive (September 2025)</h3>
+</article>
+
+<article class="release">
+<h3>v.08 - Opening Drive (September 2025)</h3>
                 <p>🚀 Launch of Individual CNA Forecasts - Revolutionary organization-specific vulnerability prediction system</p>
-                <div>
                     <h4>CNA Forecasts Platform Launch</h4>
                     <ul>
                         <li>Dedicated forecasting pipeline for 166+ CVE Numbering Authorities (CNAs)</li>
@@ -425,8 +446,6 @@
                         <li>Comprehensive sortable table interface with real-time forecast data and historical trends</li>
                         <li>Dynamic chart generation with organization-specific timelines and cumulative projections</li>
                     </ul>
-                </div>
-                <div>
                     <h4>Technical Architecture</h4>
                     <ul>
                         <li>CPU-optimized forecasting pipeline designed for production scalability</li>
@@ -436,8 +455,6 @@
                         <li>Configurable forecast horizons and model hyperparameters via JSON configuration</li>
                         <li>Enterprise-grade error handling and logging for reliable automated execution</li>
                     </ul>
-                </div>
-                <div>
                     <h4>Data & Analytics</h4>
                     <ul>
                         <li>Historical CVE data analysis spanning multiple years per organization</li>
@@ -445,12 +462,11 @@
                         <li>Forecast confidence intervals and uncertainty quantification</li>
                         <li>Cross-organizational trend analysis and comparative insights</li>
                     </ul>
-                </div>
-            </div>
-            <div class="callout callout--quiet">
-                <h3>v.07 - Security Summer Camp Prep (August 2025)</h3>
+</article>
+
+<article class="release">
+<h3>v.07 - Security Summer Camp Prep (August 2025)</h3>
                 <p>Fixed critical month transition bug in cumulative total calculations, ensuring accurate data representation across month boundaries</p>
-                <div>
                     <h4>Bug Fix Details</h4>
                     <ul>
                         <li>Replaced hard-coded month references with dynamic month detection</li>
@@ -459,13 +475,11 @@
                         <li>Implemented future-proof solution that works reliably for all calendar transitions</li>
                         <li>Added comprehensive logging to track cumulative total calculations</li>
                     </ul>
-                </div>
-            </div>
-            <div class="callout callout--quiet">
-                <h3>v.06 - Karlův mos (July 2025)</h3>
+</article>
+
+<article class="release">
+<h3>v.06 - Karlův mos (July 2025)</h3>
                 <p>Revolutionary self-improving forecasting system with intelligent hyperparameter optimization</p>
-                <div class="cols cols--2">
-                    <div>
                         <h4>Intelligent Optimization</h4>
                         <ul>
                             <li>Comprehensive hyperparameter tuner for 19+ models</li>
@@ -473,8 +487,6 @@
                             <li>Adaptive grid/random search selection</li>
                             <li>Intelligent timeout management and progress tracking</li>
                         </ul>
-                    </div>
-                    <div>
                         <h4>Automated Infrastructure</h4>
                         <ul>
                             <li>Daily GitHub Actions integration with tuner</li>
@@ -482,26 +494,24 @@
                             <li>End-to-end validation pipeline</li>
                             <li>Complete self-optimization workflow</li>
                         </ul>
-                    </div>
-                </div>
-                <div>
                     <ul>
                         <li>Support for 25+ models across Statistical, Tree-Based, and Deep Learning categories</li>
                         <li>Enterprise-grade modular architecture with 7 focused modules</li>
                         <li>Enhanced model stability with comprehensive error handling</li>
                         <li>Dynamic forecasting with automatic period adaptation</li>
                     </ul>
-                </div>
-            </div>
-            <div class="callout callout--quiet">
-                <h3>v.05 - Adolfo Suárez Madrid-Baraja</h3>
+</article>
+
+<article class="release">
+<h3>v.05 - Adolfo Suárez Madrid-Baraja</h3>
                 <ul>
                     <li>Fixed a critical bug that prevented the cumulative graph from rendering due to an incorrect data structure in <code>data.json</code>.</li>
                     <li>Restored frontend compatibility by correcting the data generation logic, ensuring all charts now load correctly.</li>
                 </ul>
-            </div>
-            <div class="callout callout--quiet">
-                <h3>v.04 ORD MAD</h3>
+</article>
+
+<article class="release">
+<h3>v.04 ORD MAD</h3>
                 <ul>
                     <li>Enhanced model stability with improved error handling.</li>
                     <li>Added input validation and scaling for better numerical stability.</li>
@@ -509,8 +519,8 @@
                     <li>Implemented dynamic forecast period calculation.</li>
                     <li>Improved model selection based on MAPE scores.</li>
                 </ul>
-            </div>
-        </div>
+</article>
+</div>
 </main>
 
 <footer class="site-footer">
@@ -527,6 +537,6 @@
     </div>
 </footer>
 
-<script src="shell.js?v=0.13.3" defer></script>
+<script src="shell.js?v=0.13.4" defer></script>
 </body>
 </html>
