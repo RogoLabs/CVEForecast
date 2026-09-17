@@ -710,7 +710,8 @@ class CNAForecaster(BaseForecaster):
             if cna_id in to_refresh:
                 best_model, best_mase, all_scores = self.select_best_model_for_cna(cna_id, ts)
                 self.selection_cache.put(cna_id, best_model, best_mase, len(ts), all_scores)
-                self.logger.info(f'{cna_info["name"]} → {best_model} (MASE: {best_mase:.2f}, re-scored)')
+                mase_text = f'{best_mase:.2f}' if best_mase is not None else 'n/a'
+                self.logger.info(f'{cna_info["name"]} → {best_model} (MASE: {mase_text}, re-scored)')
             else:
                 cached = self.selection_cache.get(cna_id)
                 if cached is None:

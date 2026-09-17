@@ -235,9 +235,12 @@ class RollingOriginBacktest:
         result.bias_pct = float(np.mean(signed) / mean_actual * 100)
         result.mase_by_horizon = {h: float(np.mean(v)) for h, v in per_horizon.items()}
 
+        # MAPE is None when every actual in the scored window was zero - real for
+        # a quiet CNA, and it used to crash this log line and take the run with it.
+        mape_text = f'{result.mape:.1f}%' if result.mape is not None else 'n/a'
         logger.info(
             f'{model_name}: MASE {result.mase:.3f} (+/-{result.mase_std:.3f}) '
-            f'MAPE {result.mape:.1f}% bias {result.bias_pct:+.1f}% over {result.n_origins} origins'
+            f'MAPE {mape_text} bias {result.bias_pct:+.1f}% over {result.n_origins} origins'
         )
         return result
 

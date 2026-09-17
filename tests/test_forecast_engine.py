@@ -153,6 +153,26 @@ class TestRollingOrigin:
         assert result.is_valid
         assert result.mase == pytest.approx(0.0, abs=1e-9)
 
+    def test_all_zero_actuals_do_not_crash_the_run(self):
+        """
+        MAPE is undefined when every actual is zero - real for a quiet CNA. The
+        summary log used to format it unconditionally and took the whole pipeline
+        down with a TypeError.
+        """
+        index = pd.date_range('2019-01-31', periods=60, freq='ME')
+        series = TimeSeries.from_series(pd.Series([0.0] * 60, index=index))
+
+        def zero_forecast(train, horizon):
+            # The final origin has fewer than `horizon` periods left, so size the
+            # values to the index rather than assuming a full window.
+            start = len(train)
+            index = series.time_index[start : start + horizon]
+            return TimeSeries.from_times_and_values(index, [0.0] * len(index))
+
+        result = RollingOriginBacktest(horizon=6, min_train=36, max_origins=4).evaluate(series, zero_forecast, 'Quiet')
+        assert result.mape is None
+        assert result.to_dict()['mape'] is None
+
     def test_failed_forecasts_are_recorded_not_hidden(self):
         result = RollingOriginBacktest(horizon=6, min_train=36, max_origins=4).evaluate(
             make_series(60), lambda train, horizon: None, 'Broken'
