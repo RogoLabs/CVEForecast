@@ -29,6 +29,7 @@ from darts import TimeSeries
 
 from core.covariates import (
     COVARIATE_CAPABLE_MODELS,
+    build_cna_covariate,
     build_future_covariates,
     denormalise_by_business_days,
     normalise_by_business_days,
@@ -61,6 +62,11 @@ class ForecastSettings:
     # Month dummies do not pay for themselves once business days are normalised out
     # of the target - they cost the best model 2.15 -> 2.26 MASE. Capability retained.
     use_future_covariates: bool = False
+    # Active-CNA count as an exogenous driver. Correlates +0.796 with monthly CVEs
+    # but costs the best model 2.12 -> 2.31 MASE: the correlation is shared trend,
+    # which the target's own lags already carry. Off by default; needs
+    # use_future_covariates when enabled.
+    use_cna_covariate: bool = False
     # Calendar of the month being predicted; [0] means "this period only".
     future_covariate_lags: Any = field(default_factory=lambda: [0])
     freq: str = 'ME'
@@ -84,6 +90,7 @@ class ForecastSettings:
             damping_phi=block.get('damping_phi', defaults.damping_phi),
             training_window_months=block.get('training_window_months', defaults.training_window_months),
             use_future_covariates=block.get('use_future_covariates', defaults.use_future_covariates),
+            use_cna_covariate=block.get('use_cna_covariate', defaults.use_cna_covariate),
             future_covariate_lags=block.get('future_covariate_lags', defaults.future_covariate_lags),
             freq=block.get('freq', defaults.freq),
         )
@@ -114,9 +121,17 @@ class ForecastEngine:
             has already been fitted leaks information across backtest folds.
     """
 
-    def __init__(self, settings: ForecastSettings, create_model: Callable[[str, Dict[str, Any]], Any]):
+    def __init__(
+        self,
+        settings: ForecastSettings,
+        create_model: Callable[[str, Dict[str, Any]], Any],
+        cna_counts: Optional[Any] = None,
+    ):
         self.settings = settings
         self.create_model = create_model
+        # DataFrame of monthly CNA counts, supplied by the adapter when the
+        # exogenous driver is enabled.
+        self.cna_counts = cna_counts
 
     def _covariates_for(self, series: TimeSeries, horizon: int) -> Optional[TimeSeries]:
         """Build a covariate block spanning the training series plus the horizon."""
@@ -126,7 +141,7 @@ class ForecastEngine:
         # darts raises rather than extrapolating a short covariate block.
         start = series.start_time() - pd.DateOffset(years=1)
         end = series.end_time() + pd.DateOffset(months=horizon + 24)
-        return build_future_covariates(
+        covariates = build_future_covariates(
             start=start,
             end=end,
             freq=self.settings.freq,
@@ -134,6 +149,13 @@ class ForecastEngine:
             # so passing it again would double-count.
             include_business_days=not self.settings.business_day_normalise,
         )
+
+        if self.settings.use_cna_covariate and self.cna_counts is not None:
+            cna = build_cna_covariate(self.cna_counts, start=start, end=end, freq=self.settings.freq)
+            if cna is not None:
+                covariates = covariates.stack(cna)
+
+        return covariates
 
     def forecast(
         self,

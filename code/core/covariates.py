@@ -170,3 +170,72 @@ def slice_covariates(covariates: Optional[TimeSeries], series: TimeSeries) -> Op
             f'target ({series.start_time()}..{series.end_time()})'
         )
     return covariates
+
+
+def build_cna_covariate(
+    monthly_counts: 'pd.DataFrame',
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    freq: str = 'ME',
+) -> Optional[TimeSeries]:
+    """
+    Cumulative active-CNA count as a covariate, extended over the forecast horizon.
+
+    CNA onboarding looks like the clearest exogenous driver of publication volume:
+    more numbering authorities issuing identifiers means more CVEs, and the raw
+    correlation between the two series is +0.796.
+
+    **It does not improve forecasts, and is off by default.** Measured over 24
+    rolling origins at h=1..12, adding it cost the best model 2.12 -> 2.31 MASE
+    and moved no other model by more than 0.06. That correlation is almost
+    entirely shared trend - both series climb together, which a lag-based model
+    already captures from the target alone - so the covariate contributes noise
+    rather than signal. The extrapolation below adds more of it.
+
+    Two further caveats if the picture ever changes. Join dates are inferred from
+    the ``CNA-YYYY-NNNN`` identifier, so the real resolution is annual with a
+    heuristic quarter; the monthly series is smoother than the truth. And future
+    values must be extrapolated, since we cannot know who will onboard next: this
+    uses the trailing 24-month linear trend, which suits a steadily growing series
+    but will understate a sudden recruitment drive.
+
+    Args:
+        monthly_counts: DataFrame with 'date' and 'cna_count' columns
+        start: First period to cover
+        end: Last period to cover, typically past the forecast horizon
+        freq: Pandas frequency alias
+
+    Returns:
+        Single-component TimeSeries of CNA counts, or None if unusable
+    """
+    if monthly_counts is None or monthly_counts.empty:
+        logger.warning('No CNA count data available; covariate unavailable')
+        return None
+
+    counts = monthly_counts.set_index(pd.DatetimeIndex(monthly_counts['date']))['cna_count'].astype(float)
+    counts = counts.resample(freq).last().dropna()
+    if len(counts) < 24:
+        logger.warning(f'Only {len(counts)} months of CNA history; covariate unavailable')
+        return None
+
+    index = pd.date_range(start=start, end=end, freq=freq)
+    aligned = counts.reindex(index)
+
+    # Back-fill before the record starts, then extrapolate the trailing trend forward.
+    aligned = aligned.ffill()
+    if aligned.isna().any():
+        aligned = aligned.bfill()
+
+    last_known = counts.index.max()
+    future = index[index > last_known]
+    if len(future) > 0:
+        recent = counts.iloc[-24:]
+        slope = float(np.polyfit(np.arange(len(recent)), recent.to_numpy(), 1)[0])
+        base = float(counts.iloc[-1])
+        aligned.loc[future] = [base + slope * (i + 1) for i in range(len(future))]
+        logger.info(f'Extrapolated CNA count {len(future)} months at {slope:.2f}/month from {base:.0f}')
+
+    values = aligned.to_numpy(dtype=float)
+    # Scale so the covariate sits on the same order as the month dummies.
+    scaled = (values - values.mean()) / max(values.std(), 1e-9)
+    return TimeSeries.from_times_and_values(index, scaled, columns=['cna_count'])

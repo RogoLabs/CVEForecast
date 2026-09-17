@@ -97,7 +97,7 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
 
         self.forecast_constraints = ForecastConstraints(config.get('forecast_constraints', {}), self.logger)
         self.settings = ForecastSettings.from_config(config)
-        self.engine = ForecastEngine(self.settings, self.create_model)
+        self.engine = ForecastEngine(self.settings, self.create_model, cna_counts=self._load_cna_counts())
         self.cna_momentum = None
 
         # Populated by run_full_pipeline
@@ -113,6 +113,29 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         self.start_of_next_month = self.start_of_current_month + relativedelta(months=1)
 
         self.logger.info('CVE Forecaster initialized')
+
+    def _load_cna_counts(self):
+        """
+        Monthly active-CNA counts, for the optional exogenous covariate.
+
+        Loaded only when the covariate is enabled - it hits a cached CNA list and
+        is pure cost otherwise. Returns None on any failure; the covariate is
+        optional and a missing driver must not take the forecast down.
+
+        Returns:
+            DataFrame of monthly CNA counts, or None
+        """
+        if not self.settings.use_cna_covariate:
+            return None
+        try:
+            from cna_trend_data import CNATrendData
+
+            counts = CNATrendData(self.logger).get_monthly_cna_counts()
+            self.logger.info(f'Loaded {len(counts)} months of CNA counts for the exogenous covariate')
+            return counts
+        except (ImportError, OSError, ValueError, KeyError) as e:
+            self.logger.warning(f'CNA covariate unavailable: {type(e).__name__}: {e}')
+            return None
 
     def load_data(self) -> TimeSeries:
         """
