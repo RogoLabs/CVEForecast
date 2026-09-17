@@ -49,6 +49,30 @@
     --pill-neutral-fg: #475569;
     --pill-neutral-border: #e2e8f0;
 
+    /* Stat cards. Same reasoning as the pills: the Tailwind gradient overrides
+       cover from-blue-50 and from-green-50 but not from-gray-50, so the grey card
+       stayed white in dark mode while its neighbours went dark. */
+    --stat-blue-bg: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    --stat-blue-fg: #1e3a8a;
+    --stat-blue-muted: #1d4ed8;
+    --stat-blue-accent: #3b82f6;
+    --stat-green-bg: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    --stat-green-fg: #14532d;
+    --stat-green-muted: #15803d;
+    --stat-green-accent: #22c55e;
+    --stat-purple-bg: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+    --stat-purple-fg: #4c1d95;
+    --stat-purple-muted: #7e22ce;
+    --stat-purple-accent: #a855f7;
+    --stat-neutral-bg: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    --stat-neutral-fg: #1e293b;
+    --stat-neutral-muted: #475569;
+    --stat-neutral-accent: #94a3b8;
+    --stat-amber-bg: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    --stat-amber-fg: #78350f;
+    --stat-amber-muted: #b45309;
+    --stat-amber-accent: #f59e0b;
+
     --color-growth-negative: #059669;
     --color-growth-neutral: #6b7280;
     --color-summary-label: #374151;
@@ -374,6 +398,52 @@ body {
         --pill-neutral-bg: rgba(148, 163, 184, 0.14);
         --pill-neutral-fg: #cbd5e1;
         --pill-neutral-border: rgba(148, 163, 184, 0.32);
+
+    /* Stat cards: deep tinted surfaces with bright text, rather than the pastel
+       fills carried over from light mode. */
+    --stat-blue-bg: linear-gradient(135deg, #172554 0%, #1e3a5f 100%);
+    --stat-blue-fg: #dbeafe;
+    --stat-blue-muted: #93c5fd;
+    --stat-blue-accent: #3b82f6;
+    --stat-green-bg: linear-gradient(135deg, #0b3323 0%, #14532d 100%);
+    --stat-green-fg: #dcfce7;
+    --stat-green-muted: #6ee7b7;
+    --stat-green-accent: #22c55e;
+    --stat-purple-bg: linear-gradient(135deg, #2e1065 0%, #3b0764 100%);
+    --stat-purple-fg: #f3e8ff;
+    --stat-purple-muted: #d8b4fe;
+    --stat-purple-accent: #a855f7;
+    --stat-neutral-bg: linear-gradient(135deg, #1e293b 0%, #263449 100%);
+    --stat-neutral-fg: #e2e8f0;
+    --stat-neutral-muted: #cbd5e1;
+    --stat-neutral-accent: #64748b;
+    --stat-amber-bg: linear-gradient(135deg, #3b2506 0%, #4a2f08 100%);
+    --stat-amber-fg: #fef3c7;
+    --stat-amber-muted: #fcd34d;
+    --stat-amber-accent: #f59e0b;
+
+        /* Stat cards: deep tinted surfaces with bright text, rather than the pastel
+           fills carried over from light mode. */
+        --stat-blue-bg: linear-gradient(135deg, #172554 0%, #1e3a5f 100%);
+        --stat-blue-fg: #dbeafe;
+        --stat-blue-muted: #93c5fd;
+        --stat-blue-accent: #3b82f6;
+        --stat-green-bg: linear-gradient(135deg, #0b3323 0%, #14532d 100%);
+        --stat-green-fg: #dcfce7;
+        --stat-green-muted: #6ee7b7;
+        --stat-green-accent: #22c55e;
+        --stat-purple-bg: linear-gradient(135deg, #2e1065 0%, #3b0764 100%);
+        --stat-purple-fg: #f3e8ff;
+        --stat-purple-muted: #d8b4fe;
+        --stat-purple-accent: #a855f7;
+        --stat-neutral-bg: linear-gradient(135deg, #1e293b 0%, #263449 100%);
+        --stat-neutral-fg: #e2e8f0;
+        --stat-neutral-muted: #cbd5e1;
+        --stat-neutral-accent: #64748b;
+        --stat-amber-bg: linear-gradient(135deg, #3b2506 0%, #4a2f08 100%);
+        --stat-amber-fg: #fef3c7;
+        --stat-amber-muted: #fcd34d;
+        --stat-amber-accent: #f59e0b;
         --color-bg: #111827;
         --color-surface: #1f2937;
         --color-text: #f9fafb;
@@ -998,4 +1068,79 @@ body {
     --pill-bg: var(--pill-neutral-bg);
     --pill-fg: var(--pill-neutral-fg);
     --pill-border: var(--pill-neutral-border);
+}
+
+
+/* --------------------------------------------------------------------------
+   Stat cards
+   --------------------------------------------------------------------------
+   The summary tiles on the CNA page. Built from tokens rather than Tailwind
+   gradient utilities so a variant cannot be half-themed - from-gray-50 was
+   missing from the dark-mode override list, which left one card white while
+   every other card went dark. */
+
+.stat-card {
+    background: var(--stat-bg);
+    border-left: 4px solid var(--stat-accent);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+.stat-card--compact {
+    padding: 1rem;
+}
+
+.stat-card__label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--stat-muted);
+}
+
+.stat-card__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--stat-fg);
+    margin-top: 0.25rem;
+}
+
+.stat-card__detail {
+    font-size: 0.8125rem;
+    color: var(--stat-muted);
+    margin-top: 0.25rem;
+}
+
+.stat-card--blue {
+    --stat-bg: var(--stat-blue-bg);
+    --stat-fg: var(--stat-blue-fg);
+    --stat-muted: var(--stat-blue-muted);
+    --stat-accent: var(--stat-blue-accent);
+}
+
+.stat-card--green {
+    --stat-bg: var(--stat-green-bg);
+    --stat-fg: var(--stat-green-fg);
+    --stat-muted: var(--stat-green-muted);
+    --stat-accent: var(--stat-green-accent);
+}
+
+.stat-card--purple {
+    --stat-bg: var(--stat-purple-bg);
+    --stat-fg: var(--stat-purple-fg);
+    --stat-muted: var(--stat-purple-muted);
+    --stat-accent: var(--stat-purple-accent);
+}
+
+.stat-card--neutral {
+    --stat-bg: var(--stat-neutral-bg);
+    --stat-fg: var(--stat-neutral-fg);
+    --stat-muted: var(--stat-neutral-muted);
+    --stat-accent: var(--stat-neutral-accent);
+}
+
+.stat-card--amber {
+    --stat-bg: var(--stat-amber-bg);
+    --stat-fg: var(--stat-amber-fg);
+    --stat-muted: var(--stat-amber-muted);
+    --stat-accent: var(--stat-amber-accent);
 }
