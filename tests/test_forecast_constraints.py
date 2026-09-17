@@ -1,72 +1,140 @@
-"""Tests for forecast_constraints.py."""
+"""
+Tests for forecast sanity guards and year-total construction.
+
+Rewritten for v0.12. The previous suite asserted the behaviour of the growth
+floor - that a forecast below 5% growth was raised to it. That behaviour was the
+defect: it compared a partial-year remainder against a full prior year and
+collapsed every model onto the same number. These tests pin the replacement,
+including a regression test for the specific 2026 failure.
+"""
 
 import pytest
-from forecast_constraints import ForecastConstraints
+from forecast_constraints import (
+    ForecastConstraints,
+    YearProjection,
+    build_year_projections,
+    combine_model_forecasts,
+)
 
 
 @pytest.fixture
 def constraints():
-    config = {
-        'min_annual_growth_rate': 0.05,
-        'max_annual_growth_rate': 0.40,
-        'historical_avg_growth': 0.18,
-        'enable_growth_floor': True,
-        'enable_trend_adjustment': True,
-        'enable_ytd_floor': True,
-        'trend_adjustment_confidence': 0.7,
-        'trend_adjustment_threshold': 0.75,
-        'ytd_minimum_factor': 0.85,
-    }
-    return ForecastConstraints(config)
+    return ForecastConstraints({})
 
 
-class TestGrowthFloor:
-    def test_below_minimum_raises_floor(self, constraints):
-        # 40000 with 5% min = 42000 minimum
-        result = constraints.apply_growth_floor(40000, 40000)
-        assert result >= 42000
+class TestYearProjections:
+    def test_splits_actuals_from_forecast(self):
+        actuals = {'2026-01': 4302, '2026-02': 4616}
+        forecasts = {'2026-03': 5000, '2026-04': 5200}
+        result = build_year_projections(actuals, forecasts)
 
-    def test_above_maximum_capped(self, constraints):
-        # 40000 with 40% max = 56000 maximum
-        result = constraints.apply_growth_floor(100000, 40000)
-        assert result <= 56000
+        proj = result[2026]
+        assert proj.actual_ytd == 8918
+        assert proj.forecast_remainder == 10200
+        assert proj.total == 19118
+        assert proj.months_actual == 2
+        assert proj.months_forecast == 2
+        assert not proj.is_complete
 
-    def test_within_range_unchanged(self, constraints):
-        # 12.5% growth - within 5-40% range
-        result = constraints.apply_growth_floor(45000, 40000)
-        assert result == 45000
+    def test_published_month_is_never_overwritten_by_its_own_forecast(self):
+        actuals = {'2026-01': 4302}
+        forecasts = {'2026-01': 9999, '2026-02': 5000}
+        result = build_year_projections(actuals, forecasts)
 
-    def test_disabled_returns_original(self, constraints):
-        constraints.enable_floor = False
-        result = constraints.apply_growth_floor(1, 40000)
-        assert result == 1
+        assert result[2026].actual_ytd == 4302
+        assert result[2026].forecast_remainder == 5000
+        assert result[2026].months_forecast == 1
 
-    def test_exact_minimum(self, constraints):
-        # Exactly 5% growth should pass through
-        result = constraints.apply_growth_floor(42000, 40000)
-        assert result == 42000
+    def test_spans_multiple_years(self):
+        result = build_year_projections({'2026-01': 100}, {'2026-02': 200, '2027-01': 300})
+
+        assert result[2026].total == 300
+        assert result[2027].total == 300
+        assert result[2027].actual_ytd == 0
+        assert result[2027].is_complete is False
+
+    def test_year_band_sums_monthly_bands_onto_actuals(self):
+        result = build_year_projections(
+            {'2026-01': 1000},
+            {'2026-02': 500, '2026-03': 600},
+            intervals={
+                '2026-02': {'lower_80': 400, 'upper_80': 700},
+                '2026-03': {'lower_80': 480, 'upper_80': 840},
+            },
+        )
+        proj = result[2026]
+        assert proj.lower_80 == 1000 + 880
+        assert proj.upper_80 == 1000 + 1540
+        assert proj.lower_80 < proj.total < proj.upper_80
+
+    def test_empty_inputs(self):
+        assert build_year_projections({}, {}) == {}
 
 
-class TestApplyConstraints:
-    def test_empty_input_returns_empty(self, constraints):
-        result = constraints.apply_constraints({})
-        assert result == {}
+class TestSanityGuards:
+    def test_plausible_forecast_passes_silently(self, constraints):
+        proj = YearProjection(year=2026, actual_ytd=57872, forecast_remainder=27000)
+        assert constraints.check_annual(proj, previous_year_total=48153) == []
 
-    def test_with_previous_year_actuals(self, constraints):
-        yearly = {2026: {'ModelA': 30000}}
-        actuals = {2025: 40000}
-        result = constraints.apply_constraints(yearly, previous_year_actuals=actuals)
-        # 30000 is below 5% growth from 40000 (42000), so should be raised
-        assert result[2026]['ModelA'] >= 42000
+    def test_2026_actual_growth_must_not_trip_the_guard(self, constraints):
+        """2026 ran ~+137% year over year. A guard that flags reality is useless."""
+        proj = YearProjection(year=2026, actual_ytd=57872, forecast_remainder=56493)
+        assert constraints.check_annual(proj, previous_year_total=48153) == []
 
-    def test_no_baseline_passes_through(self, constraints):
-        yearly = {2030: {'ModelA': 50000}}
-        result = constraints.apply_constraints(yearly)
-        assert result[2030]['ModelA'] == 50000
+    def test_divergence_is_flagged(self, constraints):
+        proj = YearProjection(year=2026, actual_ytd=0, forecast_remainder=5_000_000)
+        assert constraints.check_annual(proj, previous_year_total=48153)
 
-    def test_multiple_models(self, constraints):
-        yearly = {2026: {'ModelA': 30000, 'ModelB': 50000}}
-        actuals = {2025: 40000}
-        result = constraints.apply_constraints(yearly, previous_year_actuals=actuals)
-        assert result[2026]['ModelA'] >= 42000  # Constrained up
-        assert result[2026]['ModelB'] == 50000  # Within range, unchanged
+    def test_collapse_is_flagged(self, constraints):
+        proj = YearProjection(year=2026, actual_ytd=0, forecast_remainder=100)
+        assert constraints.check_annual(proj, previous_year_total=48153)
+
+    def test_no_baseline_means_no_opinion(self, constraints):
+        proj = YearProjection(year=2026, actual_ytd=0, forecast_remainder=999_999)
+        assert constraints.check_annual(proj, previous_year_total=None) == []
+
+    def test_monthly_spike_flagged(self, constraints):
+        assert constraints.check_monthly([90000], recent_history=[10000, 11000, 12000])
+
+    def test_monthly_within_range_passes(self, constraints):
+        assert constraints.check_monthly([15000, 16000], recent_history=[10000, 11000, 12000]) == []
+
+    def test_guards_can_be_disabled(self):
+        disabled = ForecastConstraints({'enable_sanity_guards': False})
+        proj = YearProjection(year=2026, actual_ytd=0, forecast_remainder=5_000_000)
+        assert disabled.check_annual(proj, previous_year_total=48153) == []
+
+
+class TestConfigWiring:
+    def test_reads_its_own_block(self):
+        c = ForecastConstraints({'max_annual_growth': 2.0, 'min_annual_growth': 0.5})
+        assert c.max_annual_growth == 2.0
+        assert c.min_annual_growth == 0.5
+
+    def test_full_config_document_is_unwrapped_not_ignored(self):
+        """v0.11 passed the whole config here and silently got defaults."""
+        c = ForecastConstraints({'models': {}, 'forecast_constraints': {'max_annual_growth': 7.5}})
+        assert c.max_annual_growth == 7.5
+
+
+class TestEnsemble:
+    def test_trimmed_mean_drops_the_extremes(self):
+        per_model = {
+            'a': {'2026-01': 100},
+            'b': {'2026-01': 110},
+            'c': {'2026-01': 120},
+            'diverged': {'2026-01': 100000},
+        }
+        combined = combine_model_forecasts(per_model, method='trimmed_mean')
+        assert combined['2026-01'] == pytest.approx(115.0)
+
+    def test_members_restrict_the_pool(self):
+        per_model = {'good': {'2026-01': 100}, 'bad': {'2026-01': 900}}
+        assert combine_model_forecasts(per_model, members=['good'])['2026-01'] == pytest.approx(100.0)
+
+    def test_small_pools_fall_back_to_median(self):
+        per_model = {'a': {'2026-01': 100}, 'b': {'2026-01': 200}}
+        assert combine_model_forecasts(per_model, method='trimmed_mean')['2026-01'] == pytest.approx(150.0)
+
+    def test_empty_pool(self):
+        assert combine_model_forecasts({}) == {}

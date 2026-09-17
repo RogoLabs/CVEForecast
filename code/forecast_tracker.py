@@ -14,13 +14,22 @@ Version: 1.0
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+# Daily runs accumulate quickly; keep roughly two years of vintages so the file
+# stays reviewable in git while retaining every horizon we ever forecast at.
+MAX_SNAPSHOTS = 800
+
+
+def _utc_now_iso() -> str:
+    """Timezone-aware UTC timestamp (datetime.utcnow() is deprecated in 3.12+)."""
+    return datetime.now(timezone.utc).isoformat()
 
 
 class ForecastTracker:
@@ -60,7 +69,8 @@ class ForecastTracker:
             try:
                 with open(self.history_path, 'r') as f:
                     data = json.load(f)
-                logger.info(f'Loaded forecast history with {len(data.get("forecast_snapshots", []))} snapshots')
+                data = self._normalize_history(data)
+                logger.info(f'Loaded forecast history with {len(data["forecast_snapshots"])} snapshots')
                 return data
             except Exception as e:
                 logger.error(f'Failed to load forecast history: {e}')
@@ -68,11 +78,44 @@ class ForecastTracker:
 
         return self._create_empty_history()
 
-    def _create_empty_history(self) -> Dict:
+    @staticmethod
+    def _normalize_history(data: Dict) -> Dict:
+        """
+        Migrate any on-disk history layout to the current schema.
+
+        v0.11 and earlier shipped a seed file keyed on ``snapshots`` while this class
+        has always read and written ``forecast_snapshots``. That mismatch raised
+        KeyError on every run and the exception was swallowed upstream, so no snapshot
+        was ever recorded. Normalising on load makes old files usable and keeps any
+        future key drift from silently costing us history again.
+
+        Args:
+            data: Raw dictionary loaded from disk
+
+        Returns:
+            Dictionary guaranteed to carry every key the tracker relies on
+        """
+        if not isinstance(data, dict):
+            return ForecastTracker._create_empty_history()
+
+        if 'forecast_snapshots' not in data and isinstance(data.get('snapshots'), list):
+            data['forecast_snapshots'] = data.pop('snapshots')
+            logger.warning('Migrated legacy "snapshots" key to "forecast_snapshots"')
+
+        data.setdefault('version', '1.1')
+        data.setdefault('forecast_snapshots', [])
+        data.setdefault('accuracy_tracking', {})
+        data.setdefault('stability_metrics', {})
+        data.setdefault('last_updated', _utc_now_iso())
+        data.pop('metadata', None)  # legacy seed-file field, superseded by get_summary_stats()
+        return data
+
+    @staticmethod
+    def _create_empty_history() -> Dict:
         """Create empty history structure."""
         return {
-            'version': '1.0',
-            'last_updated': datetime.utcnow().isoformat(),
+            'version': '1.1',
+            'last_updated': _utc_now_iso(),
             'forecast_snapshots': [],
             'accuracy_tracking': {},
             'stability_metrics': {},
@@ -107,7 +150,7 @@ class ForecastTracker:
         snapshot = {
             'snapshot_id': snapshot_id,
             'snapshot_date': snapshot_date.isoformat(),
-            'generation_time': datetime.utcnow().isoformat(),
+            'generation_time': _utc_now_iso(),
             'data_through': data_through,
             'forecasts': forecasts,
             'model_performance': model_performance,
@@ -120,7 +163,7 @@ class ForecastTracker:
             snapshot['actuals'] = actuals
 
         self.history['forecast_snapshots'].append(snapshot)
-        self.history['last_updated'] = datetime.utcnow().isoformat()
+        self.history['last_updated'] = _utc_now_iso()
 
         # Update derived analytics
         self._update_accuracy_tracking()

@@ -57,6 +57,11 @@ def fix_hyperparameters(model_name: str, hyperparameters: Dict[str, Any]) -> Dic
         # Remove unsupported params
         params.pop('initialization_method', None)
         params.pop('missing', None)  # Not supported in current version
+        # Extra kwargs are forwarded to statsmodels' .fit(), which no longer takes
+        # use_boxcox (it moved to that library's constructor). The model builds
+        # fine and then raises at fit time, so create_model_safe's construction
+        # fallback never fires - it has to be stripped here.
+        params.pop('use_boxcox', None)
 
     if model_name in ['Theta', 'FourTheta']:
         # Fix season_mode: must be SeasonalityMode enum, not string

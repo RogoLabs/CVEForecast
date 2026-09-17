@@ -4,7 +4,9 @@
     "output_data": "web/data.json",
     "performance_history": "web/performance_history.json",
     "forecast_history": "web/forecast_history.json",
-    "hyperparameter_results": "hyperparameter_results/"
+    "hyperparameter_results": "hyperparameter_results/",
+    "validation": "web/validation.json",
+    "data_vintages": "web/data_vintages.json"
   },
   "logging": {
     "level": "INFO",
@@ -15,26 +17,22 @@
     "start_date_filter": "2017-01-01"
   },
   "model_evaluation": {
-    "split_ratio": 0.99,
-    "min_validation_months": 12,
     "forecast_horizon_months": 12,
     "forecast_end_year": "dynamic",
     "forecast_end_month": "dynamic",
     "forecast_strategy": "through_december_next_year",
-    "ensemble_size": 5,
-    "ensemble_method": "weighted_mape",
+    "ensemble_method": "trimmed_mean",
     "metrics": [
-      "mae",
-      "mape",
       "mase",
-      "rmsse",
+      "mape",
+      "mae",
       "bias",
-      "directional_accuracy"
+      "rmsse"
     ]
   },
   "models": {
     "NaiveDrift": {
-      "enabled": false,
+      "enabled": true,
       "hyperparameters": {}
     },
     "Prophet": {
@@ -51,18 +49,11 @@
         "mcmc_samples": 0,
         "interval_width": 0.8
       },
-      "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 1.1166855081887115,
-        "mae": 41.5843002703748,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 0.05185675621032715,
-        "trial_number": 1759,
         "tuned_at": "2025-08-01T04:10:53.306335",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 2.5999742076204684,
-        "improvement": 1.483288699431757
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "ExponentialSmoothing": {
@@ -79,18 +70,11 @@
         "initialization_method": "heuristic",
         "missing": "none"
       },
-      "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 3.0782054567396764,
-        "mae": 117.28464101385869,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 0.14478015899658203,
-        "trial_number": 67,
         "tuned_at": "2025-08-01T04:10:53.306326",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 3.5963367526877916,
-        "improvement": 0.5181312959481152
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "TBATS": {
@@ -116,18 +100,11 @@
         "early_stopping_rounds": null,
         "eval_metric": "mae"
       },
-      "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 0.06365205572950683,
-        "mae": 2.2890625,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 0.07805824279785156,
-        "trial_number": 4548,
         "tuned_at": "2025-07-30T04:03:58.670124",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 1.822794093205882,
-        "improvement": 1.759142037476375
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "LightGBM": {
@@ -155,18 +132,11 @@
         "bagging_freq": 5,
         "feature_pre_filter": false
       },
-      "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 0.03719807943546785,
-        "mae": 1.3675614970179595,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 0.04757380485534668,
-        "trial_number": 19744,
         "tuned_at": "2025-07-31T04:03:21.183789",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 0.9615793405753555,
-        "improvement": 0.9243812611398877
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "CatBoost": {
@@ -182,18 +152,11 @@
         "verbose": false,
         "border_count": 64
       },
-      "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 0.24218948599533097,
-        "mae": 8.842313600174293,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 1.0175838470458984,
-        "trial_number": 1490,
         "tuned_at": "2025-08-31T03:35:04.268222",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 0.38204219048060445,
-        "improvement": 0.13985270448527348
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "TCN": {
@@ -218,18 +181,11 @@
         "model_name": "tcn_forecaster",
         "dilation_base": 2
       },
-      "optimal_split_ratio": 0.94,
       "tuning_results": {
-        "mape": 5.876735687255859,
-        "mae": 229.4140625,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 0.9281713962554932,
-        "trial_number": 1353,
         "tuned_at": "2025-07-30T04:03:58.670102",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 8.808774948120117,
-        "improvement": 2.932039260864258
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "NBEATS": {
@@ -256,18 +212,11 @@
         "expansion_coefficient_dim": 10,
         "trend_polynomial_degree": 2
       },
-      "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 1.6970690488815308,
-        "mae": 62.260986328125,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 20.24524688720703,
-        "trial_number": 44,
         "tuned_at": "2025-07-29T04:11:33.253911",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 6.046875476837158,
-        "improvement": 4.349806308746338
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "NHiTS": {
@@ -316,18 +265,11 @@
         "model_name": "tide_forecaster",
         "temporal_decoder_hidden": 32
       },
-      "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 0.45578134059906006,
-        "mae": 17.1324462890625,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 0.6650915145874023,
-        "trial_number": 1011,
         "tuned_at": "2025-09-28T02:42:18.486063",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 0.6844309568405151,
-        "improvement": 0.22864961624145508
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "DLinear": {
@@ -350,18 +292,11 @@
         },
         "model_name": "dlinear_forecaster"
       },
-      "optimal_split_ratio": 0.98,
       "tuning_results": {
-        "mape": 3.4974632263183594,
-        "mae": 132.5245819091797,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 0.42996740341186523,
-        "trial_number": 215,
         "tuned_at": "2025-08-01T04:10:53.306312",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 4.522787570953369,
-        "improvement": 1.0253243446350098
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "RandomForest": {
@@ -377,18 +312,11 @@
         "bootstrap": true,
         "max_features": "sqrt"
       },
-      "optimal_split_ratio": 0.88,
       "tuning_results": {
-        "mape": 12.07896854869417,
-        "mae": 476.0871645397433,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 1.008251667022705,
-        "trial_number": 4,
         "tuned_at": "2026-01-01T03:52:06.219120",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 17.565355986671122,
-        "improvement": 5.486387437976951
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "LinearRegression": {
@@ -405,18 +333,11 @@
         "likelihood": null,
         "quantiles": null
       },
-      "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 0.054024331351799716,
-        "mae": 2.1728586069693847,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 0.004676103591918945,
-        "trial_number": 1413,
         "tuned_at": "2025-09-27T02:40:51.158896",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 0.9261984169810139,
-        "improvement": 0.8721740856292142
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "AutoARIMA": {
@@ -432,18 +353,11 @@
         "quantiles": null,
         "season_length": 12
       },
-      "optimal_split_ratio": 0.92,
       "tuning_results": {
-        "mape": 7.780579028431555,
-        "mae": 309.5595405289327,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 8.96207332611084,
-        "trial_number": 105,
         "tuned_at": "2025-09-23T02:41:08.890837",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 8.547125619857512,
-        "improvement": 0.766546591425957
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "AutoETS": {
@@ -460,18 +374,11 @@
         "season_mode": "ADDITIVE",
         "theta": 0.5
       },
-      "optimal_split_ratio": 0.98,
       "tuning_results": {
-        "mape": 1.4121484619379547,
-        "mae": 51.5438750293653,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 0.0040378570556640625,
-        "trial_number": 664,
         "tuned_at": "2025-09-25T02:40:36.468398",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 2.4150974913507928,
-        "improvement": 1.002949029412838
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "FourTheta": {
@@ -480,18 +387,11 @@
         "season_mode": "ADDITIVE",
         "theta": 0.5
       },
-      "optimal_split_ratio": 0.98,
       "tuning_results": {
-        "mape": 1.2997731215962278,
-        "mae": 47.37767979855865,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 0.003965139389038086,
-        "trial_number": 664,
         "tuned_at": "2025-09-25T02:40:36.468419",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 2.305019931053282,
-        "improvement": 1.0052468094570544
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "KalmanFilter": {
@@ -499,18 +399,11 @@
       "hyperparameters": {
         "dim_x": 5
       },
-      "optimal_split_ratio": 0.96,
       "tuning_results": {
-        "mape": 1.6299113626190052,
-        "mae": 62.76247382539267,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 0.03195333480834961,
-        "trial_number": 116,
         "tuned_at": "2025-09-24T02:41:14.903946",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 2.241349730233767,
-        "improvement": 0.6114383676147617
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "Croston": {
@@ -522,18 +415,11 @@
         "random_state": 42,
         "version": "classic"
       },
-      "optimal_split_ratio": 0.99,
       "tuning_results": {
-        "mape": 2.3658372127192697,
-        "mae": 85.0,
-        "mase": 0,
-        "rmsse": 0,
         "training_time": 0.0015134811401367188,
-        "trial_number": 46,
         "tuned_at": "2025-09-23T02:41:08.890852",
         "tuning_method": "comprehensive_hyperparameter_tuning",
-        "previous_mape": 3.2798151754549676,
-        "improvement": 0.9139779627356979
+        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
       }
     },
     "AutoCES": {
@@ -557,13 +443,21 @@
           "NaiveSeasonal"
         ]
       }
+    },
+    "NaiveSeasonal": {
+      "enabled": true,
+      "hyperparameters": {
+        "K": 12
+      }
+    },
+    "NaiveMean": {
+      "enabled": true,
+      "hyperparameters": {}
     }
   },
   "comprehensive_tuning": {
     "last_tuned_at": "2025-07-31T04:03:21.183828",
     "best_model": "LightGBM",
-    "best_mape": 0.03719807943546785,
-    "optimal_split_ratio": 0.99,
     "models_tuned": [
       "KalmanFilter",
       "AutoARIMA",
@@ -577,19 +471,29 @@
       "LightGBM",
       "CatBoost"
     ],
-    "previous_best_mape": 0.06365205572950683,
-    "global_improvement": 0.026453976294038978
+    "note": "Superseded by rolling-origin CV; re-run the tuner against MASE before trusting these."
   },
   "forecast_constraints": {
-    "min_annual_growth_rate": 0.05,
-    "max_annual_growth_rate": 0.4,
-    "historical_avg_growth": 0.18,
-    "trend_adjustment_confidence": 0.8,
-    "trend_adjustment_threshold": 0.75,
-    "ytd_minimum_factor": 0.85,
-    "enable_growth_floor": true,
-    "enable_trend_adjustment": true,
-    "enable_ytd_floor": true,
-    "use_cna_momentum": true
+    "max_annual_growth": 4.0,
+    "min_annual_growth": 0.25,
+    "max_monthly_spike": 4.0,
+    "enable_sanity_guards": true
+  },
+  "forecasting": {
+    "log_space": true,
+    "business_day_normalise": true,
+    "damping_phi": 0.98,
+    "training_window_months": null,
+    "use_future_covariates": false,
+    "future_covariate_lags": [
+      0
+    ],
+    "freq": "ME"
+  },
+  "cross_validation": {
+    "horizon": 12,
+    "min_train": 48,
+    "step": 1,
+    "max_origins": 24
   }
 }

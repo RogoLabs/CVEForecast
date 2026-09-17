@@ -7,12 +7,14 @@ Extends BaseForecaster with CVE-specific data loading, constraints, and output f
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from cna_trend_data import calculate_cna_momentum
 from core.base_forecaster import BaseForecaster, ForecastResult
+from core.forecast_engine import ForecastEngine, ForecastSettings
+from core.intervals import apply_intervals, build_intervals, pooled_residuals, validate_coverage
 from core.model_utils import create_model_safe
 from core.validation_mixin import ValidationMixin
 from darts import TimeSeries
@@ -38,9 +40,33 @@ from darts.models import (
 )
 from darts.models.forecasting.baselines import NaiveDrift, NaiveMean, NaiveSeasonal
 from data_loader import load_cve_data
+from data_vintage import VintageLog
 from dateutil.relativedelta import relativedelta
-from forecast_constraints import ForecastConstraints
+from forecast_constraints import (
+    ForecastConstraints,
+    build_year_projections,
+    combine_model_forecasts,
+)
 from forecast_tracker import ForecastTracker
+from validation.rolling_origin import NAIVE_MODELS, RollingOriginBacktest, mark_naive_baselines, rank_models
+
+# Output key for the combined forecast. Named for what it is - a trimmed mean over
+# a curated pool - rather than v0.11's "all models average", which was a median of
+# every model including the ones that lost to a naive baseline.
+ENSEMBLE_KEY = 'Ensemble'
+
+
+class _NumpyEncoder(json.JSONEncoder):
+    """JSON encoder that handles numpy scalars and maps NaN/inf to null."""
+
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return None if (np.isnan(obj) or np.isinf(obj)) else float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
 
 
 class CVEForecaster(BaseForecaster, ValidationMixin):
@@ -69,8 +95,17 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
             history_path=config['file_paths'].get('forecast_history', 'web/forecast_history.json')
         )
 
-        self.forecast_constraints = None  # Initialized after data load
+        self.forecast_constraints = ForecastConstraints(config.get('forecast_constraints', {}), self.logger)
+        self.settings = ForecastSettings.from_config(config)
+        self.engine = ForecastEngine(self.settings, self.create_model)
         self.cna_momentum = None
+
+        # Populated by run_full_pipeline
+        self.backtest_results: Dict[str, Any] = {}
+        self.interval_bands = None
+        self.coverage: Dict[str, Any] = {}
+        self.naive_threshold: Optional[float] = None
+        self.ensemble_members: List[str] = []
 
         # Time variables
         self.current_datetime = datetime.now(timezone.utc)
@@ -91,14 +126,12 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         monthly_counts = load_cve_data(self.config)
 
         # Create time series
+        # 'M' is deprecated in pandas 3 and resolves to 'ME'; be explicit.
         self.series = TimeSeries.from_dataframe(
-            monthly_counts, freq='M', fill_missing_dates=True, value_cols='cve_count'
+            monthly_counts, freq='ME', fill_missing_dates=True, value_cols='cve_count'
         )
 
         self.logger.info(f'✓ Loaded {len(self.series)} months of CVE data')
-
-        # Initialize constraints after data load
-        self.forecast_constraints = ForecastConstraints(config=self.config, logger=self.logger)
 
         # Calculate CNA momentum
         momentum_score, momentum_stats = calculate_cna_momentum(self.logger)
@@ -112,29 +145,64 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
 
     def get_forecast_horizon(self) -> Tuple[datetime, datetime]:
         """
-        Determine CVE forecast period.
+        Determine the CVE forecast period.
 
-        Forecasts from next complete month through January of year+2.
-        - Remaining months of current year
-        - All 12 months of next year
-        - January of year+2 (needed for Dec 31 year-end marker)
+        Forecasting starts at the first month the data does not already cover.
+        The current month is excluded from training because it is incomplete, so
+        it is the first month forecast - which is what the dashboard wants, since
+        it needs a projection for the month in progress.
 
-        Example: In Oct 2025 → forecast Nov 2025 through Jan 2027
-        Example: In Jan 2026 → forecast Feb 2026 through Jan 2028
+        Runs through December of next year.
+
+        Example: on 2026-09-17 the series ends 2026-08 (complete), so the horizon
+        is 2026-09 .. 2027-12 = 16 months.
 
         Returns:
-            Tuple of (start_date, end_date)
+            Tuple of (start_date, end_date), both month-anchored
         """
-        # Start from next complete month
-        start_date = self.start_of_next_month
-
-        # End at January of year+2 (needed for Dec 31 year-end marker calculation)
-        # This gives us: remaining current year + full next year + January of year+2
-        current_year = self.current_datetime.year
-        year_plus_2 = current_year + 2
-        end_date = datetime(year_plus_2, 1, 31, tzinfo=timezone.utc)
-
+        start_date = self.start_of_current_month
+        end_date = datetime(self.current_datetime.year + 1, 12, 31, tzinfo=timezone.utc)
         return start_date, end_date
+
+    def forecast_months(self) -> int:
+        """
+        Number of months to forecast.
+
+        v0.11 computed this from a start date one month later than the month
+        ``predict()`` actually began at, so the final month of the declared range
+        was never produced.
+
+        Returns:
+            Month count spanning the forecast horizon inclusive
+        """
+        start, end = self.get_forecast_horizon()
+        return (end.year - start.year) * 12 + (end.month - start.month) + 1
+
+    def complete_series(self) -> TimeSeries:
+        """
+        The series with the current, still-filling month removed.
+
+        Returns:
+            TimeSeries of complete months only
+        """
+        df = self.series.to_dataframe()
+        cutoff = pd.Timestamp(self.start_of_current_month).tz_localize(None)
+        complete = df[df.index < cutoff]
+        return TimeSeries.from_dataframe(complete, freq='ME', fill_missing_dates=False)
+
+    def monthly_actuals(self, complete_only: bool = True) -> Dict[str, float]:
+        """
+        Published monthly counts keyed ``YYYY-MM``.
+
+        Args:
+            complete_only: Drop the current month, which is still accumulating
+
+        Returns:
+            Mapping of month string to count
+        """
+        series = self.complete_series() if complete_only else self.series
+        df = series.to_dataframe()
+        return {idx.strftime('%Y-%m'): float(row.iloc[0]) for idx, row in df.iterrows()}
 
     def get_model_list(self) -> List[str]:
         """
@@ -203,80 +271,37 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
 
     def apply_constraints(self, forecasts: Dict[str, ForecastResult]) -> Dict[str, ForecastResult]:
         """
-        Apply CVE-specific forecast constraints.
+        Check forecasts for divergence. Does not modify them.
 
-        Converts monthly ForecastResult values into yearly totals,
-        applies growth floor / trend constraints via ForecastConstraints,
-        then scales monthly values proportionally so yearly totals match.
+        v0.11 rewrote every model's yearly total to clear a hard-coded growth
+        floor, comparing a partial-year remainder against a full prior year. That
+        collapsed all twelve models onto one number. Bias is now handled where it
+        belongs - in log-space modelling - so this only reports.
 
         Args:
             forecasts: Raw forecasts from all models
 
         Returns:
-            Constrained forecasts with adjusted monthly values
+            The same forecasts, unmodified
         """
-        if not self.forecast_constraints:
-            self.logger.warning('Forecast constraints not initialized, passing through')
-            return forecasts
+        recent = list(self.complete_series().values().flatten()[-12:])
+        actuals = self.monthly_actuals()
+        prev_year_totals = self._get_previous_year_actuals()
 
-        # 1. Build yearly totals by summing monthly forecast values per model per year
-        yearly_totals: Dict[int, Dict[str, int]] = {}
+        flagged = 0
         for model_name, result in forecasts.items():
-            if model_name == 'Ensemble':
-                continue
-            for date_str, value in result.forecast_values.items():
-                year = pd.to_datetime(date_str).year
-                if year not in yearly_totals:
-                    yearly_totals[year] = {}
-                yearly_totals[year][model_name] = yearly_totals[year].get(model_name, 0) + int(round(value))
+            monthly = {pd.to_datetime(d).strftime('%Y-%m'): v for d, v in result.forecast_values.items()}
+            warnings = self.forecast_constraints.check_monthly(list(monthly.values()), recent)
 
-        if not yearly_totals:
-            self.logger.info('No yearly totals to constrain, passing through')
-            return forecasts
+            for year, proj in build_year_projections(actuals, monthly).items():
+                warnings += self.forecast_constraints.check_annual(proj, prev_year_totals.get(year - 1))
 
-        # 2. Get previous year actuals from historical series data
-        prev_year_actuals = self._get_previous_year_actuals()
+            if warnings:
+                flagged += 1
+                result.metadata['sanity_warnings'] = warnings
+                self.logger.warning(f'{model_name}: {len(warnings)} sanity warning(s)')
 
-        # 3. Apply constraints
-        self.logger.info(
-            f'Applying constraints to {len(yearly_totals)} forecast years, '
-            f'{sum(len(m) for m in yearly_totals.values())} model-year entries'
-        )
-        constrained_totals = self.forecast_constraints.apply_constraints(
-            yearly_totals, previous_year_actuals=prev_year_actuals
-        )
-
-        # 4. Calculate scaling factors and apply back to monthly forecasts
-        adjusted_count = 0
-        for model_name, result in forecasts.items():
-            if model_name == 'Ensemble':
-                continue
-
-            # Group monthly values by year for this model
-            year_months: Dict[int, List[str]] = {}
-            for date_str in result.forecast_values:
-                year = pd.to_datetime(date_str).year
-                year_months.setdefault(year, []).append(date_str)
-
-            for year, date_strs in year_months.items():
-                original_total = yearly_totals.get(year, {}).get(model_name, 0)
-                constrained_total = constrained_totals.get(year, {}).get(model_name, original_total)
-
-                if original_total == 0 or constrained_total == original_total:
-                    continue
-
-                # Scale each month proportionally
-                scale_factor = constrained_total / original_total
-                for date_str in date_strs:
-                    old_val = result.forecast_values[date_str]
-                    result.forecast_values[date_str] = round(old_val * scale_factor, 2)
-
-                adjusted_count += 1
-                self.logger.info(
-                    f'  {model_name} {year}: {original_total:,} -> {constrained_total:,} (scale {scale_factor:.4f})'
-                )
-
-        self.logger.info(f'Constraints applied to {len(forecasts)} models ({adjusted_count} model-year adjustments)')
+        self.logger.info(f'Sanity checks complete: {flagged}/{len(forecasts)} models flagged (none modified)')
         return forecasts
 
     def _get_actuals_cumulative(self) -> List[Dict[str, Any]]:
@@ -346,9 +371,6 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         cumulative_timelines = {}
 
         for model_name, forecast_result in forecasts.items():
-            if model_name == 'Ensemble':
-                continue
-
             timeline: List[Dict[str, Any]] = []
             if not forecast_result.forecast_values:
                 cumulative_timelines[f'{model_name}_cumulative'] = timeline
@@ -397,123 +419,134 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
 
             cumulative_timelines[f'{model_name}_cumulative'] = timeline
 
-        # Generate all_models_cumulative (average)
+        # The ensemble carries its own timeline; no synthetic all-model average.
         if cumulative_timelines:
-            all_model_timelines = [tl for name, tl in cumulative_timelines.items() if name != 'Ensemble_cumulative']
-            if all_model_timelines:
-                all_dates = sorted(list(set(item['date'] for tl in all_model_timelines for item in tl)))
-                avg_timeline = []
-                for date_str in all_dates:
-                    totals = [
-                        item['cumulative_total']
-                        for tl in all_model_timelines
-                        for item in tl
-                        if item['date'] == date_str
-                    ]
-                    if totals:
-                        avg_timeline.append(
-                            {'date': date_str, 'cumulative_total': int(round(sum(totals) / len(totals)))}
-                        )
-                cumulative_timelines['all_models_cumulative'] = avg_timeline
+            # The ensemble already has its own timeline; no synthetic average needed.
+            pass
 
         self.logger.info(f'Generated {len(cumulative_timelines)} cumulative timelines')
         return cumulative_timelines
 
-    def _generate_model_rankings_with_backtest(
-        self, forecasts: Dict[str, ForecastResult], backtest_metrics: Dict[str, Dict[str, float]]
-    ) -> List[Dict[str, Any]]:
+    def run_backtest(self) -> Dict[str, Any]:
         """
-        Generate model rankings sorted by performance using backtest metrics.
+        Score every enabled model across many forecast origins.
 
-        Args:
-            forecasts: Model forecasts
-            backtest_metrics: Backtest MAE/MAPE for each model
+        Runs the same ``ForecastEngine`` that produces the published forecast, so
+        the accuracy figures describe the forecast on the dashboard rather than a
+        differently-fitted model as they did through v0.11.
 
         Returns:
-            List of ranking entries sorted by MAPE
+            Mapping of model name to BacktestResult
         """
-        self.logger.info('Generating model rankings with backtest metrics')
+        cv = self.config.get('cross_validation', {})
+        backtest = RollingOriginBacktest(
+            horizon=cv.get('horizon', 12),
+            min_train=cv.get('min_train', 48),
+            step=cv.get('step', 1),
+            max_origins=cv.get('max_origins', 24),
+        )
+        series = self.complete_series()
+        self.logger.info(
+            f'Rolling-origin backtest: {len(backtest.origins_for(series))} origins, h=1..{backtest.horizon}'
+        )
 
+        results = {}
+        for model_name in self.get_model_list():
+            hyperparameters = self.config['models'][model_name].get('hyperparameters', {})
+
+            def forecast_fn(train, horizon, _name=model_name, _hp=hyperparameters):
+                attempt = self.engine.forecast(train, _name, _hp, horizon)
+                return attempt.forecast if attempt.ok else None
+
+            results[model_name] = backtest.evaluate(series, forecast_fn, model_name)
+
+        self.naive_threshold = mark_naive_baselines(results)
+        self.backtest_results = results
+        return results
+
+    def _build_intervals(self, results: Dict[str, Any]) -> None:
+        """
+        Build prediction intervals from the backtest residuals of the chosen pool.
+
+        Pools residuals over the models that beat the naive baseline, so the band
+        reflects the errors of forecasts we would actually publish.
+
+        Args:
+            results: Backtest results from run_backtest()
+        """
+        ranked = [r for r in rank_models(results) if r.is_valid and r.model_name not in NAIVE_MODELS]
+        if not ranked:
+            self.logger.warning('No valid backtest results; prediction intervals unavailable')
+            return
+
+        winners = [r.model_name for r in ranked if r.beats_naive]
+        if not winners:
+            winners = [ranked[0].model_name]
+            self.logger.warning(f'No model beat the naive baseline; intervals based on best available ({winners[0]})')
+
+        self.ensemble_members = winners
+        residuals = pooled_residuals({m: r.log_residuals_by_horizon for m, r in results.items()}, winners)
+        self.interval_bands = build_intervals(residuals)
+        self.coverage = validate_coverage(residuals, self.interval_bands)
+
+    def _generate_model_rankings(self) -> List[Dict[str, Any]]:
+        """
+        Build the dashboard ranking table, ordered by MASE.
+
+        Returns:
+            List of ranking entries, best first
+        """
         rankings = []
+        for result in rank_models(self.backtest_results):
+            entry = result.to_dict()
+            model_config = self.config.get('models', {}).get(result.model_name, {})
 
-        for model_name, forecast_result in forecasts.items():
-            if model_name == 'Ensemble':
-                continue  # Skip ensemble
+            entry['is_baseline'] = result.model_name in NAIVE_MODELS
+            entry['naive_threshold'] = round(self.naive_threshold, 3) if self.naive_threshold else None
+            entry['in_ensemble'] = result.model_name in self.ensemble_members
 
-            # Get model config
-            model_config = self.config.get('models', {}).get(model_name, {})
             hyperparameters = model_config.get('hyperparameters', {})
-            tuning_results = model_config.get('tuning_results', {})
+            if hyperparameters and any(v is not None for v in hyperparameters.values()):
+                entry['hyperparameters'] = hyperparameters
+            tuning = model_config.get('tuning_results', {})
+            if tuning.get('tuned_at'):
+                entry['tuned_at'] = tuning['tuned_at']
 
-            # Use backtest metrics if available, otherwise use forecast_result metrics
-            metrics = backtest_metrics.get(model_name, {})
+            rankings.append(entry)
 
-            ranking_entry = {
-                'model_name': model_name,
-                'mape': metrics.get('mean_absolute_percentage_error'),
-                'mae': metrics.get('mean_absolute_error'),
-                'rmse': None,  # Not calculated in backtest
-            }
-
-            # Add hyperparameters if meaningful
-            if hyperparameters and any(v for v in hyperparameters.values() if v is not None):
-                ranking_entry['hyperparameters'] = hyperparameters
-
-            # Add tuning metadata
-            if tuning_results:
-                if 'tuned_at' in tuning_results:
-                    ranking_entry['tuned_at'] = tuning_results['tuned_at']
-                if 'method' in tuning_results:
-                    ranking_entry['tuning_method'] = tuning_results['method']
-
-            rankings.append(ranking_entry)
-
-        # Sort by MAPE (lower is better)
-        rankings.sort(key=lambda x: x.get('mape') if x.get('mape') is not None else float('inf'))
-
-        self.logger.info(f'Generated rankings for {len(rankings)} models')
+        self.logger.info(f'Ranked {len(rankings)} models by MASE')
         return rankings
 
     def _calculate_yearly_totals(
-        self, cumulative_timelines: Dict[str, List[Dict[str, Any]]]
-    ) -> Dict[int, Dict[str, int]]:
+        self, forecasts: Dict[str, ForecastResult], monthly_intervals: Dict[str, Dict[str, float]]
+    ) -> Dict[str, Dict[str, Any]]:
         """
-        Calculate year-end totals from cumulative timelines.
+        Year-end totals as published months plus forecast months.
+
+        The headline number is no longer a pure model output: by September, 9/12
+        of it is already known. Splitting it makes the figure honest and makes it
+        tighten naturally as the year fills in.
 
         Args:
-            cumulative_timelines: Generated cumulative timelines
+            forecasts: Per-model forecasts
+            monthly_intervals: Interval bounds for the ensemble path
 
         Returns:
-            Dict of {year: {model_name: total}}
+            ``{year_string: {model_name: projection_dict}}`` - string keys, because
+            v0.11 built integer keys here and then tested ``str(year) in ...``,
+            which was never true and silently disabled the year-end marker.
         """
-        self.logger.info('Calculating yearly forecast totals')
+        actuals = self.monthly_actuals()
+        yearly: Dict[str, Dict[str, Any]] = {}
 
-        yearly_totals = {}
+        for model_name, result in forecasts.items():
+            monthly = {pd.to_datetime(d).strftime('%Y-%m'): v for d, v in result.forecast_values.items()}
+            intervals = monthly_intervals if model_name == ENSEMBLE_KEY else None
+            for year, projection in build_year_projections(actuals, monthly, intervals).items():
+                yearly.setdefault(str(year), {})[model_name] = projection.to_dict()
 
-        for model_key, timeline in cumulative_timelines.items():
-            if not timeline:
-                continue
-
-            model_name = model_key.replace('_cumulative', '')
-
-            # Find last entry for each year (year-end total)
-            # Group entries by year and take the last (highest cumulative) for each
-            year_entries = {}
-            for entry in timeline:
-                if entry['cumulative_total'] == 0:  # Skip Jan 1 reset markers
-                    continue
-                year = int(entry['date'][:4])
-                if year not in year_entries or entry['date'] > year_entries[year]['date']:
-                    year_entries[year] = entry
-
-            # Store year-end totals
-            for year, entry in year_entries.items():
-                if year not in yearly_totals:
-                    yearly_totals[year] = {}
-                yearly_totals[year][model_name] = entry['cumulative_total']
-
-        self.logger.info(f'Calculated totals for {len(yearly_totals)} years')
-        return yearly_totals
+        self.logger.info(f'Calculated year projections for {sorted(yearly)}')
+        return yearly
 
     def _generate_summary(self) -> Dict[str, Any]:
         """
@@ -525,11 +558,14 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
         self.logger.info('Generating summary statistics')
 
         df = self.series.to_dataframe()
+        forecast_start, forecast_end = self.get_forecast_horizon()
         summary = {
             'data_period': {'start': df.index.min().strftime('%Y-%m-%d'), 'end': df.index.max().strftime('%Y-%m-%d')},
             'forecast_period': {
-                'start': self.start_of_next_month.strftime('%Y-%m-%d'),
-                'end': datetime(self.current_datetime.year + 1, 12, 31).strftime('%Y-%m-%d'),
+                # Derived from the real horizon: v0.11 hard-coded a start one month
+                # later than predict() actually began at.
+                'start': forecast_start.strftime('%Y-%m-%d'),
+                'end': forecast_end.strftime('%Y-%m-%d'),
             },
             'total_historical_cves': int(df.iloc[:, 0].sum()),
             'models_evaluated': len(self.model_results),
@@ -548,332 +584,254 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
 
         return summary
 
-    def _save_forecast_snapshot(self, forecasts: Dict[str, ForecastResult], actuals_cumulative: List[Dict]):
+    def _save_forecast_snapshot(self, forecasts: Dict[str, ForecastResult]):
         """
-        Save current forecast snapshot to ForecastTracker for future comparison.
+        Record this run's forecast so accuracy can be measured as months land.
+
+        v0.11 passed ``actuals={}`` with a TODO, and wrote to a default path while
+        the tracker's own file used an incompatible schema - so nine months of
+        daily vintages were lost to a swallowed KeyError. Actuals are now real and
+        the exception handling is narrow enough to surface a repeat.
 
         Args:
-            forecasts: Current forecasts from all models
-            actuals_cumulative: Current actual CVE counts
+            forecasts: Final forecasts from all models
         """
+        forecast_dict: Dict[str, Dict[str, float]] = {}
+        for model_name, result in forecasts.items():
+            for date_str, count in result.forecast_values.items():
+                month = pd.to_datetime(date_str).strftime('%Y-%m')
+                forecast_dict.setdefault(month, {})[model_name] = float(count)
+
+        performance = {
+            name: {'mase': r.mase, 'mape': r.mape, 'beats_naive': r.beats_naive}
+            for name, r in self.backtest_results.items()
+            if r.is_valid
+        }
+
         try:
-            # Initialize tracker
-            tracker = ForecastTracker()
-
-            # Prepare forecasts in tracker format: {"2025-10": {"Prophet": 4049, "LightGBM": 4100, ...}}
-            forecast_dict = {}
-            for model_name, forecast_result in forecasts.items():
-                if model_name == 'Ensemble':
-                    continue
-                for date_str, cve_count in forecast_result.forecast_values.items():
-                    # Convert "2025-10-31" to "2025-10"
-                    month_str = pd.to_datetime(date_str).strftime('%Y-%m')
-                    if month_str not in forecast_dict:
-                        forecast_dict[month_str] = {}
-                    forecast_dict[month_str][model_name] = float(cve_count)
-
-            # Prepare actuals in tracker format: {"2025-01": 4274, "2025-02": 3676, ...}
-            for entry in actuals_cumulative:
-                date_str = entry['date']
-                if 'T00:00:00Z' in date_str and date_str.endswith('-01T00:00:00Z'):
-                    # This is a month boundary entry
-                    month_str = pd.to_datetime(date_str).strftime('%Y-%m')
-                    # Get the actual count for this month (not cumulative)
-                    # We'll need to calculate month-over-month difference
-                    # For now, skip this as it requires more complex logic
-                    pass
-
-            # Prepare model performance metrics
-            model_performance = {}
-            for model_name in self.model_results:
-                if model_name in forecasts:
-                    metrics = self.model_results[model_name].get('metrics', {})
-                    model_performance[model_name] = {'mape': metrics.get('mape'), 'mae': metrics.get('mae')}
-
-            # Add snapshot
-            tracker.add_snapshot(
+            self.forecast_tracker.add_snapshot(
                 forecasts=forecast_dict,
-                actuals={},  # Will be populated in future runs when months complete
-                model_performance=model_performance,
+                actuals=self.monthly_actuals(),
+                model_performance=performance,
                 snapshot_date=self.current_datetime,
                 metadata={
                     'data_periods': len(self.series),
-                    'forecast_horizon': len(list(forecasts.values())[0].forecast_values) if forecasts else 0,
+                    'forecast_horizon': self.forecast_months(),
+                    'settings': {
+                        'log_space': self.settings.log_space,
+                        'business_day_normalise': self.settings.business_day_normalise,
+                        'damping_phi': self.settings.damping_phi,
+                    },
                 },
             )
-
-            self.logger.info('✓ Saved forecast snapshot to tracker')
-
-        except Exception as e:
-            self.logger.warning(f'Could not save forecast snapshot: {e}')
+            self.logger.info('Saved forecast snapshot to tracker')
+        except (KeyError, OSError, TypeError, ValueError) as e:
+            # Narrow on purpose: a bare except here is what hid the v0.11 schema bug.
+            self.logger.error(f'Could not save forecast snapshot: {type(e).__name__}: {e}', exc_info=True)
 
     def _calculate_forecast_vs_published(self, model_name: str) -> Tuple[List[Dict[str, Any]], Dict[str, float]]:
         """
-        Calculate validation data using historical backtest for current year.
+        Month-by-month comparison of forecast against published counts, this year.
 
-        This performs a backtest by:
-        1. Training the model on data through end of previous year
-        2. Forecasting all months of current year
-        3. Comparing forecasts against actual published CVE counts for completed months
+        Runs through ``ForecastEngine`` so the table reflects the shipped pipeline.
+        It remains a single-origin view - trained through 31 December, forecasting
+        the year - which is a legible story for a reader but far too small a sample
+        to rank on. Ranking uses the rolling-origin backtest instead.
 
         Args:
-            model_name: Name of model to validate
+            model_name: Model to evaluate
 
         Returns:
-            Tuple of (table_data, summary_stats)
+            Tuple of (per-month rows, summary stats)
         """
-        # Check if we have trained model results
-        if model_name not in self.model_results:
-            return [], {}
-
-        model_result = self.model_results[model_name]
-        if not model_result.get('trained', False):
-            return [], {}
-
         try:
-            # Get full dataset
-            df = self.series.to_dataframe()
+            series = self.complete_series()
             current_year = self.current_datetime.year
+            df = series.to_dataframe()
 
-            # Split: train on data through end of previous year
-            df['year'] = df.index.year
-            train_df = df[df['year'] < current_year]
-            actual_df = df[df['year'] == current_year].copy()
-
+            train_df = df[df.index.year < current_year]
+            actual_df = df[df.index.year == current_year]
             if train_df.empty or actual_df.empty:
                 return [], {}
 
-            # Only compare completed months (exclude current incomplete month)
-            import pandas as pd
+            train_series = TimeSeries.from_dataframe(train_df, freq='ME', fill_missing_dates=False)
+            hyperparameters = self.config['models'].get(model_name, {}).get('hyperparameters', {})
 
-            current_month_start = pd.Timestamp.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            completed_months_df = actual_df[actual_df.index < current_month_start]
-
-            if completed_months_df.empty:
+            attempt = self.engine.forecast(train_series, model_name, hyperparameters, len(actual_df))
+            if not attempt.ok:
+                self.logger.warning(f'{model_name}: backtest table unavailable - {attempt.error}')
                 return [], {}
 
-            # Create training series
-            from darts import TimeSeries
-
-            train_series = TimeSeries.from_dataframe(train_df.drop('year', axis=1), freq='M', fill_missing_dates=False)
-
-            # Train a fresh model on historical data only
-            hyperparameters = model_result.get('hyperparameters', {})
-            backtest_model = self.create_model(model_name, hyperparameters)
-            backtest_model.fit(train_series)
-
-            # Forecast for all months in current year
-            num_months = len(completed_months_df)
-            forecast_series = backtest_model.predict(num_months)
-
-            # Compare forecasts to actuals
+            predicted = attempt.forecast.values().flatten()
             table_data = []
-            errors = []
-            percent_errors = []
+            abs_errors = []
+            pct_errors = []
 
-            for i, (date, row) in enumerate(completed_months_df.iterrows()):
-                actual_count = int(row.iloc[0])
-                forecast_count = int(round(forecast_series.values()[i][0]))
-                month_str = date.strftime('%Y-%m')  # e.g., "2025-01"
+            for i, (date, row) in enumerate(actual_df.iterrows()):
+                actual = int(row.iloc[0])
+                forecast = int(round(predicted[i]))
+                error = forecast - actual
+                pct = (error / actual * 100) if actual else 0.0
+                abs_pct = abs(pct)
 
-                error = forecast_count - actual_count
-                percent_error = (error / actual_count * 100) if actual_count != 0 else 0
-
-                # Determine performance rating
-                abs_pct_error = abs(percent_error)
-                if abs_pct_error < 5:
+                if abs_pct < 5:
                     performance = 'Excellent'
-                elif abs_pct_error < 10:
+                elif abs_pct < 10:
                     performance = 'Good'
-                elif abs_pct_error < 20:
+                elif abs_pct < 20:
                     performance = 'Fair'
                 else:
                     performance = 'Poor'
 
                 table_data.append(
                     {
-                        'MONTH': month_str,
-                        'PUBLISHED': actual_count,
-                        'FORECAST': forecast_count,
+                        'MONTH': date.strftime('%Y-%m'),
+                        'PUBLISHED': actual,
+                        'FORECAST': forecast,
                         'ERROR': error,
-                        'PERCENT_ERROR': round(percent_error, 2),
+                        'PERCENT_ERROR': round(pct, 2),
                         'PERFORMANCE': performance,
                     }
                 )
+                abs_errors.append(abs(error))
+                pct_errors.append(abs_pct)
 
-                errors.append(abs(error))
-                percent_errors.append(abs_pct_error)
-
-            # Calculate summary stats
             summary_stats = {
-                'mean_absolute_error': round(float(np.mean(errors)), 2),
-                'mean_absolute_percentage_error': round(float(np.mean(percent_errors)), 2),
+                'mean_absolute_error': round(float(np.mean(abs_errors)), 2),
+                'mean_absolute_percentage_error': round(float(np.mean(pct_errors)), 2),
             }
-
             self.logger.info(
-                f'{model_name} backtest: MAE={summary_stats["mean_absolute_error"]}, MAPE={summary_stats["mean_absolute_percentage_error"]}%'
+                f'{model_name} single-origin table: MAE={summary_stats["mean_absolute_error"]}, '
+                f'MAPE={summary_stats["mean_absolute_percentage_error"]}%'
             )
-
             return table_data, summary_stats
 
-        except Exception as e:
-            self.logger.warning(f'Could not generate backtest for {model_name}: {e}')
+        except (KeyError, ValueError, IndexError) as e:
+            self.logger.warning(f'Could not build comparison table for {model_name}: {type(e).__name__}: {e}')
             return [], {}
 
     def save_results(self, forecasts: Dict[str, ForecastResult]) -> str:
         """
-        Save CVE forecast results to web/data.json with complete structure.
-
-        Generates all required data structures including:
-        - Model rankings (sorted by MAPE)
-        - Yearly forecast totals (2025, 2026)
-        - Cumulative timelines (historical + forecast with year boundaries)
-        - Actuals cumulative (current year progress)
-        - Forecast vs published validation data
-        - Summary statistics
+        Write web/data.json plus web/validation.json.
 
         Args:
-            forecasts: Final forecasts
+            forecasts: Final forecasts, including the ``Ensemble`` combination
 
         Returns:
-            Path to saved file
+            Path to the saved forecast data
         """
-        output_path = Path(self.config['file_paths'].get('output', 'web/data.json'))
+        paths = self.config['file_paths']
+        # v0.11 read a key that config.json never defined and survived on the
+        # fallback happening to match. Accept both spellings.
+        output_path = Path(paths.get('output_data') or paths.get('output') or 'web/data.json')
         output_path.parent.mkdir(parents=True, exist_ok=True)
+        self.logger.info(f'Saving CVE forecast data to {output_path}')
 
-        self.logger.info(f'Saving complete CVE forecast data to {output_path}...')
+        ensemble = forecasts.get(ENSEMBLE_KEY)
+        monthly_intervals = {}
+        if ensemble is not None and self.interval_bands is not None:
+            monthly_intervals = apply_intervals(ensemble.forecast_values, self.interval_bands)
+            monthly_intervals = {pd.to_datetime(d).strftime('%Y-%m'): v for d, v in monthly_intervals.items()}
+            ensemble.confidence_intervals = monthly_intervals
 
-        # 1. Generate forecast_vs_published backtest data FIRST (to get metrics)
-        self.logger.info('Generating backtest validation data...')
+        model_rankings = self._generate_model_rankings()
+        best_model = next((r['model_name'] for r in model_rankings if not r['is_baseline']), None)
+
         forecast_vs_published = {}
-        backtest_metrics = {}  # Store metrics for model rankings
-        for model_name in [m for m in forecasts.keys() if m != 'Ensemble']:
+        for model_name in [r['model_name'] for r in model_rankings[:5]]:
             table_data, summary_stats = self._calculate_forecast_vs_published(model_name)
             forecast_vs_published[model_name] = {'table_data': table_data, 'summary_stats': summary_stats}
-            # Store metrics for rankings
-            if summary_stats:
-                backtest_metrics[model_name] = summary_stats
 
-        # 2. Generate model rankings using backtest metrics
-        model_rankings = self._generate_model_rankings_with_backtest(forecasts, backtest_metrics)
-
-        # 3. Generate actuals cumulative for current year
         actuals_cumulative = self._get_actuals_cumulative()
-
-        # Get base cumulative value for forecasts (last COMPLETE month, not current MTD)
-        # Find the last entry that's on the 1st of a month (complete month boundary)
         actuals_base = 0
         for entry in reversed(actuals_cumulative):
-            if 'T00:00:00Z' in entry['date'] and entry['date'].endswith('-01T00:00:00Z'):
+            if entry['date'].endswith('-01T00:00:00Z'):
                 actuals_base = entry['cumulative_total']
-                self.logger.info(f'Using {entry["date"]} as forecast base: {actuals_base:,} CVEs')
                 break
-
         if actuals_base == 0 and actuals_cumulative:
-            # Fallback to last entry if no month boundary found
             actuals_base = actuals_cumulative[-1]['cumulative_total']
 
-        # 3. Generate cumulative forecast timelines with year boundaries
         cumulative_timelines = self._generate_cumulative_timelines(forecasts, actuals_base)
+        yearly_forecast_totals = self._calculate_yearly_totals(forecasts, monthly_intervals)
 
-        # 4. Calculate yearly forecast totals from cumulative timelines
-        yearly_forecast_totals = self._calculate_yearly_totals(cumulative_timelines)
+        # Deliberately NOT appending a Dec 31 projection to actuals_cumulative.
+        # v0.11 intended to, but a str/int key mismatch meant the code never ran.
+        # Fixing that mismatch switched it on and the chart began drawing a
+        # forecast as part of the blue "Actual CVEs" line, which ran to year end.
+        # The year-end total already lives on the Ensemble forecast timeline;
+        # the actuals series stops at the last real observation.
 
-        # 4.5. Add Dec 31 projection to actuals_cumulative for current year
-        current_year = self.current_datetime.year
-        if str(current_year) in yearly_forecast_totals and 'all_models' in yearly_forecast_totals[str(current_year)]:
-            # Use all_models average for Dec 31 projection
-            dec_31_total = yearly_forecast_totals[str(current_year)]['all_models']
-            actuals_cumulative.append({'date': f'{current_year}-12-31T23:59:59Z', 'cumulative_total': dec_31_total})
-            self.logger.info(f'Added Dec 31 {current_year} projection: {dec_31_total:,} CVEs')
-
-        # 5. Generate summary statistics
-        summary = self._generate_summary()
-
-        # 6. Convert forecasts to simple month format for backwards compatibility
         forecasts_simple = {}
-        for model_name, forecast_result in forecasts.items():
-            if model_name == 'Ensemble':
-                continue
-
-            forecast_list = []
-            for date_str, cve_count in sorted(forecast_result.forecast_values.items()):
-                date_obj = pd.to_datetime(date_str)
-                forecast_list.append({'date': date_obj.strftime('%Y-%m'), 'cve_count': int(cve_count)})
-            forecasts_simple[model_name] = forecast_list
-
-        # 7. Add weighted ensemble forecast (average of all models)
-        all_forecast_dates = set()
-        for forecast_result in forecasts.values():
-            if forecast_result.model_name == 'Ensemble':
-                continue
-            all_forecast_dates.update(forecast_result.forecast_values.keys())
-
-        ensemble_list = []
-        for date_str in sorted(all_forecast_dates):
-            values = [
-                forecast_result.forecast_values.get(date_str, 0)
-                for forecast_result in forecasts.values()
-                if forecast_result.model_name != 'Ensemble' and date_str in forecast_result.forecast_values
+        for model_name, result in forecasts.items():
+            forecasts_simple[model_name] = [
+                {'date': pd.to_datetime(d).strftime('%Y-%m'), 'cve_count': int(round(v))}
+                for d, v in sorted(result.forecast_values.items())
             ]
-            if values:
-                date_obj = pd.to_datetime(date_str)
-                ensemble_list.append({'date': date_obj.strftime('%Y-%m'), 'cve_count': int(np.median(values))})
 
-        if ensemble_list:
-            forecasts_simple['all_models_avg'] = ensemble_list
-
-        # 8. Generate current month actual data
-        current_year = self.current_datetime.year
         df = self.series.to_dataframe()
-        df['year'] = df.index.year
-        current_year_df = df[df['year'] == current_year]
-
+        current_year_df = df[df.index.year == self.current_datetime.year]
         current_month_actual = {
             'date': self.current_datetime.strftime('%Y-%m'),
             'cve_count': int(current_year_df.iloc[-1, 0]) if not current_year_df.empty else 0,
             'cumulative_total': actuals_base,
         }
 
-        # 9. Save forecast snapshot to tracker for future comparison
-        self._save_forecast_snapshot(forecasts, actuals_cumulative)
+        self._save_forecast_snapshot(forecasts)
 
-        # 10. Assemble complete output structure
+        try:
+            vintage = VintageLog(paths.get('data_vintages', 'web/data_vintages.json'))
+            vintage.record(self.monthly_actuals(complete_only=False))
+            output_vintage_summary = vintage.summary()
+        except (OSError, ValueError, KeyError) as e:
+            self.logger.error(f'Could not record data vintage: {type(e).__name__}: {e}')
+            output_vintage_summary = {}
+
         output_data = {
             'generated_at': datetime.now(timezone.utc).isoformat(),
+            'version': '0.12',
+            'best_model': best_model,
             'model_rankings': model_rankings,
             'yearly_forecast_totals': yearly_forecast_totals,
+            'monthly_intervals': monthly_intervals,
             'current_month_actual': current_month_actual,
             'actuals_cumulative': actuals_cumulative,
             'cumulative_timelines': cumulative_timelines,
             'forecasts': forecasts_simple,
-            'summary': summary,
+            'summary': self._generate_summary(),
             'forecast_vs_published': forecast_vs_published,
+            'data_vintages': output_vintage_summary,
+            'methodology': {
+                'ranking_metric': 'MASE',
+                'naive_threshold': round(self.naive_threshold, 3) if self.naive_threshold else None,
+                'ensemble_members': self.ensemble_members,
+                'interval_coverage': self.coverage,
+                'settings': {
+                    'log_space': self.settings.log_space,
+                    'business_day_normalise': self.settings.business_day_normalise,
+                    'damping_phi': self.settings.damping_phi,
+                    'training_window_months': self.settings.training_window_months,
+                    'use_future_covariates': self.settings.use_future_covariates,
+                },
+            },
         }
 
-        # Save to file with NaN/inf handling
         with open(output_path, 'w') as f:
+            json.dump(output_data, f, indent=2, cls=_NumpyEncoder)
 
-            class NumpyEncoder(json.JSONEncoder):
-                def default(self, obj):
-                    if isinstance(obj, np.integer):
-                        return int(obj)
-                    if isinstance(obj, np.floating):
-                        if np.isnan(obj) or np.isinf(obj):
-                            return None
-                        return float(obj)
-                    if isinstance(obj, np.ndarray):
-                        return obj.tolist()
-                    return super(NumpyEncoder, self).default(obj)
+        validation_path = Path(paths.get('validation', 'web/validation.json'))
+        validation_payload = {
+            'generated_at': datetime.now(timezone.utc).isoformat(),
+            'naive_threshold': round(self.naive_threshold, 3) if self.naive_threshold else None,
+            'ensemble_members': self.ensemble_members,
+            'coverage': self.coverage,
+            'intervals': self.interval_bands.to_dict() if self.interval_bands else {},
+            'models': {name: r.to_dict() for name, r in self.backtest_results.items()},
+        }
+        with open(validation_path, 'w') as f:
+            json.dump(validation_payload, f, indent=2, cls=_NumpyEncoder)
 
-            json.dump(output_data, f, indent=2, cls=NumpyEncoder)
-
-        self.logger.info('✓ Saved complete CVE forecast data:')
-        self.logger.info(f'  - Models: {len(model_rankings)} ranked')
-        self.logger.info(f'  - Years: {list(yearly_forecast_totals.keys())}')
-        self.logger.info(f'  - Cumulative timelines: {len(cumulative_timelines)}')
-        self.logger.info(f'  - Actuals data points: {len(actuals_cumulative)}')
-
+        self.logger.info(f'Saved {len(model_rankings)} ranked models, years {sorted(yearly_forecast_totals)}')
+        self.logger.info(f'Saved validation detail to {validation_path}')
         return str(output_path)
 
     def load_optimized_models(self) -> Dict[str, Any]:
@@ -914,80 +872,89 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
 
         return models_loaded
 
-    def run_full_pipeline(
-        self, train_ratio: float = 0.8, run_validation: bool = True, run_diagnostics: bool = False
-    ) -> Dict[str, Any]:
+    def run_full_pipeline(self, **kwargs) -> Dict[str, Any]:
         """
-        Execute complete CVE forecasting pipeline.
+        Execute the complete CVE forecasting pipeline.
+
+        Order matters: the backtest runs before the forecast, so model ranking,
+        ensemble membership and prediction intervals are all settled before
+        anything is published.
 
         Args:
-            train_ratio: Train/test split ratio
-            run_validation: Whether to run cross-validation
-            run_diagnostics: Whether to run diagnostics
+            **kwargs: Accepted and ignored, for compatibility with v0.11 callers
+                that passed train_ratio / run_validation / run_diagnostics
 
         Returns:
-            Pipeline results
+            Pipeline result summary
         """
+        for legacy in ('train_ratio', 'run_validation', 'run_diagnostics'):
+            if legacy in kwargs:
+                self.logger.info(f'Ignoring legacy argument {legacy}; v0.12 always backtests before forecasting')
+
         self.logger.info('=' * 70)
-        self.logger.info('CVE FORECASTING PIPELINE - STARTING')
+        self.logger.info('CVE FORECASTING PIPELINE - v0.12')
         self.logger.info('=' * 70)
 
-        results = {}
+        results: Dict[str, Any] = {}
 
-        # 1. Load data
         self.load_data()
-        results['data_loaded'] = True
+        series = self.complete_series()
         results['data_periods'] = len(self.series)
+        results['complete_periods'] = len(series)
 
-        # 2. Load optimized models
-        self.load_optimized_models()
-        results['models_loaded'] = len(self.model_results)
+        backtest_results = self.run_backtest()
+        results['models_backtested'] = sum(1 for r in backtest_results.values() if r.is_valid)
 
-        # 3. Train models
-        self.train_all_models(train_ratio=train_ratio)
-        trained_count = len([m for m in self.model_results.values() if m.get('trained', False)])
-        results['models_trained'] = trained_count
+        self._build_intervals(backtest_results)
+        results['ensemble_members'] = self.ensemble_members
+        results['interval_coverage'] = self.coverage
 
-        # 4. Generate forecasts
-        start_date, end_date = self.get_forecast_horizon()
-        forecast_months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month) + 1
+        horizon = self.forecast_months()
+        self.logger.info(f'Forecasting {horizon} months from {series.end_time().date()}')
 
-        raw_forecasts = self.generate_forecasts(forecast_horizon=forecast_months)
-        results['raw_forecasts_generated'] = len(raw_forecasts)
+        forecasts: Dict[str, ForecastResult] = {}
+        for model_name in self.get_model_list():
+            hyperparameters = self.config['models'][model_name].get('hyperparameters', {})
+            attempt = self.engine.forecast(series, model_name, hyperparameters, horizon)
+            if not attempt.ok:
+                self.logger.warning(f'{model_name}: excluded from output - {attempt.error}')
+                continue
 
-        # 5. Apply constraints
-        constrained_forecasts = self.apply_constraints(raw_forecasts)
-        results['constrained_forecasts'] = len(constrained_forecasts)
+            backtest = backtest_results.get(model_name)
+            forecasts[model_name] = ForecastResult(
+                forecast_values={
+                    str(d.date()): float(v)
+                    for d, v in zip(attempt.forecast.time_index, attempt.forecast.values().flatten())
+                },
+                model_name=model_name,
+                metrics={
+                    'mase': backtest.mase if backtest else None,
+                    'mape': backtest.mape if backtest else None,
+                    'beats_naive': backtest.beats_naive if backtest else None,
+                },
+                metadata={'hyperparameters': hyperparameters, **attempt.metadata},
+            )
+        results['models_forecast'] = len(forecasts)
 
-        # 6. Save results
-        output_path = self.save_results(constrained_forecasts)
-        results['output_path'] = output_path
+        ensemble_monthly = combine_model_forecasts(
+            {name: r.forecast_values for name, r in forecasts.items()},
+            members=self.ensemble_members or None,
+            method=self.config.get('model_evaluation', {}).get('ensemble_method', 'trimmed_mean'),
+        )
+        if ensemble_monthly:
+            forecasts[ENSEMBLE_KEY] = ForecastResult(
+                forecast_values=ensemble_monthly,
+                model_name=ENSEMBLE_KEY,
+                metadata={'members': self.ensemble_members},
+            )
 
-        # 7. Optional validation
-        if run_validation:
-            self.logger.info('\nRunning cross-validation...')
-            cv_results = self.perform_cross_validation(n_splits=5, forecast_horizon=12)
-            results['cv_completed'] = True
-            results['cv_models'] = len(cv_results)
-
-            # Statistical tests
-            if len(cv_results) >= 2:
-                self.perform_statistical_tests(cv_results)
-                results['statistical_tests'] = True
-
-        # 8. Optional diagnostics
-        if run_diagnostics:
-            self.logger.info('\nRunning diagnostics...')
-            diag_results = self.run_residual_diagnostics()
-            results['diagnostics_completed'] = True
-            results['diagnostics_models'] = len(diag_results)
+        self.apply_constraints(forecasts)
+        results['output_path'] = self.save_results(forecasts)
 
         self.logger.info('=' * 70)
         self.logger.info('CVE FORECASTING PIPELINE - COMPLETE')
+        self.logger.info(f'  Backtested: {results["models_backtested"]} models')
+        self.logger.info(f'  Ensemble:   {", ".join(self.ensemble_members) or "none"}')
+        self.logger.info(f'  Output:     {results["output_path"]}')
         self.logger.info('=' * 70)
-        self.logger.info(f'✓ Data: {results["data_periods"]} periods')
-        self.logger.info(f'✓ Models trained: {results["models_trained"]}')
-        self.logger.info(f'✓ Forecasts: {results["constrained_forecasts"]} models')
-        self.logger.info(f'✓ Output: {results["output_path"]}')
-
         return results

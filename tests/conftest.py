@@ -15,14 +15,16 @@ def sample_config():
     return {
         'models': {'ExponentialSmoothing': {'enabled': True, 'hyperparameters': {'damped_trend': True}}},
         'forecast_constraints': {
-            'min_annual_growth_rate': 0.05,
-            'max_annual_growth_rate': 0.40,
-            'historical_avg_growth': 0.18,
-            'enable_growth_floor': True,
-            'enable_trend_adjustment': True,
-            'enable_ytd_floor': True,
-            'trend_adjustment_confidence': 0.7,
-            'trend_adjustment_threshold': 0.75,
-            'ytd_minimum_factor': 0.85,
+            'max_annual_growth': 4.0,
+            'min_annual_growth': 0.25,
+            'max_monthly_spike': 4.0,
+            'enable_sanity_guards': True,
+        },
+        'forecasting': {
+            'log_space': True,
+            'business_day_normalise': True,
+            'damping_phi': 0.98,
+            'training_window_months': None,
+            'use_future_covariates': False,
         },
     }

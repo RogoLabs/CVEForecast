@@ -1,7 +1,7 @@
 # CVE Forecast Architecture Guide
 
-**Version**: 0.11 "Phoenix" 🔥🐦
-**Last Updated**: March 2026
+**Version**: 0.12 "Delphi" 🔮
+**Last Updated**: September 2026
 
 ## Table of Contents
 - [Overview](#overview)

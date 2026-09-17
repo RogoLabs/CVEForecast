@@ -99,6 +99,7 @@ All forecasters extend this base class:
 ```python
 from core.base_forecaster import BaseForecaster
 
+
 class MyForecaster(BaseForecaster):
     def load_data(self): ...
     def get_forecast_horizon(self): ...
@@ -125,15 +126,13 @@ from unified_pipeline import UnifiedForecastPipeline
 # Initialize
 pipeline = UnifiedForecastPipeline()
 
-# Run both CVE and CNA
-results = pipeline.run_all(
-    run_cve=True,
-    run_cna=True,
-    cve_validation=True
-)
+# Run both CVE and CNA. Since v0.12 the CVE pipeline always backtests before
+# forecasting, so there is no validation flag to set - the accuracy figures and
+# the published forecast come from the same run.
+results = pipeline.run_all(run_cve=True, run_cna=True)
 
 # Or run individually
-cve_results = pipeline.run_cve_pipeline(run_validation=True)
+cve_results = pipeline.run_cve_pipeline()
 cna_results = pipeline.run_cna_pipeline()
 
 # Access forecasters directly
