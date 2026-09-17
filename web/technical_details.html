@@ -40,7 +40,7 @@
             })();
         </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=0.12">
 </head>
 <body class="font-sans text-gray-800">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50">Skip to main content</a>
@@ -280,10 +280,17 @@
                                 <li><strong>Business-day normalisation</strong> &mdash; months carry 20–23 business days.</li>
                                 <li><strong>Conformal prediction intervals</strong> with published empirical coverage.</li>
                                 <li><strong>Curated ensemble</strong> &mdash; a trimmed mean over models that clear the baseline.</li>
+                                <li><strong>One forecast path for both halves of the site.</strong> CNA forecasts now run through the
+                                    same engine as the CVE forecast, rather than fitting models raw.</li>
                                 <li><strong>Data vintage logging</strong>, to measure how much counts get revised after publication.</li>
                                 <li><strong>Output validation</strong> in CI now checks what actually broke before: year totals that
                                     do not reconcile, projections leaking into the actuals series, models collapsing onto one number,
                                     and intervals that fail to contain their own forecast.</li>
+                                <li><strong>CNA page rebuilt.</strong> Years were hard-coded, so by September 2026 the settled 2025
+                                    total was labelled a forecast. The "2026 Forecasted" figure summed only forecast months &mdash; a
+                                    four-month total shown as a year. Per-CNA model choice now uses rolling-origin MASE against a
+                                    naive baseline, and a CNA whose best model cannot beat that baseline gets the baseline, rather
+                                    than reporting a 160%-error model as its best.</li>
                             </ul>
                         </div>
                     </div>

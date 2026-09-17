@@ -5,7 +5,6 @@ Extends BaseForecaster to handle per-CNA forecasting with model selection.
 """
 
 import json
-import logging
 import os
 from datetime import datetime, timezone
 from glob import glob
@@ -15,9 +14,17 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from core.base_forecaster import BaseForecaster, ForecastResult
+from core.forecast_engine import ForecastEngine, ForecastSettings
 from core.model_utils import create_model_safe
 from darts import TimeSeries
 from darts.models import AutoARIMA, ExponentialSmoothing, LightGBMModel, LinearRegressionModel, Prophet, XGBModel
+from darts.models.forecasting.baselines import NaiveDrift, NaiveMean, NaiveSeasonal
+from validation.rolling_origin import RollingOriginBacktest, mark_naive_baselines, rank_models
+
+# What a CNA falls back to when no model beats it. NaiveDrift extrapolates the
+# recent level, which is the right default for a short, noisy series - and is an
+# honest answer where v0.11 reported a 160%-error model as the "best" one.
+FALLBACK_MODEL = 'NaiveDrift'
 
 
 class CNAForecaster(BaseForecaster):
@@ -45,6 +52,19 @@ class CNAForecaster(BaseForecaster):
 
         self.cvelist_dir = cvelist_dir
         self.min_cves = min_cves
+
+        # Same forecast path as the CVE pipeline: log space, business-day
+        # normalisation, damping. v0.11 fitted CNA models raw, so the two halves
+        # of the site were forecasting by different methods.
+        self.settings = ForecastSettings.from_config(self.config)
+        self.engine = ForecastEngine(self.settings, self.create_model)
+
+        # CNA series are short and spiky, so fewer origins and a shorter minimum
+        # than the main pipeline - otherwise most CNAs score nothing at all.
+        cv = self.config.get('cross_validation', {})
+        self.cv_horizon = cv.get('cna_horizon', 6)
+        self.cv_min_train = cv.get('cna_min_train', 24)
+        self.cv_max_origins = cv.get('cna_max_origins', 8)
 
         # CNA-specific attributes
         self.cna_data = {}  # {cna_id: {historical: series, name: str}}
@@ -232,6 +252,10 @@ class CNAForecaster(BaseForecaster):
             'LightGBM': LightGBMModel,
             'XGBoost': XGBModel,
             'LinearRegression': LinearRegressionModel,
+            # The baseline every other model has to clear.
+            'NaiveDrift': NaiveDrift,
+            'NaiveSeasonal': NaiveSeasonal,
+            'NaiveMean': NaiveMean,
         }
 
         if model_name not in model_classes:
@@ -239,73 +263,84 @@ class CNAForecaster(BaseForecaster):
 
         return create_model_safe(model_classes[model_name], model_name, hyperparameters, self.logger)
 
+    def _complete_months(self, series: TimeSeries) -> Optional[TimeSeries]:
+        """
+        Drop the month currently in progress.
+
+        Args:
+            series: Historical series for one CNA
+
+        Returns:
+            Series of complete months, or None if nothing is left
+        """
+        cutoff = pd.Timestamp.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        frame = series.to_dataframe()
+        complete = frame[frame.index < cutoff]
+        if complete.empty:
+            return None
+        if len(complete) == len(frame):
+            return series
+        return TimeSeries.from_dataframe(complete, freq=series.freq_str, fill_missing_dates=False)
+
     def select_best_model_for_cna(self, cna_id: str, ts: TimeSeries) -> Tuple[str, float, Dict[str, float]]:
         """
-        Test all models and select best performer for this CNA.
+        Pick a model for one CNA by rolling-origin MASE.
+
+        v0.11 scored each model on a single 6-month holdout by MAPE and took the
+        minimum, independently for ~140 CNAs across 5 models - roughly 700
+        comparisons on 6 points each. The winner was largely sampling noise, and
+        the headline it produced said so: Patchstack's "best" model carried a
+        validation MAPE of 160%.
+
+        Scoring now uses the same rolling-origin backtest as the main pipeline,
+        and a naive baseline is scored alongside. A CNA whose best model cannot
+        beat the baseline gets the baseline, which is the honest outcome for a
+        short, spiky series.
 
         Args:
             cna_id: CNA identifier
-            ts: Historical time series
+            ts: Historical time series for this CNA
 
         Returns:
-            Tuple of (best_model_name, best_mape, all_scores)
+            Tuple of (best_model_name, best_mase, all_scores)
         """
-        models_to_test = self.get_model_list()
-        scores = {}
+        backtest = RollingOriginBacktest(
+            horizon=self.cv_horizon,
+            min_train=self.cv_min_train,
+            step=1,
+            max_origins=self.cv_max_origins,
+        )
 
-        for model_name in models_to_test:
+        candidates = list(self.get_model_list())
+        if FALLBACK_MODEL not in candidates:
+            candidates.append(FALLBACK_MODEL)
+
+        results = {}
+        for model_name in candidates:
             hyperparameters = self.config.get('models', {}).get(model_name, {}).get('hyperparameters', {})
 
-            try:
-                mape = self._validate_model_performance(ts, model_name, hyperparameters)
-                scores[model_name] = mape
-            except Exception as e:
-                self.logger.debug(f'{cna_id} - {model_name} validation failed: {e}')
-                scores[model_name] = float('inf')
+            def forecast_fn(train, horizon, _name=model_name, _hp=hyperparameters):
+                attempt = self.engine.forecast(train, _name, _hp, horizon)
+                return attempt.forecast if attempt.ok else None
 
-        # Select best model
-        best_model = min(scores.items(), key=lambda x: x[1])
+            results[model_name] = backtest.evaluate(ts, forecast_fn, model_name)
 
-        return best_model[0], best_model[1], scores
+        mark_naive_baselines(results)
+        scores = {name: (r.mase if r.is_valid else None) for name, r in results.items()}
 
-    def _validate_model_performance(
-        self, ts: TimeSeries, model_name: str, hyperparameters: Dict[str, Any], validation_months: int = 6
-    ) -> float:
-        """Validate model using walk-forward validation."""
-        if len(ts) < validation_months + 12:
-            return float('inf')
+        ranked = [r for r in rank_models(results) if r.is_valid]
+        if not ranked:
+            return FALLBACK_MODEL, float('inf'), scores
 
-        # Temporarily suppress ERROR logging for expected validation errors
+        best = ranked[0]
+        baseline = results.get(FALLBACK_MODEL)
+        # Prefer the baseline when nothing beats it: a model chosen from a field
+        # that all lost is the least-bad noise, not a signal.
+        if baseline and baseline.is_valid and best.model_name != FALLBACK_MODEL and best.mase >= baseline.mase:
+            self.logger.debug(f'{cna_id}: no model beat {FALLBACK_MODEL}; using the baseline')
+            return FALLBACK_MODEL, baseline.mase, scores
 
-        prev_level = logging.getLogger().level
-        logging.getLogger().setLevel(logging.CRITICAL)
-
-        try:
-            train_ts = ts[:-validation_months]
-            test_ts = ts[-validation_months:]
-
-            model = self.create_model(model_name, hyperparameters)
-            if model is None:
-                return float('inf')
-
-            model.fit(train_ts)
-            predictions = model.predict(validation_months)
-
-            actual = test_ts.values().flatten()
-            predicted = predictions.values().flatten()
-
-            mask = actual != 0
-            if not mask.any():
-                return float('inf')
-
-            mape = np.mean(np.abs((actual[mask] - predicted[mask]) / actual[mask])) * 100
-            return float(mape)
-
-        except Exception:
-            return float('inf')
-        finally:
-            # Restore logging level
-            logging.getLogger().setLevel(prev_level)
+        return best.model_name, best.mase, scores
 
     def apply_constraints(self, forecasts: Dict[str, ForecastResult]) -> Dict[str, ForecastResult]:
         """
@@ -574,7 +609,8 @@ class CNAForecaster(BaseForecaster):
                 'cumulative_timelines': cumulative_timelines,
                 'model_selection': {
                     'selected_model': forecast_result.model_name,
-                    'validation_mape': forecast_result.metrics.get('validation_mape'),
+                    'validation_mase': forecast_result.metrics.get('validation_mase'),
+                    'is_fallback': forecast_result.metadata.get('is_fallback', False),
                     'all_model_scores': forecast_result.metadata.get('all_scores', {}),
                 },
             }
@@ -632,60 +668,44 @@ class CNAForecaster(BaseForecaster):
         cna_forecasts = {}
 
         for cna_id, cna_info in self.cna_data.items():
-            ts = cna_info['historical']
+            # ForecastEngine does not strip the incomplete current month - the CVE
+            # adapter does that before calling it - so do the same here. Training
+            # on a part-published month drags the level down and shifts the whole
+            # forecast a month late.
+            ts = self._complete_months(cna_info['historical'])
+            if ts is None or len(ts) < 24:
+                self.logger.debug(f'Skipping {cna_id}: only {0 if ts is None else len(ts)} complete months')
+                continue
 
             # Select best model for this CNA
-            best_model, best_mape, all_scores = self.select_best_model_for_cna(cna_id, ts)
+            best_model, best_mase, all_scores = self.select_best_model_for_cna(cna_id, ts)
 
-            self.logger.info(f'{cna_info["name"]} → {best_model} (MAPE: {best_mape:.1f}%)')
+            self.logger.info(f'{cna_info["name"]} → {best_model} (MASE: {best_mase:.2f})')
 
             # Get forecast horizon
             start_date, end_date = self.get_forecast_horizon()
             forecast_months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month) + 1
 
-            # Train and forecast with best model
+            # Forecast through the shared engine, which handles the incomplete
+            # current month, log space and damping consistently with the CVE side.
             try:
                 hyperparameters = self.config.get('models', {}).get(best_model, {}).get('hyperparameters', {})
-                model = self.create_model(best_model, hyperparameters)
+                attempt = self.engine.forecast(ts, best_model, hyperparameters, forecast_months)
 
-                # Skip if model creation failed
-                if model is None:
-                    self.logger.debug(f'Skipping {cna_id}: Model creation failed')
+                if not attempt.ok:
+                    self.logger.debug(f'Skipping {cna_id}: {attempt.error}')
                     continue
-
-                # Exclude current incomplete month from training (match base forecaster logic)
-                import pandas as pd
-                from darts import TimeSeries
-
-                current_month_start = pd.Timestamp.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-                series_df = ts.to_dataframe()
-                complete_months_df = series_df[series_df.index < current_month_start]
-
-                if len(complete_months_df) < len(series_df):
-                    training_series = TimeSeries.from_dataframe(
-                        complete_months_df, freq=ts.freq_str, fill_missing_dates=False
-                    )
-                else:
-                    training_series = ts
-
-                # Train on complete months only
-                model.fit(training_series)
-
-                # Generate predictions
-                # Training excludes current month, so model predicts from current month onwards
-                # Keep ALL predictions (including current incomplete month, matching CVE adapter)
-                predictions = model.predict(forecast_months)
 
                 forecast_values = {
                     str(date): max(0, round(float(value)))
-                    for date, value in zip(predictions.time_index, predictions.values().flatten())
+                    for date, value in zip(attempt.forecast.time_index, attempt.forecast.values().flatten())
                 }
 
                 cna_forecasts[cna_id] = ForecastResult(
                     forecast_values=forecast_values,
                     model_name=best_model,
-                    metrics={'validation_mape': best_mape},
-                    metadata={'all_scores': all_scores},
+                    metrics={'validation_mase': best_mase},
+                    metadata={'all_scores': all_scores, 'is_fallback': best_model == FALLBACK_MODEL},
                 )
 
             except ValueError as e:

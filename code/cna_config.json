@@ -90,13 +90,30 @@
         "seasonal_periods": 12,
         "damped_trend": false
       }
+    },
+    "NaiveDrift": {
+      "enabled": true,
+      "hyperparameters": {}
     }
   },
   "model_priority": [
     "ExponentialSmoothing",
     "Prophet",
-    "LightGBM", 
+    "LightGBM",
     "XGBoost",
     "LinearRegression"
-  ]
+  ],
+  "forecasting": {
+    "log_space": true,
+    "business_day_normalise": true,
+    "damping_phi": 0.98,
+    "training_window_months": null,
+    "use_future_covariates": false,
+    "freq": "ME"
+  },
+  "cross_validation": {
+    "cna_horizon": 6,
+    "cna_min_train": 24,
+    "cna_max_origins": 8
+  }
 }

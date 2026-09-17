@@ -303,7 +303,8 @@ function calculateCnaMetrics(rec) {
       forecastedNext: forecastedNext,
       growthRate: growthRate,
       model: rec.model_selection?.selected_model || 'N/A',
-      mape: rec.model_selection?.validation_mape || 0
+      mase: rec.model_selection?.validation_mase ?? null,
+      isFallback: rec.model_selection?.is_fallback === true
     };
 
     return result;
@@ -1114,15 +1115,15 @@ function updateModelStatistics() {
     if (cna.model_selection) {
       cnasWithModelSelection++;
       const model = cna.model_selection.selected_model;
-      const mape = cna.model_selection.validation_mape;
+      const mase = cna.model_selection.validation_mase;
       
       if (index < 3) { // Log first 3 for debugging
-        console.log(`updateModelStatistics: CNA ${index + 1} - Model: ${model}, MAPE: ${mape}`);
+        console.log(`updateModelStatistics: CNA ${index + 1} - Model: ${model}, MASE: ${mase}`);
       }
       
       modelCounts[model] = (modelCounts[model] || 0) + 1;
-      if (mape && mape < 999) { // Filter out fallback high MAPE values
-        mapeScores.push(mape);
+      if (typeof mase === 'number' && isFinite(mase)) {
+        mapeScores.push(mase);
       }
       totalCnas++;
     }
@@ -1149,8 +1150,8 @@ function updateModelStatistics() {
     const sorted = [...mapeScores].sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)];
 
-    averageMapeEl.textContent = `${median.toFixed(1)}%`;
-    bestMapeEl.textContent = `${sorted[0].toFixed(1)}%`;
+    averageMapeEl.textContent = median.toFixed(2);
+    bestMapeEl.textContent = sorted[0].toFixed(2);
   } else {
     averageMapeEl.textContent = '—';
     bestMapeEl.textContent = '—';
