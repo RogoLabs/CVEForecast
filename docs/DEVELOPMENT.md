@@ -97,7 +97,7 @@ CVEForecast/
 │   ├── index.html               # Main dashboard
 │   ├── app.js                  # Dashboard JavaScript
 │   ├── app.css                 # Design system (replaces Tailwind CDN)
-│   ├── styles.css               # Shared CSS (dark mode, accessibility)
+│   ├── shell.js                # Shared header behaviour (theme, nav)
 │   ├── cna_forecast.html        # CNA dashboard
 │   └── technical_details.html   # Documentation
 ├── docs/

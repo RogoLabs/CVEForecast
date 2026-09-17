@@ -620,3 +620,60 @@ select:hover, input:hover { border-color: var(--border-strong); }
 .vintage-row:last-child { border-bottom: 0; }
 .vintage-row b { color: var(--text); font-weight: 600; }
 .vintage-n { color: var(--text-subtle); }
+
+/* --------------------------------------------------------------------------
+   CNA page: table controls, sorting, pagination, model distribution
+   -------------------------------------------------------------------------- */
+.table-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.table-controls input[type="search"] { width: 190px; }
+@media (max-width: 520px) {
+    .table-controls { width: 100%; }
+    .table-controls input[type="search"] { flex: 1; width: auto; min-width: 0; }
+}
+
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--text); background: var(--surface-sunk); }
+
+/* The indicator is drawn from aria-sort, so the accessible state and the
+   visible one cannot drift apart. */
+.sort-indicator::after { content: '\2195'; opacity: .35; font-size: 10px; }
+th[aria-sort="ascending"] .sort-indicator::after { content: '\2191'; opacity: 1; }
+th[aria-sort="descending"] .sort-indicator::after { content: '\2193'; opacity: 1; }
+th[aria-sort="ascending"], th[aria-sort="descending"] { color: var(--text); }
+
+tbody tr.is-selected td { background: var(--accent-soft); }
+tbody tr[data-cna] { cursor: pointer; }
+
+.pager {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: .75rem; padding: .9rem 1.35rem; border-top: 1px solid var(--border);
+}
+.pager__count { font-size: 12.5px; color: var(--text-subtle); }
+.pager__count b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pager__controls { display: flex; align-items: center; gap: .35rem; }
+.pager__pages { display: flex; align-items: center; gap: .2rem; }
+.pager__pages button {
+    min-width: 30px; padding: .3rem .45rem;
+    font-variant-numeric: tabular-nums;
+}
+.pager__pages button[aria-current="page"] {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn:disabled:hover { background: var(--surface); border-color: var(--border); }
+
+/* A nested stat grid sits inside a panel, so it drops the outer frame. */
+.stats--inset { border: 0; border-radius: 0; margin-top: .55rem; }
+.stats--inset .stat { padding: .75rem .85rem; }
+.stats--inset .stat__value { font-size: 21px; }
+
+.model-dist { margin-top: .55rem; display: flex; flex-direction: column; gap: .5rem; }
+.model-dist__row { display: grid; grid-template-columns: 1fr auto; gap: .2rem .75rem; align-items: baseline; }
+.model-dist__name { font-size: 13px; color: var(--text); font-weight: 550; }
+.model-dist__count { font-size: 12.5px; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+.model-dist__track {
+    grid-column: 1 / -1; height: 5px; border-radius: 3px;
+    background: var(--surface-sunk); overflow: hidden;
+}
+.model-dist__fill { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.model-dist__fill--baseline { background: var(--border-strong); }

@@ -1,40 +1,11 @@
 // CNA Forecast JavaScript - Consolidated
 
 // Theme toggle with localStorage persistence
-(function initTheme() {
-    const toggle = document.getElementById('themeToggle');
-    const sunIcon = document.getElementById('themeSun');
-    const moonIcon = document.getElementById('themeMoon');
-
-    function applyTheme(theme) {
-        if (theme === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            if (sunIcon) sunIcon.classList.remove('hidden');
-            if (moonIcon) moonIcon.classList.add('hidden');
-        } else {
-            document.documentElement.setAttribute('data-theme', 'light');
-            if (sunIcon) sunIcon.classList.add('hidden');
-            if (moonIcon) moonIcon.classList.remove('hidden');
-        }
-    }
-
-    // Check saved preference, then system preference
-    const saved = localStorage.getItem('theme');
-    if (saved) {
-        applyTheme(saved);
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        applyTheme('dark');
-    }
-
-    if (toggle) {
-        toggle.addEventListener('click', function() {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            const newTheme = isDark ? 'light' : 'dark';
-            applyTheme(newTheme);
-            localStorage.setItem('theme', newTheme);
-        });
-    }
-})();
+/* Chart.js bakes token colours in when a chart is built, so repaint on the
+   theme change that shell.js announces. */
+document.addEventListener('themechange', () => {
+    if (chartInstance && currentCnaData) renderChart(currentCnaData);
+});
 
 // Constants
 const TOP_MODELS_COUNT = 5;
@@ -48,6 +19,7 @@ let sortedCnaIds = [];
 let chartInstance = null;
 let currentYear = new Date().getFullYear();
 let currentCnaData = null;
+let selectedCnaId = null;
 
 // Table variables
 let tableData = [];
@@ -380,24 +352,32 @@ function renderTable() {
   const end = start + pageSize;
   const pageData = filteredData.slice(start, end);
   
+  /* Growth is left uncoloured: a CNA publishing more or fewer CVEs is a
+     direction, not a verdict, and the sign already carries it. */
   tbody.innerHTML = pageData.map(row => {
-    const growthClass = row.growthRate > 0 ? 'text-green-600' : row.growthRate < 0 ? 'text-red-600' : 'text-gray-600';
     const growthSymbol = row.growthRate > 0 ? '+' : '';
-    
+    const selected = row.id === selectedCnaId ? ' is-selected' : '';
+
     return `
-      <tr class="hover:bg-gray-50 cursor-pointer" onclick="selectCnaFromTable('${row.id}')">
-        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${row.name || 'Unknown CNA'}</td>
-        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${numberFmt.format(row.priorTotal)}</td>
-        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${numberFmt.format(row.forecastedCurrent)}</td>
-        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${numberFmt.format(row.forecastedNext)}</td>
-        <td class="px-4 py-3 whitespace-nowrap text-sm ${growthClass}">${growthSymbol}${row.growthRate.toFixed(1)}%</td>
-        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-          <span class="pill ${row.isFallback ? 'pill--neutral' : 'pill--info'} pill--nodot"
+      <tr class="${selected}" data-cna="${row.id}">
+        <td class="strong">${row.name || 'Unknown CNA'}</td>
+        <td class="num">${numberFmt.format(row.priorTotal)}</td>
+        <td class="num">${numberFmt.format(row.forecastedCurrent)}</td>
+        <td class="num">${numberFmt.format(row.forecastedNext)}</td>
+        <td class="num">${growthSymbol}${row.growthRate.toFixed(1)}%</td>
+        <td>
+          <span class="pill ${row.isFallback ? 'pill--neutral' : 'pill--info'}"
                 title="${row.isFallback ? 'No model beat the naive baseline for this CNA' : 'Selected by rolling-origin backtest'}">${row.model}</span>
         </td>
       </tr>
     `;
   }).join('');
+
+  /* Delegated rather than an inline onclick attribute, so selecting a row does
+     not depend on the handler being a global. */
+  tbody.querySelectorAll('tr[data-cna]').forEach(tr => {
+    tr.addEventListener('click', () => selectCnaFromTable(tr.dataset.cna));
+  });
 }
 
 function updatePagination() {
@@ -433,13 +413,14 @@ function updatePagination() {
   if (paginationNumbers) {
     let numbersHTML = '';
     for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
-      if (i === currentPage) {
-        numbersHTML += `<button class="px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-gray-300 rounded">${i}</button>`;
-      } else {
-        numbersHTML += `<button onclick="goToPage(${i})" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50">${i}</button>`;
-      }
+      numbersHTML += i === currentPage
+        ? `<button type="button" class="btn" aria-current="page">${i}</button>`
+        : `<button type="button" class="btn" data-page="${i}">${i}</button>`;
     }
     paginationNumbers.innerHTML = numbersHTML;
+    paginationNumbers.querySelectorAll('button[data-page]').forEach(b => {
+      b.addEventListener('click', () => goToPage(Number(b.dataset.page)));
+    });
   }
 }
 
@@ -453,8 +434,12 @@ function selectCnaFromTable(cnaId) {
   const rec = cnaData[cnaId];
   if (rec) {
     currentCnaData = rec;
+    selectedCnaId = cnaId;
     updateSummary(rec);
     renderChart(rec);
+    document.querySelectorAll('#cnaTableBody tr[data-cna]').forEach(tr => {
+      tr.classList.toggle('is-selected', tr.dataset.cna === cnaId);
+    });
   }
 }
 
@@ -471,15 +456,11 @@ function handleSort(event) {
     sortDirection = 'asc';
   }
   
-  // Update sort indicators
-  const headers = document.querySelectorAll('#cnaTable th[data-sort]');
-  headers.forEach(h => {
-    const indicator = h.querySelector('.sort-indicator');
-    if (h === header) {
-      indicator.textContent = sortDirection === 'asc' ? '↑' : '↓';
-    } else {
-      indicator.textContent = '↕';
-    }
+  // Update sort indicators. app.css draws the arrow from aria-sort, so setting
+  // the attribute is what makes it visible — no second source of truth.
+  document.querySelectorAll('#cnaTable th[data-sort]').forEach(h => {
+    h.setAttribute('aria-sort',
+      h === header ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none');
   });
   
   // Reset to page 1 when sorting
@@ -519,13 +500,10 @@ function setupTableSorting() {
     });
   }
   
-  // Initialize sort indicator for default column
+  // Initialize sort indicator for the default column
   const defaultHeader = document.querySelector(`#cnaTable th[data-sort="${sortColumn}"]`);
   if (defaultHeader) {
-    const indicator = defaultHeader.querySelector('.sort-indicator');
-    if (indicator) {
-      indicator.textContent = sortDirection === 'asc' ? '↑' : '↓';
-    }
+    defaultHeader.setAttribute('aria-sort', sortDirection === 'asc' ? 'ascending' : 'descending');
   }
 }
 
@@ -534,11 +512,8 @@ function updateDynamicHeaders() {
   const growthHeader = document.querySelector('#cnaTable th[data-sort="growthRate"]');
   if (growthHeader) {
     const previousYear = currentYear - 1;
-    const headerText = `${previousYear}→${currentYear} Growth`;
-    // Update the text content while preserving the sort indicator
-    const indicator = growthHeader.querySelector('.sort-indicator');
-    const indicatorText = indicator ? indicator.textContent : '↕';
-    growthHeader.innerHTML = `${headerText} <span class="sort-indicator">${indicatorText}</span>`;
+    const label = growthHeader.querySelector('#thGrowth');
+    if (label) label.textContent = `${previousYear}→${currentYear} growth`;
   }
 }
 
@@ -778,15 +753,15 @@ function renderChart(rec) {
   // Hide loading state and show chart
   const loadingState = document.getElementById('loadingState');
   if (loadingState) {
-    loadingState.classList.add('hidden');
+    loadingState.hidden = true;
   }
   
-  chartSection.classList.remove('hidden');
+  chartSection.hidden = false;
   
   // Show year toggle
   const yearToggle = document.getElementById('yearToggleContainer');
   if (yearToggle) {
-    yearToggle.classList.remove('hidden');
+    yearToggle.hidden = false;
   }
   
   // Get or recreate canvas
@@ -968,11 +943,9 @@ function updateYearToggleUI() {
   const btn2025 = document.getElementById('yearCurrentBtn');
   const btn2026 = document.getElementById('yearNextBtn');
   
-  const active = 'px-3 py-1 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors';
-  const idle = 'px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors';
   const showingCurrent = currentYear === YEARS.currentYear;
-  if (btn2025) btn2025.className = showingCurrent ? active : idle;
-  if (btn2026) btn2026.className = showingCurrent ? idle : active;
+  if (btn2025) btn2025.setAttribute('aria-pressed', String(showingCurrent));
+  if (btn2026) btn2026.setAttribute('aria-pressed', String(!showingCurrent));
 }
 
 // =============================================================================
@@ -1019,13 +992,6 @@ function updateSummary(rec) {
     const growthRate = metrics.growthRate;
     growthRateElement.textContent = `${growthRate > 0 ? '+' : ''}${growthRate.toFixed(1)}%`;
 
-    // Recolour the whole card through the stat-card variants, rather than
-    // swapping Tailwind gradient utilities that are only half-themed for dark mode.
-    const card = growthRateElement.closest('.stat-card');
-    if (card) {
-      card.classList.remove('stat-card--green', 'stat-card--bad', 'stat-card--neutral', 'stat-card--purple');
-      card.classList.add(growthRate > 0 ? 'stat-card--green' : growthRate < 0 ? 'stat-card--amber' : 'stat-card--neutral');
-    }
   }
 
   // Update page title
@@ -1172,34 +1138,20 @@ function updateModelStatistics() {
   const sortedModels = Object.entries(modelCounts)
     .sort(([,a], [,b]) => b - a);
 
-  // Define colors for each model - using Tailwind v2.2.19 compatible classes
-  const modelColors = {
-    'Prophet': 'bg-purple-500',
-    'XGBoost': 'bg-green-500',
-    'LightGBM': 'bg-yellow-500',
-    'ExponentialSmoothing': 'bg-red-500',
-    'LinearRegression': 'bg-indigo-500',
-    'AutoARIMA': 'bg-gray-500'
-  };
-
   sortedModels.forEach(([model, count]) => {
     const percentage = ((count / totalCnas) * 100).toFixed(1);
-    const color = modelColors[model] || 'bg-gray-500';
-    
+    /* Naive baselines are drawn in the muted track colour: a CNA on one is
+       not using a model that won, it is using the one nothing beat. */
+    const isBaseline = /^Naive/i.test(model);
+
     const modelBar = document.createElement('div');
-    modelBar.className = 'flex items-center justify-between';
+    modelBar.className = 'model-dist__row';
     modelBar.innerHTML = `
-      <div class="flex items-center space-x-3 flex-1">
-        <div class="w-3 h-3 rounded-full ${color}"></div>
-        <span class="text-sm font-medium text-gray-700">${model}</span>
-      </div>
-      <div class="flex items-center space-x-2">
-        <div class="w-24 bg-gray-200 rounded-full h-2">
-          <div class="${color} h-2 rounded-full" style="width: ${percentage}%"></div>
-        </div>
-        <span class="text-sm text-gray-600 w-12 text-right">${count}</span>
-        <span class="text-xs text-gray-500 w-10 text-right">(${percentage}%)</span>
-      </div>
+      <span class="model-dist__name">${model}</span>
+      <span class="model-dist__count">${count} &middot; ${percentage}%</span>
+      <span class="model-dist__track">
+        <span class="model-dist__fill${isBaseline ? ' model-dist__fill--baseline' : ''}" style="width: ${percentage}%"></span>
+      </span>
     `;
     
     distributionEl.appendChild(modelBar);

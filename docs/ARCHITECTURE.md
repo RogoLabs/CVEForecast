@@ -43,7 +43,7 @@ CVE Forecast is built on a modular, extensible architecture that separates conce
         └─ cna_adapter.py     ├─ transforms        ├─ forecast_history.html
                               ├─ intervals         ├─ history.js
                               ├─ model_utils       ├─ technical_details.html
-                              ├─ rolling_origin    └─ styles.css
+                              ├─ rolling_origin    └─ app.css   
                               ├─ unified_pipeline
                               └─ forecast_tracker
 
