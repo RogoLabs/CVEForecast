@@ -1,280 +1,233 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-5VDQPNTFQ2"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5VDQPNTFQ2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-    gtag('config', 'G-5VDQPNTFQ2');
-  </script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CNA Forecasts - CVEForecast</title>
-  <meta name="description" content="Individual CVE publication forecasts for 120+ CVE Numbering Authorities (CNAs) with per-organization model selection.">
-  <meta property="og:title" content="CNA Forecasts - CVEForecast">
-  <meta property="og:description" content="Individual CVE forecasts for 120+ CVE Numbering Authorities.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://cveforecast.org/cna_forecast.html">
-  <meta name="twitter:card" content="summary">
-  <link rel="canonical" href="https://cveforecast.org/cna_forecast.html">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <script>
-    (function initThemeEarly() {
-      try {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark' || savedTheme === 'light') {
-          document.documentElement.setAttribute('data-theme', savedTheme);
-          return;
-        }
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          document.documentElement.setAttribute('data-theme', 'dark');
-          return;
-        }
-        document.documentElement.setAttribute('data-theme', 'light');
-      } catch (error) {
-        document.documentElement.setAttribute('data-theme', 'light');
-      }
-    })();
-  </script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="styles.css?v=0.12">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-  <script src="cna.js?v=0.12" defer></script>
+      gtag('config', 'G-5VDQPNTFQ2');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CNA Forecasts - CVEForecast</title>
+    <meta name="description" content="Per-organisation CVE publication forecasts for every CVE Numbering Authority, with the model chosen for each by rolling-origin backtest.">
+    <link rel="canonical" href="https://cveforecast.org/cna_forecast.html">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <script>
+        /* Runs before first paint so the correct theme is painted once, with no
+           flash. Only an explicit choice is stamped; leaving the attribute off
+           lets the prefers-color-scheme rules in app.css decide. */
+        (function initThemeEarly() {
+            try {
+                const saved = localStorage.getItem('theme');
+                if (saved === 'dark' || saved === 'light') {
+                    document.documentElement.setAttribute('data-theme', saved);
+                }
+            } catch (error) {
+                /* Private mode or blocked storage: fall through to the OS preference. */
+            }
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="app.css?v=0.13.4">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
-  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50">Skip to main content</a>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
 
-  <!-- Header -->
-  <header class="gradient-bg text-white shadow-lg">
-    <div class="container mx-auto px-6 py-4">
-      <div class="flex justify-between items-end">
-        <div>
-          <h1 class="text-3xl font-bold">CVE<span class="rogo-blue">Forecast</span></h1>
-          <p class="text-blue-100 mt-1">Predictive Analytics for CVE Publications</p>
-        </div>
-        <nav aria-label="Main navigation" class="flex items-center space-x-4">
-          <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
-          <a href="forecast_history.html" class="text-gray-300 hover:text-white transition-colors">Forecast History</a>
-                    <a href="technical_details.html" class="text-gray-300 hover:text-white transition-colors">Technical Details</a>
-          <button id="themeToggle" aria-label="Toggle dark mode" class="text-gray-300 hover:text-white transition-colors p-2 rounded">
-              <svg id="themeSun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-              </svg>
-              <svg id="themeMoon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-              </svg>
-          </button>
+<header class="site-header">
+    <div class="wrap site-header__inner">
+        <a class="brand" href="index.html">
+            <span class="brand__name">CVE<span>Forecast</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Main">
+            <div class="site-nav__links" id="navLinks">
+                <a href="index.html">Overview</a>
+                <a href="cna_forecast.html" aria-current="page">CNA Forecasts</a>
+                <a href="forecast_history.html">History</a>
+                <a href="technical_details.html">Methodology</a>
+            </div>
+            <button class="icon-btn" id="themeToggle" aria-label="Toggle dark mode">
+                <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+                <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+            </button>
+            <button class="icon-btn nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false" aria-controls="navLinks">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+            </button>
         </nav>
-      </div>
     </div>
-  </header>
+</header>
 
-  <main id="main-content" class="container mx-auto px-6 py-8">
-    <!-- CNA Table Section -->
-    <div class="bg-white rounded-lg card-shadow p-6 mb-6">
-      <div class="flex justify-between items-center mb-6">
-        <div>
-          <h2 class="text-2xl font-bold text-gray-800">CNA Overview Table</h2>
-          <p class="text-gray-600 mt-1">Comprehensive view of all CNAs with current and predicted CVE counts</p>
-        </div>
-        <div class="flex items-center space-x-4">
-          <div class="flex items-center space-x-2">
-            <label for="tablePageSize" class="text-sm font-medium text-gray-700">Show:</label>
-            <select id="tablePageSize" aria-label="Rows per page" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
-              <option value="10" selected>10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-          </div>
-          <div>
-            <label for="tableSearch" class="sr-only">Search CNAs</label>
-            <input id="tableSearch" type="text" aria-label="Search CNAs" placeholder="Search CNAs..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-48" />
-          </div>
-        </div>
-      </div>
+<main id="main" class="wrap stack">
 
-      <div class="overflow-x-auto">
-        <table id="cnaTable" class="w-full text-sm text-left text-gray-500">
-          <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-            <tr>
-              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="name">
-                CNA Name <span class="sort-indicator">↕</span>
-              </th>
-              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="priorTotal">
-<span id="thPriorYear">Prior year</span> <span class="sort-indicator">↕</span>
-              </th>
-              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="forecastedCurrent">
-<span id="thCurrentYear">This year</span> <span class="sort-indicator">↕</span>
-              </th>
-              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="forecastedNext">
-<span id="thNextYear">Next year</span> <span class="sort-indicator">↕</span>
-              </th>
-              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="growthRate">
-<span id="thGrowth">Growth</span> <span class="sort-indicator">↕</span>
-              </th>
-              <th scope="col" class="px-4 py-3 cursor-pointer hover:bg-gray-100" data-sort="model">
-                Model <span class="sort-indicator">↕</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody id="cnaTableBody">
-            <!-- Table rows will be populated by JavaScript -->
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-      <div class="flex items-center justify-between mt-6">
-        <div class="text-sm text-gray-700">
-          Showing <span id="tableShowingStart">1</span> to <span id="tableShowingEnd">10</span> of <span id="tableTotal">0</span> CNAs
-        </div>
-        <div class="flex items-center space-x-2">
-          <button id="tablePrevBtn" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-            Previous
-          </button>
-          <div id="tablePaginationNumbers" class="flex items-center space-x-1">
-            <!-- Page numbers will be populated by JavaScript -->
-          </div>
-          <button id="tableNextBtn" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-            Next
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Chart Section -->
-    <div class="bg-white rounded-lg card-shadow p-6 mb-6">
-      <div class="flex justify-between items-start mb-4">
-        <div>
-          <h2 class="text-xl font-bold text-gray-800" id="panelTitle">CNA Forecast Chart</h2>
-          <p class="text-gray-600 mt-1">Historical monthly CVE publications and forecast per model</p>
-        </div>
-        <div id="yearToggleContainer" class="hidden">
-          <div class="flex items-center space-x-2">
-            <span class="text-sm font-medium text-gray-700">Year:</span>
-            <button id="yearCurrentBtn" class="px-3 py-1 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"></button>
-            <button id="yearNextBtn" class="px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"></button>
-          </div>
-        </div>
-      </div>
-      
-      
-      <div id="loadingState" class="text-center">
-        <div id="errorState" class="hidden text-center">
-          <p class="text-red-600">Failed to load CNA data. Please try refreshing the page.</p>
-        </div>
-        <div class="loading-spinner"></div>
-        <p class="text-gray-600 mt-4">Loading CNA forecast data...</p>
-      </div>
-      <div id="chartSection" class="hidden">
-        <div class="chart-container" style="height: 300px;">
-          <canvas id="cnaChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Enhanced Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-      <div class="stat-card stat-card--blue card-shadow">
-        <div class="stat-card__label">Selected CNA</div>
-        <div class="stat-card__value" id="summaryPanelTitle">Select a CNA</div>
-        <div class="stat-card__detail" id="summaryId">Choose from table below</div>
-      </div>
-
-      <div class="stat-card stat-card--neutral card-shadow">
-        <div class="stat-card__label" id="summaryPriorYearLabel">Prior year published</div>
-        <div class="stat-card__value" id="summaryPriorYear">-</div>
-        <div class="stat-card__detail">Settled total</div>
-      </div>
-
-      <div class="stat-card stat-card--green card-shadow">
-        <div class="stat-card__label" id="summaryCurrentYearLabel">This year projected</div>
-        <div class="stat-card__value" id="summaryCurrentYear">-</div>
-        <div class="stat-card__detail" id="summaryCurrentYearSplit">Published + forecast</div>
-        <div class="stat-card__detail" id="summaryModelInfo">Select CNA to see model</div>
-      </div>
-
-      <div class="stat-card stat-card--purple card-shadow">
-        <div class="stat-card__label">Growth rate</div>
-        <div class="stat-card__value" id="summaryGrowthRate">-</div>
-        <div class="stat-card__detail" id="summaryGrowthDetail">Year on year</div>
-      </div>
-    </div>
-
-    <!-- Model Usage Statistics Card -->
-    <div class="bg-white rounded-lg card-shadow p-6 mt-8">
-      <h2 class="text-xl font-bold text-gray-800 mb-2">Model Performance Overview</h2>
-          <p class="text-sm text-gray-600 mb-6">
-            Each CNA's model is chosen by rolling-origin backtest and scored in MASE against a naive
-            baseline. A CNA shown with a grey model pill is using that baseline, because nothing beat
-            it &mdash; the honest answer for a short or spiky series rather than the least-bad loser.
-          </p>
-      
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Model Distribution -->
-        <div>
-          <h3 class="text-lg font-semibold text-gray-700 mb-4">Model Usage Distribution</h3>
-          <div id="modelDistribution" class="space-y-3">
-            <!-- Model bars will be populated by JavaScript -->
-          </div>
-        </div>
-        
-        <!-- Performance Metrics -->
-        <div>
-          <h3 class="text-lg font-semibold text-gray-700 mb-4">Performance Metrics</h3>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="stat-card stat-card--blue stat-card--compact">
-              <div class="stat-card__label">CNAs forecast</div>
-              <div class="stat-card__value" id="totalCnas">-</div>
+    <!-- Hero: the selected CNA, matching the overview page's shape.
+         No interval here: the CNA pipeline emits a point forecast per
+         organisation rather than a band, so the headline is the central
+         estimate and the model behind it is named directly underneath. -->
+    <section class="panel hero">
+        <div class="hero__top">
+            <div>
+                <p class="eyebrow" id="cnaEyebrow">Select a CNA</p>
+                <div class="figure">
+                    <div class="figure__value figure__value--range num" id="summaryCurrentYear">&mdash;</div>
+                </div>
+                <p class="figure__compare" id="summaryGrowthRate"></p>
+                <p class="figure__note" id="summaryModelInfo">Choose a CNA from the table below</p>
             </div>
-            <div class="stat-card stat-card--neutral stat-card--compact">
-              <div class="stat-card__label">Median MASE</div>
-              <div class="stat-card__value" id="averageMape">-</div>
+            <div class="seg" id="yearToggleContainer" role="group" aria-label="Forecast year" hidden>
+                <button type="button" id="yearCurrentBtn"></button>
+                <button type="button" id="yearNextBtn"></button>
             </div>
-            <div class="stat-card stat-card--green stat-card--compact">
-              <div class="stat-card__label">Best MASE</div>
-              <div class="stat-card__value" id="bestMape">-</div>
-            </div>
-            <div class="stat-card stat-card--purple stat-card--compact">
-              <div class="stat-card__label">Models used</div>
-              <div class="stat-card__value" id="modelsUsed">-</div>
-            </div>
-          </div>
         </div>
-      </div>
-    </div>
-  </main>
 
-  <!-- Footer -->
-  <footer class="bg-gray-900 text-white py-8 mt-12">
-    <div class="container mx-auto px-6 text-center">
-      <p class="mb-2">CVEForecast - Part of <a href="https://rogolabs.net" class="text-blue-400 hover:text-blue-300 transition-colors">RogoLabs</a> Open-Source Security Tools</p>
-      <p class="text-gray-300 text-sm">Data source: <a href="https://github.com/CVEProject/cvelistV5" class="text-blue-400 hover:text-blue-300 transition-colors">CVE Project Official Repository</a></p>
-      <p class="text-gray-300 text-sm mt-2">Powered by time series forecasting models using the <a href="https://unit8co.github.io/darts/" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 transition-colors">Darts library</a></p>
-      <div class="mt-4 pt-4 border-t border-gray-600">
-        <div class="mt-2">
-          <span class="inline-block bg-green-600 text-white text-xs px-2 py-1 rounded-full font-mono">v0.12 Delphi 🔮</span>
+        <div id="loadingState" class="state">
+            <div class="spinner"></div>
+            <p>Loading CNA forecast data&hellip;</p>
         </div>
-      </div>
+        <div id="errorState" class="state" hidden>
+            <h2>Could not load CNA data</h2>
+            <p>The forecast data did not load. This is usually temporary.</p>
+            <button type="button" class="btn btn--primary" onclick="location.reload()">Try again</button>
+        </div>
+        <div id="chartSection" hidden>
+            <div class="chart"><canvas id="cnaChart"></canvas></div>
+        </div>
+
+        <div class="hero__meta" id="cnaMeta"></div>
+    </section>
+
+    <!-- Site-wide figures, in the slot the overview page uses for its own -->
+    <section class="stats" aria-label="CNA forecast summary">
+        <div class="stat">
+            <p class="eyebrow">CNAs forecast</p>
+            <p class="stat__value num" id="totalCnas">&mdash;</p>
+            <p class="stat__note">Organisations with a published forecast</p>
+        </div>
+        <div class="stat">
+            <p class="eyebrow">Median MASE</p>
+            <p class="stat__value num" id="averageMape">&mdash;</p>
+            <p class="stat__note">Across every CNA &middot; lower is better</p>
+        </div>
+        <div class="stat">
+            <p class="eyebrow">Best MASE</p>
+            <p class="stat__value num" id="bestMape">&mdash;</p>
+            <p class="stat__note">The most predictable CNA in the set</p>
+        </div>
+        <div class="stat">
+            <p class="eyebrow">Models used</p>
+            <p class="stat__value num" id="modelsUsed">&mdash;</p>
+            <p class="stat__note">Distinct models selected across CNAs</p>
+        </div>
+    </section>
+
+    <!-- All CNAs -->
+    <section class="panel">
+        <div class="panel__head">
+            <div class="panel__head-row">
+                <div>
+                    <h2 class="panel__title">All CNAs</h2>
+                    <p class="panel__sub">Every CVE Numbering Authority with a forecast. Select a row to chart it.</p>
+                </div>
+                <div class="table-controls">
+                    <label for="tableSearch" class="sr-only">Search CNAs</label>
+                    <input id="tableSearch" type="search" aria-label="Search CNAs" placeholder="Search CNAs&hellip;">
+                    <label for="tablePageSize" class="sr-only">Rows per page</label>
+                    <select id="tablePageSize" aria-label="Rows per page">
+                        <option value="10" selected>10 rows</option>
+                        <option value="25">25 rows</option>
+                        <option value="50">50 rows</option>
+                        <option value="100">100 rows</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-scroll">
+            <table id="cnaTable">
+                <thead>
+                    <tr>
+                        <th scope="col" class="sortable" data-sort="name" aria-sort="none">
+                            CNA <span class="sort-indicator" aria-hidden="true"></span>
+                        </th>
+                        <th scope="col" class="sortable num" data-sort="priorTotal" aria-sort="none">
+                            <span id="thPriorYear">Prior year</span> <span class="sort-indicator" aria-hidden="true"></span>
+                        </th>
+                        <th scope="col" class="sortable num" data-sort="forecastedCurrent" aria-sort="none">
+                            <span id="thCurrentYear">This year</span> <span class="sort-indicator" aria-hidden="true"></span>
+                        </th>
+                        <th scope="col" class="sortable num" data-sort="forecastedNext" aria-sort="none">
+                            <span id="thNextYear">Next year</span> <span class="sort-indicator" aria-hidden="true"></span>
+                        </th>
+                        <th scope="col" class="sortable num" data-sort="growthRate" aria-sort="none">
+                            <span id="thGrowth">Growth</span> <span class="sort-indicator" aria-hidden="true"></span>
+                        </th>
+                        <th scope="col" class="sortable" data-sort="model" aria-sort="none">
+                            Model <span class="sort-indicator" aria-hidden="true"></span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="cnaTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="pager">
+            <p class="pager__count">
+                Showing <b id="tableShowingStart">1</b>&ndash;<b id="tableShowingEnd">10</b>
+                of <b id="tableTotal">0</b> CNAs
+            </p>
+            <div class="pager__controls">
+                <button type="button" class="btn" id="tablePrevBtn">Previous</button>
+                <div id="tablePaginationNumbers" class="pager__pages"></div>
+                <button type="button" class="btn" id="tableNextBtn">Next</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- How the per-CNA models were chosen -->
+    <section class="panel">
+        <div class="panel__head">
+            <h2 class="panel__title">Model performance overview</h2>
+            <p class="panel__sub">
+                Each CNA's model is chosen by rolling-origin backtest and scored in MASE against a naive
+                baseline. A CNA shown with a grey model pill is using that baseline, because nothing beat
+                it &mdash; the honest answer for a short or spiky series rather than the least-bad loser.
+            </p>
+        </div>
+        <div class="panel__body">
+            <div>
+                <div>
+                    <p class="eyebrow">Model usage distribution</p>
+                    <div id="modelDistribution" class="model-dist"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="wrap site-footer__inner">
+        <div>
+            Part of <a href="https://rogolabs.net">RogoLabs</a> open-source security tools &middot;
+            data from the <a href="https://github.com/CVEProject/cvelistV5">CVE Project</a> &middot;
+            models via <a href="https://unit8co.github.io/darts/" target="_blank" rel="noopener noreferrer">Darts</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:.75rem">
+            <span>Updated daily at midnight UTC</span>
+            <span class="ver">v0.13</span>
+        </div>
     </div>
-  </footer>
+</footer>
 
-  <script>
-    // Initialize everything
-    async function init() {
-      await loadCnaNameMapping();
-      await loadCnaData();
-    }
-
-    init();
-  </script>
+<script src="shell.js?v=0.13.4" defer></script>
+<script src="cna.js?v=0.13.4" defer></script>
 </body>
 </html>

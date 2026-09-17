@@ -979,7 +979,7 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
 
         output_data = {
             'generated_at': datetime.now(timezone.utc).isoformat(),
-            'version': '0.12',
+            'version': '0.13',
             'best_model': best_model,
             'model_rankings': model_rankings,
             'yearly_forecast_totals': yearly_forecast_totals,
