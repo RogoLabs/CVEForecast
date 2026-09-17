@@ -269,10 +269,18 @@ def check_cna_intervals(data: Dict[str, Any], failures: List[str]) -> None:
                 failures,
             )
 
+        forecast_months = {m[:7] for m in (rec.get('forecasts') or {}).get(model, {})}
         for year, band in (intervals.get('annual') or {}).items():
             if band['lower_80'] > band['upper_80']:
                 _fail(f'{name} {year}: annual interval bounds inverted', failures)
-            published = sum(v for m, v in (rec.get('historical') or {}).items() if str(m)[:4] == year)
+            # The month in progress belongs to the forecast, which predicts all
+            # of it, not to the history, which holds only the part published so
+            # far. Adding both counts it twice.
+            published = sum(
+                v
+                for m, v in (rec.get('historical') or {}).items()
+                if str(m)[:4] == year and str(m)[:7] not in forecast_months
+            )
             forecast = sum(v for m, v in (rec.get('forecasts') or {}).get(model, {}).items() if m[:4] == year)
             total = published + forecast
             if not (band['lower_80'] <= total <= band['upper_80']):

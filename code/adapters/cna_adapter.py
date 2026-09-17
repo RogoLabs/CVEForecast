@@ -916,6 +916,11 @@ class CNAForecaster(BaseForecaster):
                     # should know it was not necessarily picked today.
                     'selected_at': forecast_result.metadata.get('selected_at'),
                     'all_model_scores': forecast_result.metadata.get('all_scores', {}),
+                    'awaiting_scoring': forecast_result.metadata.get('awaiting_scoring', False),
+                    # The chosen model produced a forecast its own history could
+                    # not support and was replaced. The page says so rather than
+                    # naming the baseline as though it had been selected on merit.
+                    'runaway_guarded': forecast_result.metadata.get('runaway_guarded', False),
                 },
             }
 
