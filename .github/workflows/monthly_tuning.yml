@@ -1,13 +1,16 @@
 name: Monthly Hyperparameter Tuning
 
 on:
-  push:
-    branches: [main, master]
+  # Deliberately NOT triggered by push. This job is named "monthly" and carries a
+  # 5-hour timeout, but a push trigger fired it on every merge to main: 14 of the
+  # last 20 runs came from push against 4 from the schedule, and three of those
+  # were cancelled colliding with each other on simultaneous dependabot merges.
+  # Hyperparameters do not need re-tuning because a dependency bumped.
   schedule:
-    # Run on the 1st of each month at 2 AM UTC
+    # 1st of each month at 2 AM UTC
     - cron: "0 2 1 * *"
 
-  # Allow manual triggering
+  # Manual runs for an intentional re-tune
   workflow_dispatch:
 
 permissions:

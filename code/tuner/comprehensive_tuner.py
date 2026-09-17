@@ -161,6 +161,29 @@ def score_model(model_name, model_config, series, eval_config):
     }
 
 
+def _fmt(value, digits: int = 3, suffix: str = '') -> str:
+    """
+    Format a metric for display, tolerating None and infinity.
+
+    Every metric here can legitimately be absent: MAPE is undefined when the
+    scored window has no non-zero actuals, and a model that never produced a
+    valid fold carries infinity. Formatting those directly raises TypeError and
+    takes the whole tuning run down, which is exactly what happened on the first
+    scheduled run after the v0.12 merge.
+
+    Args:
+        value: The metric, possibly None or non-finite
+        digits: Decimal places
+        suffix: Appended when a real number is shown, e.g. '%'
+
+    Returns:
+        Formatted string, or 'n/a' when there is nothing meaningful to show
+    """
+    if value is None or not np.isfinite(value):
+        return 'n/a'
+    return f'{value:.{digits}f}{suffix}'
+
+
 MODEL_CLASSES = {
     'Prophet': Prophet,
     'ExponentialSmoothing': ExponentialSmoothing,
@@ -1686,7 +1709,7 @@ class ComprehensiveHyperparameterTuner:
         print(f'✅ Main production config.json updated with {len(models_improved)} improved configurations')
         print(f'🎯 Updated file: {main_config_path}')
         if best_model_name is not None:
-            print(f'🏆 Best model: {best_model_name} (MASE: {self.best_configs[best_model_name]["mase"]:.3f})')
+            print(f'🏆 Best model: {best_model_name} (MASE: {_fmt(self.best_configs[best_model_name]["mase"])})')
         return updated_config
 
     def update_tuner_config(self):
@@ -2071,13 +2094,13 @@ class ComprehensiveHyperparameterTuner:
                         status = '🚀 IMPROVEMENT' if not is_partial_result else '🔥 PARTIAL IMPROVEMENT'
                         print(
                             f'{status}: MASE {improvement:.3f} better than deployed '
-                            f'({current_deployed_mase:.3f} → {best_result.mase:.3f})'
+                            f'({_fmt(current_deployed_mase)} → {_fmt(best_result.mase)})'
                         )
                     else:
                         status = '📊 NO IMPROVEMENT' if not is_partial_result else '⏱️ PARTIAL NO IMPROVEMENT'
                         print(
                             f'{status}: Current deployed is better '
-                            f'(MASE {current_deployed_mase:.3f} vs {best_result.mase:.3f})'
+                            f'(MASE {_fmt(current_deployed_mase)} vs {_fmt(best_result.mase)})'
                         )
                 else:
                     status = '🆕 NEW MODEL' if not is_partial_result else '🆕 PARTIAL NEW MODEL'
@@ -2098,7 +2121,7 @@ class ComprehensiveHyperparameterTuner:
 
                         if best_available.mase < current_deployed_mase:
                             print(
-                                f'   ✅ Found better result despite timeout: MASE {best_available.mase:.3f} vs {current_deployed_mase:.3f}'
+                                f'   ✅ Found better result despite timeout: MASE {_fmt(best_available.mase)} vs {_fmt(current_deployed_mase)}'
                             )
                             self.best_configs[model_name] = {
                                 'split_ratio': best_available.split_ratio,
@@ -2114,15 +2137,14 @@ class ComprehensiveHyperparameterTuner:
                             }
                         else:
                             print(
-                                f'   📊 No improvement found: MASE {best_available.mase:.3f} vs {current_deployed_mase:.3f}'
+                                f'   📊 No improvement found: MASE {_fmt(best_available.mase)} vs {_fmt(current_deployed_mase)}'
                             )
 
             if model_name in self.best_configs:
                 model_time = time.time() - model_start_time
                 print(f'✅ {model_name} completed in {model_time:.1f}s')
-                print(
-                    f'🏆 Best MAPE: {self.best_configs[model_name]["mape"]:.3f}% (split: {self.best_configs[model_name]["split_ratio"]:.3f})'
-                )
+                best = self.best_configs[model_name]
+                print(f'🏆 Best MASE: {_fmt(best["mase"])} (MAPE {_fmt(best["mape"], suffix="%")})')
 
                 # Update dynamic timeout manager for successful model
                 if dynamic_timeout_manager:
@@ -2162,9 +2184,9 @@ class ComprehensiveHyperparameterTuner:
                     if len(key_params) > 4:
                         key_params_str += f', +{len(key_params) - 4} more'
 
-                    print(f'  {j}. MAPE: {result.mape:.3f}%, Split: {result.split_ratio:.3f}')
+                    print(f'  {j}. MASE: {_fmt(result.mase)}, MAPE: {_fmt(result.mape, suffix="%")}')
                     print(
-                        f'     MAE: {result.mae:.1f}, Trial: #{result.trial_number}, Time: {result.training_time:.1f}s'
+                        f'     MAE: {_fmt(result.mae, digits=1)}, Trial: #{result.trial_number}, Time: {result.training_time:.1f}s'
                     )
                     print(f'     Key params: {key_params_str}')
                     if j < len(best_results[:3]):  # Add separator except for last item
@@ -2195,7 +2217,7 @@ class ComprehensiveHyperparameterTuner:
             print('\n🏆 BEST TRAINING CONFIGURATIONS:')
             print('-' * 120)
             print(
-                f'{"Rank":<5} {"Model":<15} {"Split":<7} {"MAPE":<8} {"MAE":<8} {"Trial":<8} {"Time":<8} {"Key Parameters":<50}'
+                f'{"Rank":<5} {"Model":<15} {"MASE":<8} {"MAPE":<8} {"MAE":<8} {"Trial":<8} {"Time":<8} {"Key Parameters":<50}'
             )
             print('-' * 120)
 
@@ -2239,18 +2261,17 @@ class ComprehensiveHyperparameterTuner:
                     key_params_str = key_params_str[:45] + '...'
 
                 print(
-                    f'{rank:<5} {model_name:<15} {config["split_ratio"]:<7.3f} '
-                    f'{config["mape"]:<8.3f} {config["mae"]:<8.0f} '
+                    f'{rank:<5} {model_name:<15} {_fmt(config["mase"]):<8} '
+                    f'{_fmt(config["mape"]):<8} {_fmt(config["mae"], digits=0):<8} '
                     f'{config["trial_number"]:<8} {config["training_time"]:<8.2f} {key_params_str:<50}'
                 )
 
             print('-' * 120)
             best_model, best_config = sorted_configs[0]
-            print(f'🥇 Training Champion: {best_model} (MAPE: {best_config["mape"]:.3f}%)')
+            print(f'🥇 Training Champion: {best_model} (MASE: {_fmt(best_config["mase"])})')
 
             # Show detailed optimal configuration
             print('🎯 Optimal Configuration Details:')
-            print(f'   Split Ratio: {best_config["split_ratio"]:.3f}')
             print(f'   Trial Number: #{best_config["trial_number"]}')
             print(f'   Training Time: {best_config["training_time"]:.2f}s')
             print(f'   Full Parameters: {best_config["hyperparameters"]}')
