@@ -231,6 +231,69 @@
         <div class="panel prose">
             <h2>Release History</h2>
 <article class="release">
+<h3>v0.14 - Hedge (September 2026)</h3>
+<p><strong>The CNA pages get an interval</strong> &mdash; and the year totals stop being measured by
+    adding up their months.</p>
+<h4>Forecasts</h4>
+<ul>
+    <li><strong>Every scored CNA publishes an 80% range.</strong> The per-CNA backtest already computed
+        the residuals a band needs and threw them away. They are kept now, and the CNA hero leads with
+        the range in the same form the overview page does. A CNA without one keeps the model-and-MASE
+        line rather than implying a precision nobody measured.</li>
+    <li><strong>The band's shape is shared; its width is not.</strong> A rolling-origin backtest can
+        only score its newest origin one month out, the next two months out, and so on, so horizon
+        <em>h</em> holds at most <code>max_origins - h + 1</code> residuals however long the series is.
+        A CNA therefore has almost nothing to fit at exactly the horizons the next-year column is built
+        from. So how the band widens with horizon is pooled across CNAs, where the data for it exists
+        and where CNAs genuinely resemble each other, and only its overall width is the CNA's own
+        &mdash; measured dispersion varies about fivefold between them. Held out across 139 CNAs, that
+        covers 80.0% at the 80% level and 93.1% at the 95% level, and holds those rates from h=1 to
+        h=16. Fitting each CNA on its own residuals gives 73.0% and 83.2%; one pooled band for everyone
+        gives 83.9% and drifts to 88% by h=16.</li>
+    <li><strong>A year is measured as a year.</strong> The year band used to be the sum of its monthly
+        bands, which assumes the model is wrong in the same direction every month of the year. It is
+        not: monthly residual spread runs about 3.4x the spread of the same model's error on a
+        16-month total, where 4.0x would mean the months cancel completely. The months very nearly
+        cancel, so summing overstated the range badly &mdash; it put the median CNA's 80% interval at
+        25x, and oracle's 2027 range at 937 to 835,920. Both pipelines now score a published total as a
+        total, so the figure the front page leads with is measured the way it is presented.</li>
+</ul>
+<h4>Corrected</h4>
+<ul>
+    <li><strong>The interval stopped widening before the forecast stopped.</strong> The backtest ran to
+        twelve months against a sixteen-month forecast, and the band code silently reuses its longest
+        fitted horizon beyond that range &mdash; so September to December of next year were all drawn
+        with the h=12 band, flat, across a third of the range the dashboard leads with. The horizon now
+        follows what is published, and a month past it carries no band rather than an extrapolated
+        one.</li>
+    <li><strong>Runaway CNA forecasts.</strong> TR-CERT was published forecasting 1,018,180 CVEs for
+        December 2027 against 809 in its entire history &mdash; a model compounding a trend in log
+        space, carrying a respectable MASE of 1.79 because selection scored the first months of the
+        path while the divergence happened out at the end where nothing was measured. A forecast that
+        exceeds eight times the CNA's trailing two-year peak now falls back to the naive baseline and
+        says so. The threshold comes from the series: across 6,858 CNA-months, real growth over that
+        peak passes 5.0x once in a thousand, and 8x three times in all.</li>
+    <li><strong>A crash waiting on the first CNA band.</strong> Horizon lookup assumed the fitted
+        horizons were contiguous. They need not be &mdash; a residual is only recorded where both the
+        actual and the forecast are positive, so a series with sporadic zero months loses whole
+        horizons, and 127 of 140 CNAs have at least one zero month. The aggregate series never does,
+        which is why it had not fired.</li>
+    <li><strong>Asset versions are stamped by CI.</strong> The <code>?v=</code> on every stylesheet and
+        script was maintained by hand in eleven places across four files, where getting it wrong serves
+        new markup with a cached script. It is stamped from the last commit that touched an asset
+        &mdash; not from the head commit, which advances on every daily data update and would discard
+        every visitor's cache once a day.</li>
+</ul>
+<h4>Known gap</h4>
+<ul>
+    <li><strong>A CNA's band arrives when its turn does.</strong> Scoring is far too slow to run for
+        every CNA daily, so a dozen are re-scored per run and the population cycles through over about
+        a fortnight. A CNA that has not been scored since this release has no band yet, and shows the
+        model and its MASE until it is.</li>
+</ul>
+</article>
+
+<article class="release">
 <h3>v0.13 - Ockham (September 2026)</h3>
 <p><strong>The front end, rebuilt</strong> &mdash; the dashboard says what it can defend and drops what it could not.</p>
 <h4>Forecasts</h4>
@@ -532,7 +595,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:.75rem">
             <span>Updated daily at midnight UTC</span>
-            <span class="ver">v0.13</span>
+            <span class="ver">v0.14</span>
         </div>
     </div>
 </footer>

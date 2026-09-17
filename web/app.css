@@ -403,6 +403,12 @@ tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover td { background: var(--surface-sunk); }
 
 th.num, td.num { text-align: right; }
+
+/* A range in a numeric column. The dash is the quietest thing in the cell -
+   it is punctuation, not a value - and the cell must not wrap mid-range,
+   which would read as two separate numbers stacked. */
+td.num .to { color: var(--text-subtle); margin: 0 .1em; }
+td.num { white-space: nowrap; }
 th.center, td.center { text-align: center; }
 td.strong { color: var(--text); font-weight: 550; }
 td.rank { color: var(--text-subtle); width: 1%; font-variant-numeric: tabular-nums; }

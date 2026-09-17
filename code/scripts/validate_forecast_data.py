@@ -12,6 +12,9 @@ the specific failures we have actually shipped:
   overriding the models looks like from the outside
 * prediction intervals that do not bracket their own point forecast
 * an accuracy table with no baseline to compare against
+* a CNA interval that inverts, excludes its own point forecast, or claims a
+  horizon the backtest never reached
+* a CNA forecast that has run away from anything its own history could reach
 
 Exits non-zero on failure so the deploy does not proceed.
 """
@@ -22,6 +25,12 @@ from typing import Any, Dict, List
 
 DATA_PATH = 'web/data.json'
 VALIDATION_PATH = 'web/validation.json'
+CNA_PATH = 'web/cna_data.json'
+
+# A forecast month above this multiple of the CNA's trailing peak is a runaway,
+# not a prediction. Mirrors RUNAWAY_CEILING in the CNA adapter; this is the
+# backstop that keeps one from reaching the site if the guard there regresses.
+CNA_RUNAWAY_CEILING = 8.0
 
 REQUIRED_KEYS = [
     'generated_at',
@@ -223,5 +232,105 @@ def validate(path: str = DATA_PATH) -> bool:
     return True
 
 
+def check_cna_intervals(data: Dict[str, Any], failures: List[str]) -> None:
+    """
+    Per-CNA bands, where a CNA has one.
+
+    Absent intervals are fine and expected: a band arrives only as that CNA's
+    backtest is re-scored, which happens a dozen CNAs at a time.
+    """
+    with_intervals = 0
+    for cna_id, rec in data.items():
+        intervals = rec.get('intervals')
+        if not intervals:
+            continue
+        with_intervals += 1
+        name = rec.get('name') or cna_id
+
+        model = (rec.get('model_selection') or {}).get('selected_model')
+        points = {m[:7]: v for m, v in (rec.get('forecasts') or {}).get(model, {}).items()}
+
+        for month, band in (intervals.get('monthly') or {}).items():
+            if band['lower_80'] > band['upper_80'] or band['lower_95'] > band['upper_95']:
+                _fail(f'{name} {month}: interval bounds inverted', failures)
+            if band['lower_95'] > band['lower_80'] or band['upper_95'] < band['upper_80']:
+                _fail(f'{name} {month}: 95% interval is narrower than 80%', failures)
+            point = points.get(month)
+            if point is not None and not (band['lower_80'] <= point <= band['upper_80']):
+                _fail(f'{name} {month}: point forecast {point} outside its own 80% band', failures)
+
+        # A month past the fitted horizon must carry no band rather than one
+        # extrapolated from the longest horizon that was measured.
+        max_horizon = intervals.get('max_horizon')
+        monthly = intervals.get('monthly') or {}
+        if max_horizon is not None and len(monthly) > max_horizon:
+            _fail(
+                f'{name}: {len(monthly)} months carry a band but only {max_horizon} horizons were fitted',
+                failures,
+            )
+
+        for year, band in (intervals.get('annual') or {}).items():
+            if band['lower_80'] > band['upper_80']:
+                _fail(f'{name} {year}: annual interval bounds inverted', failures)
+            published = sum(v for m, v in (rec.get('historical') or {}).items() if str(m)[:4] == year)
+            forecast = sum(v for m, v in (rec.get('forecasts') or {}).get(model, {}).items() if m[:4] == year)
+            total = published + forecast
+            if not (band['lower_80'] <= total <= band['upper_80']):
+                _fail(
+                    f'{name} {year}: projected total {total:,.0f} outside its own 80% band '
+                    f'({band["lower_80"]:,} to {band["upper_80"]:,})',
+                    failures,
+                )
+
+    print(f'  {with_intervals}/{len(data)} CNAs publish a prediction interval')
+
+
+def check_cna_runaways(data: Dict[str, Any], failures: List[str]) -> None:
+    """No CNA may publish a month far beyond anything its own history reached."""
+    for cna_id, rec in data.items():
+        history = [v for v in (rec.get('historical') or {}).values() if isinstance(v, (int, float))]
+        if not history:
+            continue
+        peak = max(history[-24:])
+        if peak <= 0:
+            continue
+        model = (rec.get('model_selection') or {}).get('selected_model')
+        forecast = (rec.get('forecasts') or {}).get(model) or {}
+        worst = max((v for v in forecast.values() if isinstance(v, (int, float))), default=0)
+        if worst > peak * CNA_RUNAWAY_CEILING:
+            _fail(
+                f'{rec.get("name") or cna_id}: forecast peaks at {worst:,.0f} against a 24-month high of '
+                f'{peak:,.0f} ({worst / peak:,.0f}x) - a runaway reached the site',
+                failures,
+            )
+
+
+def validate_cna(path: str = CNA_PATH) -> bool:
+    """Validate web/cna_data.json. Absent file is not a failure; it is optional output."""
+    try:
+        with open(path, 'r') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        print(f'SKIP: {path} not present')
+        return True
+    except json.JSONDecodeError as e:
+        print(f'FAIL: {path} is not valid JSON: {e}')
+        return False
+
+    failures: List[str] = []
+    check_cna_intervals(data, failures)
+    check_cna_runaways(data, failures)
+
+    if failures:
+        for message in failures:
+            print(f'FAIL: {message}')
+        return False
+
+    print(f'OK: {path} valid - {len(data)} CNAs')
+    return True
+
+
 if __name__ == '__main__':
-    sys.exit(0 if validate(sys.argv[1] if len(sys.argv) > 1 else DATA_PATH) else 1)
+    ok = validate(sys.argv[1] if len(sys.argv) > 1 else DATA_PATH)
+    ok = validate_cna() and ok
+    sys.exit(0 if ok else 1)

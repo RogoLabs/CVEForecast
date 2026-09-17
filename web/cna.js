@@ -78,6 +78,32 @@ function applyYearLabels() {
 // Formatting
 const numberFmt = new Intl.NumberFormat();
 
+/* app.js has its own copy; this page does not load app.js. Model names come from
+   our own pipeline, but they reach the DOM through innerHTML here, so they go
+   through this on the way rather than relying on that staying true. */
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/* The overview page rounds modelled figures to the nearest thousand, because
+   every number on it is in the tens of thousands. CNA totals span four orders of
+   magnitude - a median of 87 CVEs a year, a handful above 10,000 - so a fixed
+   unit would round most of them to zero. This keeps the same idea, that a
+   modelled figure should not claim more precision than the model has, and scales
+   the unit to the number: two significant figures, near enough. */
+function approxCna(value) {
+  const v = Math.round(Number(value) || 0);
+  if (v < 100) return numberFmt.format(v);
+  const unit = Math.pow(10, Math.floor(Math.log10(v)) - 1);
+  return numberFmt.format(Math.round(v / unit) * unit);
+}
+
+/** The published 80% range for a year, when this CNA has one. */
+function annualBand(rec, year) {
+  const band = rec?.intervals?.annual?.[String(year)];
+  if (!band || band.lower_80 == null || band.upper_80 == null) return null;
+  if (!(band.upper_80 > band.lower_80)) return null;
+  return band;
+}
+
 // =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================
@@ -276,7 +302,10 @@ function calculateCnaMetrics(rec) {
       model: rec.model_selection?.selected_model || 'N/A',
       mase: rec.model_selection?.validation_mase ?? null,
       isFallback: rec.model_selection?.is_fallback === true,
-      awaitingScoring: rec.model_selection?.awaiting_scoring === true
+      awaitingScoring: rec.model_selection?.awaiting_scoring === true,
+      // The next-year column is the one the band matters most for: it is
+      // entirely forecast, up to sixteen months out.
+      nextBand: annualBand(rec, YEARS.nextYear)
     };
 
     return result;
@@ -362,7 +391,9 @@ function renderTable() {
         <td class="strong">${row.name || 'Unknown CNA'}</td>
         <td class="num">${numberFmt.format(row.priorTotal)}</td>
         <td class="num">${numberFmt.format(row.forecastedCurrent)}</td>
-        <td class="num">${numberFmt.format(row.forecastedNext)}</td>
+        <td class="num">${row.nextBand
+          ? `${approxCna(row.nextBand.lower_80)}<span class="to">\u2013</span>${approxCna(row.nextBand.upper_80)}`
+          : numberFmt.format(row.forecastedNext)}</td>
         <td class="num">${growthSymbol}${row.growthRate.toFixed(1)}%</td>
         <td>
           <span class="pill ${row.isFallback ? 'pill--neutral' : 'pill--info'}"
@@ -966,33 +997,50 @@ function updateSummary(rec) {
   };
 
   setText('cnaEyebrow', `${displayName} \u00b7 projected ${currentYear}`);
-  setText('summaryCurrentYear', numberFmt.format(metrics.forecastedCurrent));
 
-  /* The comparison against last year, in the same form the overview page
-     uses: a multiple carries further than a percentage. A CNA can start from
-     nothing, though, where a multiple is undefined and the count is the only
-     honest thing to show. */
+  /* The interval leads where there is one, exactly as the overview page does,
+     and for the same reason: a single figure this far out claims a precision
+     the model has not got. Where there is none the page says what it always
+     said - the model and its MASE - rather than implying a range it cannot
+     support. A band is per CNA and arrives as its backtest is re-scored, so
+     both states are normal and neither is an error. */
+  const band = annualBand(rec, currentYear);
+  const total = metrics.forecastedCurrent;
+
+  setHTML('summaryCurrentYear', band
+    ? `${approxCna(band.lower_80)}<span class="to">\u2013</span>${approxCna(band.upper_80)}`
+    : approxCna(total));
+
   const prior = metrics.priorTotal;
   const compare = document.getElementById('summaryGrowthRate');
   if (compare) {
     if (prior > 0) {
-      const multiple = metrics.forecastedCurrent / prior;
-      compare.innerHTML = `<b>${multiple.toFixed(1)}\u00d7</b> the ${numberFmt.format(prior)} published in ${currentYear - 1}`;
+      /* Quoted as a range too when the headline is one: a single growth
+         multiple against a range forecast puts the false precision straight
+         back. */
+      const low = (band ? band.lower_80 : total) / prior;
+      const high = (band ? band.upper_80 : total) / prior;
+      compare.innerHTML = band
+        ? `<b>${low.toFixed(1)}\u00d7</b> to <b>${high.toFixed(1)}\u00d7</b> the ${numberFmt.format(prior)} published in ${currentYear - 1}`
+        : `<b>${low.toFixed(1)}\u00d7</b> the ${numberFmt.format(prior)} published in ${currentYear - 1}`;
     } else {
       compare.innerHTML = `No CVEs published in ${currentYear - 1}`;
     }
   }
 
   /* Model choice is cached and refreshed periodically, so say when it was made
-     rather than implying it was decided on today's data. The MASE sits here
-     because it is the only uncertainty signal this page has — the CNA pipeline
-     produces a point forecast per organisation, not an interval. */
+     rather than implying it was decided on today's data. */
   const selection = cnaData?.[metrics.id]?.model_selection;
   const chosen = selection?.selected_at;
   const when = chosen ? ` \u00b7 chosen ${new Date(chosen).toLocaleDateString('en-US', { dateStyle: 'medium' })}` : '';
   const mase = typeof metrics.mase === 'number' ? ` \u00b7 MASE ${metrics.mase.toFixed(2)}` : '';
-  const fallback = selection?.is_fallback ? ' \u00b7 naive baseline, nothing beat it' : '';
-  setText('summaryModelInfo', `${metrics.model || 'Unknown'}${mase}${when}${fallback}`);
+  const fallback = selection?.runaway_guarded
+    ? ' \u00b7 naive baseline, the chosen model ran away'
+    : selection?.is_fallback ? ' \u00b7 naive baseline, nothing beat it' : '';
+
+  setHTML('summaryModelInfo', band
+    ? `80% prediction interval \u00b7 central estimate <b>${approxCna(total)}</b> \u00b7 ${esc(metrics.model || 'Unknown')}${mase}${when}${fallback}`
+    : `${esc(metrics.model || 'Unknown')}${mase}${when}${fallback}`);
 
   const parts = [
     `<b>${numberFmt.format(metrics.currentPublished)}</b> published`,
