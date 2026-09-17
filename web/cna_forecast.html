@@ -211,7 +211,12 @@
 
     <!-- Model Usage Statistics Card -->
     <div class="bg-white rounded-lg card-shadow p-6 mt-8">
-      <h2 class="text-xl font-bold text-gray-800 mb-6">Model Performance Overview</h2>
+      <h2 class="text-xl font-bold text-gray-800 mb-2">Model Performance Overview</h2>
+          <p class="text-sm text-gray-600 mb-6">
+            Each CNA's model is chosen by rolling-origin backtest and scored in MASE against a naive
+            baseline. A CNA shown with a grey model pill is using that baseline, because nothing beat
+            it &mdash; the honest answer for a short or spiky series rather than the least-bad loser.
+          </p>
       
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Model Distribution -->

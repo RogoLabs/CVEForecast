@@ -304,7 +304,8 @@ function calculateCnaMetrics(rec) {
       growthRate: growthRate,
       model: rec.model_selection?.selected_model || 'N/A',
       mase: rec.model_selection?.validation_mase ?? null,
-      isFallback: rec.model_selection?.is_fallback === true
+      isFallback: rec.model_selection?.is_fallback === true,
+      awaitingScoring: rec.model_selection?.awaiting_scoring === true
     };
 
     return result;
@@ -391,7 +392,8 @@ function renderTable() {
         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${numberFmt.format(row.forecastedNext)}</td>
         <td class="px-4 py-3 whitespace-nowrap text-sm ${growthClass}">${growthSymbol}${row.growthRate.toFixed(1)}%</td>
         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-          <span class="pill pill--info pill--nodot">${row.model}</span>
+          <span class="pill ${row.isFallback ? 'pill--neutral' : 'pill--info'} pill--nodot"
+                title="${row.isFallback ? 'No model beat the naive baseline for this CNA' : 'Selected by rolling-origin backtest'}">${row.model}</span>
         </td>
       </tr>
     `;
