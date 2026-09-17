@@ -38,10 +38,14 @@ CVE Forecast is built on a modular, extensible architecture that separates conce
 └──────────────┘      └──────────────┘     └──────────────┘
         │                     │                     │
         ├─ data_loader.py     ├─ base_forecaster.py├─ index.html
-        ├─ cve_adapter.py     ├─ validation_mixin  ├─ script.js
-        └─ cna_adapter.py     ├─ model_utils       ├─ cna_forecast.html
-                              ├─ unified_pipeline  ├─ technical_details.html
-                              └─ forecast_tracker  └─ styles.css
+        ├─ data_vintage.py    ├─ forecast_engine   ├─ script.js
+        ├─ cve_adapter.py     ├─ covariates        ├─ cna_forecast.html
+        └─ cna_adapter.py     ├─ transforms        ├─ forecast_history.html
+                              ├─ intervals         ├─ history.js
+                              ├─ model_utils       ├─ technical_details.html
+                              ├─ rolling_origin    └─ styles.css
+                              ├─ unified_pipeline
+                              └─ forecast_tracker
 
 ┌─────────────────────────────────────────────────────────────────┐
 │                     CI/CD & Scripts                              │
@@ -83,6 +87,37 @@ CVE Forecast is built on a modular, extensible architecture that separates conce
   - `.github/workflows/test.yml` — runs pytest on pull requests
   - `.github/workflows/lint.yml` — runs ruff linting on pull requests
   - `.github/dependabot.yml` — weekly dependency update checks
+
+## The v0.12 forecast path
+
+Everything a forecast passes through, in order, shared by production and by the
+rolling-origin backtest so the published accuracy describes the published number:
+
+```
+complete months (current month excluded)
+  └─ core/transforms.trim_to_window        optional; off by default
+     └─ core/covariates.normalise_by_business_days
+        └─ core/transforms.to_log_space
+           └─ model.fit / model.predict    (+ future covariates where supported)
+              └─ core/transforms.damp_forecast_path      phi = 0.98
+                 └─ core/transforms.from_log_space
+                    └─ core/covariates.denormalise_by_business_days
+```
+
+`core/forecast_engine.ForecastEngine` owns that pipeline.
+`validation/rolling_origin.RollingOriginBacktest` drives it from historical
+cut-offs to produce rankings and the residuals that `core/intervals` turns into
+calibrated prediction bands. The tuner calls the same engine, so hyperparameters
+are chosen for the pipeline that actually ships.
+
+| Module | Responsibility |
+|---|---|
+| `core/forecast_engine.py` | The single forecast path and its settings |
+| `core/covariates.py` | Business-day normalisation, calendar and CNA covariates |
+| `core/transforms.py` | Log space, trend damping, training-window trimming |
+| `core/intervals.py` | Conformal intervals from backtest residuals, and coverage |
+| `validation/rolling_origin.py` | Multi-origin scoring, MASE, naive comparison |
+| `data_vintage.py` | Records how monthly counts get revised after publication |
 
 ## Core Components
 

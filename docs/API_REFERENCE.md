@@ -568,9 +568,12 @@ def load_cve_data(config: Dict[str, Any],
                 "seasonality_prior_scale": 0.1
             },
             "tuning_results": {
-                "mape": 10.13,
-                "mae": 412.78,
-                "tuned_at": "2025-10-01T00:00:00Z"
+                "mase": 2.76,
+                "mape": 18.70,
+                "mae": 1712.40,
+                "n_origins": 24,
+                "tuned_at": "2026-09-01T00:00:00Z",
+                "tuning_method": "rolling_origin_mase"
             }
         },
         "LightGBM": {
@@ -581,14 +584,34 @@ def load_cve_data(config: Dict[str, Any],
                 "n_estimators": 100
             },
             "tuning_results": {
-                "mape": 6.22,
-                "mae": 257.44,
-                "tuned_at": "2025-10-01T00:00:00Z"
+                "mase": 4.21,
+                "mape": 30.40,
+                "mae": 2784.10,
+                "n_origins": 24,
+                "tuned_at": "2026-09-01T00:00:00Z",
+                "tuning_method": "rolling_origin_mase"
             }
         }
     },
+    "forecasting": {
+        "log_space": true,
+        "business_day_normalise": true,
+        "damping_phi": 0.98,
+        "training_window_months": null,
+        "use_future_covariates": false,
+        "use_cna_covariate": false,
+        "freq": "ME"
+    },
+    "cross_validation": {
+        "horizon": 12,
+        "min_train": 48,
+        "step": 1,
+        "max_origins": 24
+    },
     "file_paths": {
-        "output": "web/data.json",
+        "output_data": "web/data.json",
+        "validation": "web/validation.json",
+        "data_vintages": "web/data_vintages.json",
         "cna_output": "web/cna_data.json",
         "forecast_history": "web/forecast_history.json",
         "pipeline_results": "web/pipeline_results.json"
@@ -673,83 +696,143 @@ class ForecastResult:
 
 ### Output Data Structure (data.json)
 
+Changed substantially in v0.12. Rankings carry MASE and a naive-baseline verdict;
+year totals split published months from forecast months; prediction intervals and
+a methodology block are new.
+
 ```python
 {
-    "generated_at": "2025-10-13T15:30:00Z",
+    "generated_at": "2026-09-17T15:44:30Z",
+    "version": "0.12",
+    "best_model": "LinearRegression",
+
+    # Ranked by MASE, best first. Naive baselines are included and flagged so a
+    # model that cannot beat one is visible as such.
     "model_rankings": [
         {
-            "model_name": "LightGBM",
-            "mape": 6.22,
-            "mae": 257.44,
-            "rmse": null,
+            "model_name": "LinearRegression",
+            "mase": 2.28,            # primary ranking metric
+            "mase_std": 1.98,        # spread across origins
+            "mape": 17.3,
+            "mae": 1967.25,
+            "bias_pct": -8.4,        # negative = under-forecasting
+            "mase_by_horizon": {"1": 1.52, "6": 2.31, "12": 3.18},
+            "n_origins": 24,
+            "beats_naive": True,     # vs. the best naive baseline in the same run
+            "naive_threshold": 2.984,
+            "is_baseline": False,
+            "in_ensemble": True,
+            "n_errors": 0,
             "hyperparameters": {...}
         }
     ],
+
+    # Published months plus forecast months, never conflated. The month in
+    # progress counts once, as an actual, with its forecast entry holding only
+    # the remaining days.
     "yearly_forecast_totals": {
-        "2025": {
-            "Prophet": 47501,
-            "LightGBM": 46892,
-            "all_models": 47200
-        },
         "2026": {
-            "Prophet": 52345,
-            "LightGBM": 51234,
-            "all_models": 51800
-        }
-    },
-    "current_month_actual": {
-        "date": "2025-10",
-        "cve_count": 1576,
-        "cumulative_total": 35397
-    },
-    "actuals_cumulative": [
-        {"date": "2025-01-01T00:00:00Z", "cumulative_total": 0},
-        {"date": "2025-02-01T00:00:00Z", "cumulative_total": 4274},
-        {"date": "2025-10-13T15:30:00Z", "cumulative_total": 36973}
-    ],
-    "cumulative_timelines": {
-        "Prophet_cumulative": [
-            {"date": "2025-01-01T00:00:00Z", "cumulative_total": 0},
-            {"date": "2025-10-01T00:00:00Z", "cumulative_total": 35397},
-            {"date": "2025-11-01T00:00:00Z", "cumulative_total": 39447}
-        ]
-    },
-    "forecasts": {
-        "Prophet": [
-            {"date": "2025-10", "cve_count": 4049},
-            {"date": "2025-11", "cve_count": 3968}
-        ]
-    },
-    "summary": {
-        "data_period": {
-            "start": "2017-01-31",
-            "end": "2025-09-30"
-        },
-        "forecast_period": {
-            "start": "2025-10-01",
-            "end": "2026-12-31"
-        },
-        "cumulative_cves_2025": 35397,
-        "previous_year_total": 34700
-    },
-    "forecast_vs_published": {
-        "Prophet": {
-            "table_data": [
-                {
-                    "MONTH": "2025-01",
-                    "PUBLISHED": 4274,
-                    "FORECAST": 3284,
-                    "ERROR": -990,
-                    "PERCENT_ERROR": -23.16,
-                    "PERFORMANCE": "Poor"
-                }
-            ],
-            "summary_stats": {
-                "mean_absolute_error": 412.78,
-                "mean_absolute_percentage_error": 10.13
+            "Ensemble": {
+                "year": 2026,
+                "total": 97885,
+                "actual_ytd": 66401,
+                "forecast_remainder": 31484,
+                "months_actual": 9,
+                "months_forecast": 3,
+                "lower_80": 93346,
+                "upper_80": 115359
             }
         }
+    },
+
+    # Bands on the figure published for each month. For the month in progress
+    # that figure is the full-month nowcast, so the band covers it too.
+    "monthly_intervals": {
+        "2026-10": {"lower_80": 8043.0, "upper_80": 14350.0,
+                    "lower_95": 7220.0, "upper_95": 17880.0}
+    },
+
+    # Cumulative bounds aligned to Ensemble_cumulative, computed server-side so
+    # the browser never has to work out which month a cumulative step belongs to.
+    "cumulative_band": {
+        "lower": [{"date": "2026-10-01T00:00:00Z", "cumulative_total": 69522}],
+        "upper": [{"date": "2026-10-01T00:00:00Z", "cumulative_total": 71580}]
+    },
+
+    # Observed data only. Never contains a projection - it is drawn as the
+    # "Actual CVEs" line and ends at the current count.
+    "actuals_cumulative": [
+        {"date": "2026-09-01T00:00:00Z", "cumulative_total": 57872},
+        {"date": "2026-09-17T15:44:30Z", "cumulative_total": 66401}
+    ],
+
+    # Per-model cumulative paths. Each starts with an anchor at the current count
+    # so the forecast line continues the actuals line.
+    "cumulative_timelines": {
+        "Ensemble_cumulative": [
+            {"date": "2026-01-01T00:00:00Z", "cumulative_total": 0},
+            {"date": "2026-09-17T15:44:30Z", "cumulative_total": 66401},
+            {"date": "2026-10-01T00:00:00Z", "cumulative_total": 70047}
+        ]
+    },
+
+    # "Ensemble" is a trimmed mean over the models that beat the naive baseline,
+    # not an average of everything.
+    "forecasts": {
+        "Ensemble": [{"date": "2026-10", "cve_count": 9398}]
+    },
+
+    "current_month_actual": {"date": "2026-09", "cve_count": 8529, "cumulative_total": 66401},
+    "summary": {
+        "data_period": {"start": "2017-01-31", "end": "2026-09-30"},
+        "forecast_period": {"start": "2026-09-01", "end": "2027-12-31"},
+        "cumulative_cves_2026": 66401,
+        "previous_year_total": 48153
+    },
+
+    # Single-origin comparison table, kept because it reads well. Ranking uses
+    # the rolling-origin backtest instead - eight points is far too few to rank on.
+    "forecast_vs_published": {
+        "LinearRegression": {
+            "table_data": [{"MONTH": "2026-01", "PUBLISHED": 4302, "FORECAST": 5151,
+                            "ERROR": 849, "PERCENT_ERROR": 19.74, "PERFORMANCE": "Fair"}],
+            "summary_stats": {"mean_absolute_error": 1967.25,
+                              "mean_absolute_percentage_error": 22.54}
+        }
+    },
+
+    "data_vintages": {"n_vintages": 1, "first_observed": "...", "revision_factors": {...}},
+
+    "methodology": {
+        "ranking_metric": "MASE",
+        "naive_threshold": 2.984,
+        "ensemble_members": ["LinearRegression", "TBATS", "Prophet", "AutoARIMA", "KalmanFilter"],
+        "interval_coverage": {
+            "80": {"nominal": 0.8, "empirical": 0.8072, "n": 1110, "calibrated": True},
+            "95": {"nominal": 0.95, "empirical": 0.9532, "n": 1110, "calibrated": True}
+        },
+        "settings": {"log_space": True, "business_day_normalise": True,
+                     "damping_phi": 0.98, "training_window_months": None,
+                     "use_future_covariates": False}
     }
+}
+```
+
+### Validation Detail (validation.json)
+
+Full per-model backtest results, interval factors by horizon, and coverage. Too
+bulky for `data.json`, but it is the file to read when auditing a ranking.
+
+```python
+{
+    "generated_at": "2026-09-17T15:44:30Z",
+    "naive_threshold": 2.984,
+    "ensemble_members": [...],
+    "coverage": {"80": {...}, "95": {...}},
+    "intervals": {"levels": ["80", "95"], "max_horizon": 12,
+                  "factors": {"1": {"80": [0.88, 1.30], "95": [0.86, 1.42]}},
+                  "n_residuals": {"1": 120}},
+    "models": {"LinearRegression": {...}}
 }
 ```
 
