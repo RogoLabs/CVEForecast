@@ -65,13 +65,12 @@ function applyYearLabels() {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
   };
-  set('summaryPriorYearLabel', `${priorYear} published`);
-  set('summaryCurrentYearLabel', `${currentYear} projected`);
-  set('summaryGrowthDetail', `${priorYear} → ${currentYear} change`);
-  set('thPriorYear', `${priorYear} Published`);
-  set('thCurrentYear', `${currentYear} Projected`);
-  set('thNextYear', `${nextYear} Forecast`);
-  set('thGrowth', `${priorYear}→${currentYear} Growth`);
+  /* The hero writes its own labels from the selected CNA, so only the table
+     headers and the year toggle are set here. */
+  set('thPriorYear', `${priorYear} published`);
+  set('thCurrentYear', `${currentYear} projected`);
+  set('thNextYear', `${nextYear} forecast`);
+  set('thGrowth', `${priorYear}→${currentYear} growth`);
   set('yearCurrentBtn', String(currentYear));
   set('yearNextBtn', String(nextYear));
 }
@@ -526,9 +525,10 @@ function autoSelectTopCna() {
     const rec = cnaData[topCna.id];
     if (rec) {
       console.log('autoSelectTopCna: Found CNA record, updating summary and chart');
-      currentCnaData = rec;
-      updateSummary(rec);
-      renderChart(rec);
+      /* Route through the same handler a click uses, so the auto-selected row
+         is highlighted like any other selection instead of the page opening
+         with a chart whose row looks unselected. */
+      selectCnaFromTable(topCna.id);
     } else {
       console.log('autoSelectTopCna: CNA record not found for ID:', topCna.id);
     }
@@ -954,52 +954,55 @@ function updateYearToggleUI() {
 
 function updateSummary(rec) {
   const displayName = getCnaDisplayName(rec.id, rec.name);
-  const shortName = getCnaShortName(rec.id, rec.name);
-  
-  // Calculate metrics using the same logic as table
   const metrics = calculateCnaMetrics(rec);
-  
-  // Update CNA info card
-  document.getElementById('summaryPanelTitle').textContent = displayName;
-  document.getElementById('summaryId').textContent = shortName;
-  
-  // Update 2024 card
+
   const setText = (id, value) => {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
   };
+  const setHTML = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = value;
+  };
 
-  setText('summaryPriorYear', numberFmt.format(metrics.priorTotal));
+  setText('cnaEyebrow', `${displayName} \u00b7 projected ${currentYear}`);
   setText('summaryCurrentYear', numberFmt.format(metrics.forecastedCurrent));
-  // Say plainly how much of the projection is already fact.
-  setText(
-    'summaryCurrentYearSplit',
-    `${numberFmt.format(metrics.currentPublished)} published + ${numberFmt.format(metrics.currentRemainder)} forecast`
-  );
 
-  const modelInfo = document.getElementById('summaryModelInfo');
-  if (modelInfo) {
-    // Model choice is cached and refreshed periodically, so say when it was made
-    // rather than implying it was decided on today's data.
-    const chosen = cnaData?.[metrics.id]?.model_selection?.selected_at;
-    const when = chosen ? ` · chosen ${new Date(chosen).toLocaleDateString()}` : '';
-    const mase = typeof metrics.mase === 'number' ? ` (MASE ${metrics.mase.toFixed(2)})` : '';
-    modelInfo.textContent = `${metrics.model || 'Unknown'}${mase}${when}`;
+  /* The comparison against last year, in the same form the overview page
+     uses: a multiple carries further than a percentage. A CNA can start from
+     nothing, though, where a multiple is undefined and the count is the only
+     honest thing to show. */
+  const prior = metrics.priorTotal;
+  const compare = document.getElementById('summaryGrowthRate');
+  if (compare) {
+    if (prior > 0) {
+      const multiple = metrics.forecastedCurrent / prior;
+      compare.innerHTML = `<b>${multiple.toFixed(1)}\u00d7</b> the ${numberFmt.format(prior)} published in ${currentYear - 1}`;
+    } else {
+      compare.innerHTML = `No CVEs published in ${currentYear - 1}`;
+    }
   }
 
-  const growthRateElement = document.getElementById('summaryGrowthRate');
-  if (growthRateElement) {
-    const growthRate = metrics.growthRate;
-    growthRateElement.textContent = `${growthRate > 0 ? '+' : ''}${growthRate.toFixed(1)}%`;
+  /* Model choice is cached and refreshed periodically, so say when it was made
+     rather than implying it was decided on today's data. The MASE sits here
+     because it is the only uncertainty signal this page has — the CNA pipeline
+     produces a point forecast per organisation, not an interval. */
+  const selection = cnaData?.[metrics.id]?.model_selection;
+  const chosen = selection?.selected_at;
+  const when = chosen ? ` \u00b7 chosen ${new Date(chosen).toLocaleDateString('en-US', { dateStyle: 'medium' })}` : '';
+  const mase = typeof metrics.mase === 'number' ? ` \u00b7 MASE ${metrics.mase.toFixed(2)}` : '';
+  const fallback = selection?.is_fallback ? ' \u00b7 naive baseline, nothing beat it' : '';
+  setText('summaryModelInfo', `${metrics.model || 'Unknown'}${mase}${when}${fallback}`);
 
-  }
+  const parts = [
+    `<b>${numberFmt.format(metrics.currentPublished)}</b> published`,
+    `<b>${numberFmt.format(metrics.currentRemainder)}</b> forecast`,
+  ];
+  if (prior > 0) parts.push(`Prior year <b>${numberFmt.format(prior)}</b>`);
+  parts.push(`Growth <b>${metrics.growthRate > 0 ? '+' : ''}${metrics.growthRate.toFixed(1)}%</b>`);
+  setHTML('cnaMeta', parts.map(p => `<span>${p}</span>`).join(''));
 
-  // Update page title
-  const titleText = `${displayName} - CVE Forecast`;
-  const panelTitleElement = document.getElementById('panelTitle');
-  if (panelTitleElement) {
-    panelTitleElement.textContent = titleText;
-  }
+  document.title = `${displayName} - CNA Forecasts - CVEForecast`;
 }
 
 // =============================================================================

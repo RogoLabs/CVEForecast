@@ -36,7 +36,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="app.css?v=0.13.2">
+    <link rel="stylesheet" href="app.css?v=0.13.3">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -69,58 +69,63 @@
 
 <main id="main" class="wrap stack">
 
-    <!-- Selected CNA: filled in when a row is chosen -->
-    <section class="stats" id="cnaSummary" aria-label="Selected CNA">
-        <div class="stat">
-            <p class="eyebrow">Selected CNA</p>
-            <p class="stat__value" id="summaryPanelTitle">Select a CNA</p>
-            <p class="stat__note" id="summaryId">Choose one from the table below</p>
+    <!-- Hero: the selected CNA, matching the overview page's shape.
+         No interval here: the CNA pipeline emits a point forecast per
+         organisation rather than a band, so the headline is the central
+         estimate and the model behind it is named directly underneath. -->
+    <section class="panel hero">
+        <div class="hero__top">
+            <div>
+                <p class="eyebrow" id="cnaEyebrow">Select a CNA</p>
+                <div class="figure">
+                    <div class="figure__value figure__value--range num" id="summaryCurrentYear">&mdash;</div>
+                </div>
+                <p class="figure__compare" id="summaryGrowthRate"></p>
+                <p class="figure__note" id="summaryModelInfo">Choose a CNA from the table below</p>
+            </div>
+            <div class="seg" id="yearToggleContainer" role="group" aria-label="Forecast year" hidden>
+                <button type="button" id="yearCurrentBtn"></button>
+                <button type="button" id="yearNextBtn"></button>
+            </div>
         </div>
-        <div class="stat">
-            <p class="eyebrow" id="summaryPriorYearLabel">Prior year published</p>
-            <p class="stat__value num" id="summaryPriorYear">&mdash;</p>
-            <p class="stat__note">Settled total</p>
+
+        <div id="loadingState" class="state">
+            <div class="spinner"></div>
+            <p>Loading CNA forecast data&hellip;</p>
         </div>
-        <div class="stat">
-            <p class="eyebrow" id="summaryCurrentYearLabel">This year projected</p>
-            <p class="stat__value num" id="summaryCurrentYear">&mdash;</p>
-            <p class="stat__note" id="summaryCurrentYearSplit">Published + forecast</p>
-            <p class="stat__note" id="summaryModelInfo">Select a CNA to see its model</p>
+        <div id="errorState" class="state" hidden>
+            <h2>Could not load CNA data</h2>
+            <p>The forecast data did not load. This is usually temporary.</p>
+            <button type="button" class="btn btn--primary" onclick="location.reload()">Try again</button>
         </div>
-        <div class="stat">
-            <p class="eyebrow">Growth rate</p>
-            <p class="stat__value num" id="summaryGrowthRate">&mdash;</p>
-            <p class="stat__note" id="summaryGrowthDetail">Year on year</p>
+        <div id="chartSection" hidden>
+            <div class="chart"><canvas id="cnaChart"></canvas></div>
         </div>
+
+        <div class="hero__meta" id="cnaMeta"></div>
     </section>
 
-    <!-- Chart for the selected CNA -->
-    <section class="panel">
-        <div class="panel__head">
-            <div class="panel__head-row">
-                <div>
-                    <h2 class="panel__title" id="panelTitle">CNA forecast</h2>
-                    <p class="panel__sub">Monthly CVE publications and the forecast that follows them.</p>
-                </div>
-                <div class="seg" id="yearToggleContainer" role="group" aria-label="Forecast year" hidden>
-                    <button type="button" id="yearCurrentBtn"></button>
-                    <button type="button" id="yearNextBtn"></button>
-                </div>
-            </div>
+    <!-- Site-wide figures, in the slot the overview page uses for its own -->
+    <section class="stats" aria-label="CNA forecast summary">
+        <div class="stat">
+            <p class="eyebrow">CNAs forecast</p>
+            <p class="stat__value num" id="totalCnas">&mdash;</p>
+            <p class="stat__note">Organisations with a published forecast</p>
         </div>
-        <div class="panel__body">
-            <div id="loadingState" class="state">
-                <div class="spinner"></div>
-                <p>Loading CNA forecast data&hellip;</p>
-            </div>
-            <div id="errorState" class="state" hidden>
-                <h2>Could not load CNA data</h2>
-                <p>The forecast data did not load. This is usually temporary.</p>
-                <button type="button" class="btn btn--primary" onclick="location.reload()">Try again</button>
-            </div>
-            <div id="chartSection" hidden>
-                <div class="chart"><canvas id="cnaChart"></canvas></div>
-            </div>
+        <div class="stat">
+            <p class="eyebrow">Median MASE</p>
+            <p class="stat__value num" id="averageMape">&mdash;</p>
+            <p class="stat__note">Across every CNA &middot; lower is better</p>
+        </div>
+        <div class="stat">
+            <p class="eyebrow">Best MASE</p>
+            <p class="stat__value num" id="bestMape">&mdash;</p>
+            <p class="stat__note">The most predictable CNA in the set</p>
+        </div>
+        <div class="stat">
+            <p class="eyebrow">Models used</p>
+            <p class="stat__value num" id="modelsUsed">&mdash;</p>
+            <p class="stat__note">Distinct models selected across CNAs</p>
         </div>
     </section>
 
@@ -198,31 +203,10 @@
             </p>
         </div>
         <div class="panel__body">
-            <div class="cols cols--2">
+            <div>
                 <div>
                     <p class="eyebrow">Model usage distribution</p>
                     <div id="modelDistribution" class="model-dist"></div>
-                </div>
-                <div>
-                    <p class="eyebrow">Performance metrics</p>
-                    <div class="stats stats--inset">
-                        <div class="stat">
-                            <p class="eyebrow">CNAs forecast</p>
-                            <p class="stat__value num" id="totalCnas">&mdash;</p>
-                        </div>
-                        <div class="stat">
-                            <p class="eyebrow">Median MASE</p>
-                            <p class="stat__value num" id="averageMape">&mdash;</p>
-                        </div>
-                        <div class="stat">
-                            <p class="eyebrow">Best MASE</p>
-                            <p class="stat__value num" id="bestMape">&mdash;</p>
-                        </div>
-                        <div class="stat">
-                            <p class="eyebrow">Models used</p>
-                            <p class="stat__value num" id="modelsUsed">&mdash;</p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -243,7 +227,7 @@
     </div>
 </footer>
 
-<script src="shell.js?v=0.13.2" defer></script>
-<script src="cna.js?v=0.13.2" defer></script>
+<script src="shell.js?v=0.13.3" defer></script>
+<script src="cna.js?v=0.13.3" defer></script>
 </body>
 </html>
