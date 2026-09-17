@@ -26,6 +26,15 @@ const $ = id => document.getElementById(id);
 
 const nf = new Intl.NumberFormat('en-US');
 const n = v => nf.format(Math.round(v));
+
+/* Modelled figures are rounded to the nearest thousand; counts of what has
+   already been published are not. An 80% interval some 22,000 wide quoted to
+   the unit claims five significant figures the model cannot support, and the
+   rounding is what tells a reader which numbers are estimated and which are
+   observed. Detail tables stay exact, because that is where the month-level
+   errors are actually being checked. */
+const approx = v => nf.format(Math.round(v / 1000) * 1000);
+const approxK = v => `${Math.round(v / 1000)}k`;
 const signed = v => (v > 0 ? '+' : v < 0 ? '−' : '') + nf.format(Math.abs(Math.round(v)));
 const pct = (v, d = 1) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d) + '%';
 const token = name => getComputedStyle(root).getPropertyValue(name).trim();
@@ -163,11 +172,11 @@ function renderHero() {
        central estimate is a supporting line. */
     const hasBand = projection.lower_80 != null && projection.upper_80 != null;
     $('heroRange').innerHTML = hasBand
-        ? `${n(projection.lower_80)}<span class="to">–</span>${n(projection.upper_80)}`
-        : n(projection.total);
+        ? `${approx(projection.lower_80)}<span class="to">–</span>${approx(projection.upper_80)}`
+        : approx(projection.total);
 
     $('heroPoint').innerHTML = hasBand
-        ? `80% prediction interval · central estimate <b>${n(projection.total)}</b>`
+        ? `80% prediction interval · central estimate <b>${approx(projection.total)}</b>`
         : 'Central estimate';
 
     const prev = forecastData.yearly_forecast_totals?.[selectedYear - 1]?.Ensemble;
@@ -191,9 +200,9 @@ function renderHero() {
     if (projection.months_actual > 0) {
         parts.push(`<b>${n(projection.actual_ytd)}</b> published (${projection.months_actual} mo)`);
     }
-    parts.push(`<b>${n(projection.forecast_remainder)}</b> forecast (${projection.months_forecast} mo)`);
+    parts.push(`<b>${approx(projection.forecast_remainder)}</b> forecast (${projection.months_forecast} mo)`);
     parts.push(`Ensemble of <b>${(forecastData.methodology?.ensemble_members || []).length}</b> models`);
-    if (prevTotal) parts.push(`Prior year <b>${n(prevTotal)}</b>`);
+    if (prevTotal) parts.push(`Prior year <b>${n(prevTotal)}</b>`);  /* settled count, exact */
     $('heroMeta').innerHTML = parts.map(p => `<span>${p}</span>`).join('');
 }
 
@@ -605,8 +614,8 @@ const annotate = {
                 ctx.fillStyle = token('--accent');
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(n(upper.data[k].y), x + 8, upperPt.y);
-                ctx.fillText(n(lower.data[k].y), x + 8, lowerPt.y);
+                ctx.fillText(approxK(upper.data[k].y), x + 8, upperPt.y);
+                ctx.fillText(approxK(lower.data[k].y), x + 8, lowerPt.y);
                 ctx.restore();
             }
         }
