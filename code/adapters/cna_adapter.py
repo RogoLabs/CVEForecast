@@ -21,6 +21,7 @@ from core.model_utils import create_model_safe
 from darts import TimeSeries
 from darts.models import AutoARIMA, ExponentialSmoothing, LightGBMModel, LinearRegressionModel, Prophet, XGBModel
 from darts.models.forecasting.baselines import NaiveDrift, NaiveMean, NaiveSeasonal
+from forecast_constraints import build_cumulative_band
 from validation.rolling_origin import BacktestResult, RollingOriginBacktest, mark_naive_baselines, rank_models
 
 # What a CNA falls back to when no model beats it. NaiveDrift extrapolates the
@@ -358,7 +359,9 @@ class CNAForecaster(BaseForecaster):
         if FALLBACK_MODEL not in candidates:
             candidates.append(FALLBACK_MODEL)
 
-        windows = self.publication_windows()
+        # The year spans the headline needs, and the running totals the chart
+        # draws. Both are sums, so both are scored as sums.
+        windows = {**self.publication_windows(), **self.cumulative_windows()}
 
         results = {}
         for model_name in candidates:
@@ -497,26 +500,56 @@ class CNAForecaster(BaseForecaster):
 
     def _build_annual_bands(self) -> Dict[str, Dict[str, IntervalBands]]:
         """
-        Bands on the year totals, measured on year totals.
+        Bands on the totals this site publishes, measured on those totals.
 
         Same construction as the monthly bands - shape pooled across CNAs, width
-        per CNA - but fitted to a different quantity. The error on a year is not
+        per CNA - but fitted to a different quantity. The error on a total is not
         the sum of the errors on its months: summing monthly bounds assumes the
         model is wrong in the same direction all year, and measured on these
         series the months largely cancel instead. Carrying the summed assumption
         into the published figure gave the median CNA an 80% range spanning 25x.
 
+        Covers both the year totals the headline leads with and the running
+        totals the chart plots, so the cone and the headline are the same
+        measurement rather than two that have to be kept in step.
+
         Returns:
-            ``{cna_id: {'YYYY': bands}}``. The window name occupies the horizon
+            ``{cna_id: {span_name: bands}}``, keyed 'YYYY' for a year and
+            'YYYY-MM' for a running total. The span name occupies the horizon
             slot in each band, so every one of them is a single horizon.
         """
-        windows = self.publication_windows()
-        out: Dict[str, Dict[str, IntervalBands]] = {}
+        year_spans = self.publication_windows()
+        windows = {**year_spans, **self.cumulative_windows()}
 
+        # A CNA takes part only if its cached residuals cover every span this run
+        # publishes. Partial cover is how the headline and the chart come to
+        # disagree: an entry scored before the chart's spans were measured has
+        # the year and not the running totals, so the year figure would be
+        # measured while the cone beneath it fell back to accumulating months -
+        # the disagreement that blocked three deploys, reappearing one CNA at a
+        # time as the cache turns over. Absent is the honest state, and the page
+        # already has somewhere to fall back to.
+        covering: Dict[str, Dict[str, List[float]]] = {}
+        partial = 0
+        for cna_id, entry in self.selection_cache.entries.items():
+            stored = entry.get('log_residuals_by_window') or {}
+            if not stored:
+                continue
+            if all(stored.get(name) for name in windows):
+                covering[cna_id] = stored
+            else:
+                partial += 1
+        if partial:
+            self.logger.info(
+                f'{partial} CNAs were scored before the current spans and have no band yet; '
+                f'they gain one when their turn to re-score comes round'
+            )
+
+        fitted: Dict[str, Dict[str, IntervalBands]] = {}
         for name in windows:
             by_cna: Dict[str, Dict[int, List[float]]] = {}
-            for cna_id, entry in self.selection_cache.entries.items():
-                values = (entry.get('log_residuals_by_window') or {}).get(name)
+            for cna_id, stored in covering.items():
+                values = stored.get(name)
                 if values:
                     by_cna[cna_id] = {1: list(values)}
             if not by_cna:
@@ -525,28 +558,43 @@ class CNAForecaster(BaseForecaster):
             shape, scales = build_shared_shape(by_cna)
             if not shape.factors:
                 continue
-            uninformative = 0
             for cna_id, scale in scales.items():
                 band = scale_bands(shape, scale)
-                if not band.factors:
+                if band.factors:
+                    fitted.setdefault(cna_id, {})[name] = band
+
+        # A year too uncertain to state is too uncertain to draw. The guard is
+        # applied to the year, then to everything inside it: keeping the cone
+        # while dropping the headline would leave the chart asserting a range
+        # the page had just declined to make.
+        out: Dict[str, Dict[str, IntervalBands]] = {}
+        dropped: Dict[str, int] = {}
+        for cna_id, spans in fitted.items():
+            too_wide = set()
+            for year in year_spans:
+                band = spans.get(year)
+                if not band:
                     continue
                 low, high = band.for_horizon(1)['80']
                 if high / low > MAX_INFORMATIVE_ANNUAL_RATIO:
-                    uninformative += 1
-                    self.logger.debug(f'{cna_id}: {name} band spans {high / low:,.0f}x, too wide to publish')
-                    continue
-                out.setdefault(cna_id, {})[name] = band
+                    too_wide.add(year)
+                    dropped[year] = dropped.get(year, 0) + 1
+                    self.logger.debug(f'{cna_id}: {year} band spans {high / low:,.0f}x, too wide to publish')
 
-            if uninformative:
-                self.logger.info(
-                    f'{name}: {uninformative} CNAs have a band too wide to be worth publishing '
-                    f'(over {MAX_INFORMATIVE_ANNUAL_RATIO:.0f}x); those pages keep the model and MASE line'
-                )
+            kept = {name: band for name, band in spans.items() if name[:4] not in too_wide}
+            if kept:
+                out[cna_id] = kept
+
+        for year, count in sorted(dropped.items()):
+            self.logger.info(
+                f'{year}: {count} CNAs have a band too wide to be worth publishing '
+                f'(over {MAX_INFORMATIVE_ANNUAL_RATIO:.0f}x); those pages keep the model and MASE line'
+            )
 
         if out:
             self.logger.info(
-                f'Built annual interval bands for {len(out)} CNAs over windows '
-                + ', '.join(f'{k}=h{v[0]}..{v[1]}' for k, v in sorted(windows.items()))
+                f'Built interval bands on published totals for {len(out)} CNAs over '
+                + ', '.join(f'{k}=h{v[0]}..{v[1]}' for k, v in sorted(year_spans.items()))
             )
         return out
 
@@ -638,6 +686,8 @@ class CNAForecaster(BaseForecaster):
 
         annual: Dict[str, Dict[str, int]] = {}
         for year, band in annual_bands.items():
+            if len(year) != 4:
+                continue  # a running total, not a year
             total = forecast_by_year.get(year)
             factors = band.for_horizon(1)
             if total is None or not factors:
@@ -956,6 +1006,18 @@ class CNAForecaster(BaseForecaster):
             intervals = self._interval_payload(forecast_result, historical_dict)
             if intervals:
                 record['intervals'] = intervals
+
+                # The shaded cone on the chart, from the same measured spans the
+                # headline is built from. Accumulating the monthly bands here
+                # instead would be the obvious shortcut and would draw a cone
+                # several times too wide, contradicting the figure above it.
+                band = build_cumulative_band(
+                    cumulative_timelines.get(f'{forecast_result.model_name}_cumulative', []),
+                    intervals.get('monthly') or {},
+                    forecast_result.metadata.get('annual_bands') or {},
+                )
+                if band:
+                    record['cumulative_band'] = band
 
             output_data[cna_id] = record
 

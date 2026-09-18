@@ -12,12 +12,19 @@ import numpy as np
 import pandas as pd
 import pytest
 from cna_model_cache import ModelSelectionCache
+from core.base_forecaster import BaseForecaster
 from darts import TimeSeries
 from validation.rolling_origin import RollingOriginBacktest
 
 
-class FakeHorizon:
-    """A forecaster stub with only the horizon behaviour publication_windows needs."""
+class FakeHorizon(BaseForecaster):
+    """
+    A forecaster with only the horizon behaviour the span derivation needs.
+
+    Subclassed rather than stubbed because cumulative_windows builds on
+    publication_windows, so the two have to stay in step - which is the property
+    several of these tests are about.
+    """
 
     def __init__(self, start, end):
         self._start, self._end = start, end
@@ -25,16 +32,38 @@ class FakeHorizon:
     def get_forecast_horizon(self):
         return self._start, self._end
 
+    # Unused here; declared because the base class requires them.
+    def load_data(self):
+        raise NotImplementedError
 
-def windows_for(year, month):
-    """Publication windows as they would be derived in a given month."""
-    from core.base_forecaster import BaseForecaster
+    def get_model_list(self):
+        raise NotImplementedError
 
-    stub = FakeHorizon(
+    def create_model(self, model_name, hyperparameters):
+        raise NotImplementedError
+
+    def apply_constraints(self, forecasts):
+        raise NotImplementedError
+
+    def save_results(self, forecasts):
+        raise NotImplementedError
+
+
+def _at(year, month):
+    return FakeHorizon(
         datetime(year, month, 1, tzinfo=timezone.utc),
         datetime(year + 1, 12, 31, tzinfo=timezone.utc),
     )
-    return BaseForecaster.publication_windows(stub)
+
+
+def windows_for(year, month):
+    """Publication windows as they would be derived in a given month."""
+    return _at(year, month).publication_windows()
+
+
+def cumulative_windows_for(year, month):
+    """Cumulative spans as they would be derived in a given month."""
+    return _at(year, month).cumulative_windows()
 
 
 class TestPublicationWindows:
@@ -187,3 +216,34 @@ class TestCachedResiduals:
         entry = ModelSelectionCache(path=str(path)).get('a')
         assert entry['model'] == 'Prophet'
         assert entry.get('log_residuals') is None
+
+
+class TestSpanCoverage:
+    """
+    A CNA is banded only where its cached residuals cover every span the run
+    publishes. Partial cover is how the headline and the chart come to disagree.
+    """
+
+    def test_windows_cover_both_the_year_and_every_running_total(self):
+        year_spans = windows_for(2026, 9)
+        cumulative = cumulative_windows_for(2026, 9)
+
+        # Every running total starts where its year starts, so a year's last
+        # running total IS that year's span - the chart closes on the same
+        # measurement the headline is made of, rather than one kept in step.
+        for year, span in year_spans.items():
+            closing = [k for k, v in cumulative.items() if k.startswith(year) and v == span]
+            assert closing, f'{year} has no running total covering its whole span'
+
+    def test_a_running_total_never_reaches_past_its_own_year(self):
+        cumulative = cumulative_windows_for(2026, 9)
+        year_spans = windows_for(2026, 9)
+        for name, (first, last) in cumulative.items():
+            year = name[:4]
+            assert (first, last) >= (year_spans[year][0], first)
+            assert last <= year_spans[year][1]
+
+    @pytest.mark.parametrize('month', range(1, 13))
+    def test_running_totals_exist_for_every_forecast_month(self, month):
+        cumulative = cumulative_windows_for(2026, month)
+        assert len(cumulative) == 25 - month

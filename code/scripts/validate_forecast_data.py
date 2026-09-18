@@ -270,6 +270,26 @@ def check_cna_intervals(data: Dict[str, Any], failures: List[str]) -> None:
             )
 
         forecast_months = {m[:7] for m in (rec.get('forecasts') or {}).get(model, {})}
+        # The cone must contain the line it is drawn around, and must close where
+        # the year figure says. The same two checks the CVE chart gets.
+        chart = rec.get('cumulative_band') or {}
+        if chart:
+            line = {
+                e['date']: e['cumulative_total']
+                for e in (rec.get('cumulative_timelines') or {}).get(f'{model}_cumulative', [])
+            }
+            low = {e['date']: e['cumulative_total'] for e in chart.get('lower', [])}
+            high = {e['date']: e['cumulative_total'] for e in chart.get('upper', [])}
+            if set(low) != set(line) or set(high) != set(line):
+                _fail(f'{name}: cumulative_band does not align with its own timeline', failures)
+            else:
+                for date, point in line.items():
+                    if not (low[date] <= point <= high[date]):
+                        _fail(
+                            f'{name} {date}: cumulative {point:,} outside its band [{low[date]:,}, {high[date]:,}]',
+                            failures,
+                        )
+
         for year, band in (intervals.get('annual') or {}).items():
             if band['lower_80'] > band['upper_80']:
                 _fail(f'{name} {year}: annual interval bounds inverted', failures)
@@ -289,6 +309,23 @@ def check_cna_intervals(data: Dict[str, Any], failures: List[str]) -> None:
                     f'({band["lower_80"]:,} to {band["upper_80"]:,})',
                     failures,
                 )
+
+            # Chart and headline are the same measurement, so they must land on
+            # the same number - the disagreement that blocked three deploys.
+            year_end = f'{year}-12-31T23:59:59Z'
+            chart_low = {e['date']: e['cumulative_total'] for e in chart.get('lower', [])}
+            chart_high = {e['date']: e['cumulative_total'] for e in chart.get('upper', [])}
+            if year_end in chart_low:
+                for label, from_chart, from_year in (
+                    ('lower', chart_low[year_end], band['lower_80']),
+                    ('upper', chart_high[year_end], band['upper_80']),
+                ):
+                    if from_chart != from_year:
+                        _fail(
+                            f'{name} {year}: {label} bound disagrees between chart band '
+                            f'({from_chart:,}) and year total ({from_year:,})',
+                            failures,
+                        )
 
     print(f'  {with_intervals}/{len(data)} CNAs publish a prediction interval')
 

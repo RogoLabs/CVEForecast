@@ -162,6 +162,105 @@ class ForecastConstraints:
         return warnings
 
 
+def build_cumulative_band(
+    timeline: List[Dict[str, Any]],
+    step_intervals: Dict[str, Dict[str, float]],
+    measured_bands: Optional[Dict[str, Any]] = None,
+) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Cumulative 80% bounds aligned to the ensemble timeline.
+
+    Computed here rather than in the browser: the front-end would have to
+    re-derive which month each cumulative step belongs to, and getting that
+    off by one silently mislabels every band on the chart.
+
+    Each point on this chart is a running total for the year, so its band is
+    measured on running totals - the same way the year figure is, and using
+    the span that ends at that month. Through v0.14 the bounds were instead
+    accumulated month by month, which assumes the model errs in the same
+    direction every month running. The months largely cancel, so that
+    overstated the band, and once the year figure started being measured
+    properly the two disagreed: 2027 read 109,546-138,059 in the headline
+    and 97,760-215,537 on the chart drawn beneath it.
+
+    A month's span starts where its year starts, so the last point of a year
+    carries that year's own band and the chart closes exactly where the
+    headline says it should.
+
+    Args:
+        timeline: The ensemble cumulative timeline
+        step_intervals: Per-month bands on what each month adds, used only
+            where no measured span is available
+        measured_bands: ``{'YYYY-MM': IntervalBands}`` on the year-to-date
+            total at that month, from ``cumulative_windows``
+
+    Returns:
+        ``{'lower': [{date, cumulative_total}], 'upper': [...]}``
+    """
+    measured = measured_bands or {}
+    if not timeline or (not measured and not step_intervals):
+        return {}
+
+    lower: List[Dict[str, Any]] = []
+    upper: List[Dict[str, Any]] = []
+    # Retained for the fallback path below, which still accumulates.
+    lower_offset = 0.0
+    upper_offset = 0.0
+    previous: Optional[Dict[str, Any]] = None
+    # Where this year's forecasting starts from. Set on the first banded
+    # marker of the year, to whatever was already published by then.
+    forecast_base: Optional[float] = None
+
+    for entry in timeline:
+        if previous is None or entry['cumulative_total'] == 0:
+            # Start of the path, or a year reset: no accumulated uncertainty
+            # yet, and nothing forecast for this year so far.
+            lower_offset = upper_offset = 0.0
+            forecast_base = None
+            lower.append(dict(entry))
+            upper.append(dict(entry))
+            previous = entry
+            continue
+
+        # A marker shows the total BEFORE its own month, so the span it
+        # closes is the one ending at the previous marker's month - the same
+        # alignment the accumulating path uses, and the reason it is computed
+        # here rather than in the browser.
+        band = measured.get(previous['date'][:7])
+        factors = band.for_horizon(1).get('80') if band else None
+
+        # The accumulator is kept up to date whether or not it is used, so
+        # that a marker with no measured span falls back to a correct
+        # accumulation rather than to however much had been accrued the last
+        # time this branch was taken. A year measured up to November and
+        # unmeasured at its close would otherwise have ended on an offset of
+        # zero - a year-end band of no width at all, disagreeing with the
+        # year figure, which is the failure this whole change exists to fix.
+        step = entry['cumulative_total'] - previous['cumulative_total']
+        step_band = step_intervals.get(previous['date'][:7])
+        if step_band and step > 0:
+            lower_offset += step_band['lower_80'] - step
+            upper_offset += step_band['upper_80'] - step
+
+        if factors:
+            if forecast_base is None:
+                forecast_base = previous['cumulative_total']
+            # Only the forecast part of the year carries model error; what
+            # is already published is observed and does not move.
+            forecast_so_far = entry['cumulative_total'] - forecast_base
+            low = forecast_base + forecast_so_far * factors[0]
+            high = forecast_base + forecast_so_far * factors[1]
+        else:
+            low = entry['cumulative_total'] + lower_offset
+            high = entry['cumulative_total'] + upper_offset
+
+        lower.append({'date': entry['date'], 'cumulative_total': int(round(low))})
+        upper.append({'date': entry['date'], 'cumulative_total': int(round(high))})
+        previous = entry
+
+    return {'lower': lower, 'upper': upper}
+
+
 def build_year_projections(
     monthly_actuals: Dict[str, float],
     monthly_forecasts: Dict[str, float],
