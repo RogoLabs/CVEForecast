@@ -851,7 +851,9 @@ class CNAForecaster(BaseForecaster):
 
         return constrained
 
-    def _generate_historical_cumulative(self, historical_dict: Dict[str, int]) -> List[Dict[str, Any]]:
+    def _generate_historical_cumulative(
+        self, historical_dict: Dict[str, int], now: Optional[datetime] = None
+    ) -> List[Dict[str, Any]]:
         """
         Generate per-year cumulative historical data for chart display.
         Each year resets to 0 on January 1st (matches CVE adapter behavior).
@@ -871,7 +873,9 @@ class CNAForecaster(BaseForecaster):
         result = []
         current_year = None
         year_cumulative = 0
-        current_datetime = datetime.now()
+        # Aware and shared with the forecast timeline: these two series meet at
+        # this point, and a naive local clock put them hours apart off UTC.
+        current_datetime = now or datetime.now(timezone.utc)
 
         for date_str in sorted_dates:
             # Parse date
@@ -926,7 +930,11 @@ class CNAForecaster(BaseForecaster):
         return result
 
     def _generate_cna_cumulative_timelines(
-        self, forecast_dict: Dict[str, int], model_name: str, actuals_base: int
+        self,
+        forecast_dict: Dict[str, int],
+        model_name: str,
+        actuals_base: int,
+        now: Optional[datetime] = None,
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Generate cumulative forecast timelines for chart display.
@@ -942,6 +950,7 @@ class CNAForecaster(BaseForecaster):
         """
         from datetime import datetime
 
+        now = now or datetime.now(timezone.utc)
         timeline = []
 
         if not forecast_dict:
@@ -986,13 +995,22 @@ class CNAForecaster(BaseForecaster):
                 current_year = forecast_year
                 year_total = 0
 
-            # Add month-start entry BEFORE adding this month's forecast
-            month_start_date = f'{forecast_date.year}-{forecast_date.month:02d}-01T00:00:00Z'
+            # A marker carries the total BEFORE this month's contribution. For
+            # the month in progress that state is "published so far", which is
+            # true as of now rather than as of the 1st - and the historical
+            # series already ends on exactly that point. Dating it to the 1st
+            # put the month-to-date total at a position where the actuals line
+            # was still showing last month's, so the chart jumped between two
+            # values at the same x.
+            if forecast_date.year == now.year and forecast_date.month == now.month:
+                marker_date = now.strftime('%Y-%m-%dT%H:%M:%SZ')
+            else:
+                marker_date = f'{forecast_date.year}-{forecast_date.month:02d}-01T00:00:00Z'
 
             # Check if this date already exists
-            existing_entry = next((entry for entry in timeline if entry['date'] == month_start_date), None)
+            existing_entry = next((entry for entry in timeline if entry['date'] == marker_date), None)
             if not existing_entry:
-                timeline.append({'date': month_start_date, 'cumulative_total': int(round(year_total))})
+                timeline.append({'date': marker_date, 'cumulative_total': int(round(year_total))})
 
             # Now add this month's forecast to the running total
             year_total += cve_count
@@ -1080,11 +1098,11 @@ class CNAForecaster(BaseForecaster):
             )
 
             # Generate historical_cumulative for chart display
-            historical_cumulative = self._generate_historical_cumulative(historical_dict)
+            historical_cumulative = self._generate_historical_cumulative(historical_dict, now)
 
             # Generate cumulative timelines for chart display
             cumulative_timelines = self._generate_cna_cumulative_timelines(
-                forecast_result.forecast_values, forecast_result.model_name, actuals_base
+                forecast_result.forecast_values, forecast_result.model_name, actuals_base, now
             )
 
             record = {
