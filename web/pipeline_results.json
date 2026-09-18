@@ -6,21 +6,19 @@
     "ensemble_members": [
       "LinearRegression",
       "TBATS",
-      "Prophet",
-      "AutoARIMA",
-      "KalmanFilter"
+      "Prophet"
     ],
     "interval_coverage": {
       "80": {
         "nominal": 0.8,
-        "empirical": 0.8072,
-        "n": 1110,
+        "empirical": 0.8169,
+        "n": 792,
         "calibrated": true
       },
       "95": {
         "nominal": 0.95,
-        "empirical": 0.9532,
-        "n": 1110,
+        "empirical": 0.9394,
+        "n": 792,
         "calibrated": true
       }
     },
@@ -29,9 +27,26 @@
   },
   "cna": {
     "cnas_loaded": 146,
-    "cnas_rescored": 0,
-    "cnas_from_cache": 140,
+    "cnas_rescored": 12,
+    "cnas_from_cache": 128,
     "cnas_awaiting_scoring": 0,
+    "cnas_with_intervals": 12,
+    "interval_coverage": {
+      "80": {
+        "nominal": 0.8,
+        "empirical": 0.8092,
+        "n": 2794,
+        "n_cnas": 12,
+        "calibrated": true
+      },
+      "95": {
+        "nominal": 0.95,
+        "empirical": 0.952,
+        "n": 2794,
+        "n_cnas": 12,
+        "calibrated": true
+      }
+    },
     "forecasts_generated": 140,
     "output_path": "web/cna_data.json"
   }
