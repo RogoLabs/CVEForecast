@@ -319,3 +319,49 @@ class TestConeWidening:
         bands = {'2027': self.band(0.9, 1.1)}
         out = self.widened(bands, {'2027-01-01': 100.0})
         assert out['2027'].for_horizon(1)['80'] == (0.9, 1.1)
+
+
+class TestNowcast:
+    """
+    Training stops at the last complete month, so the forecast opens on the month
+    in progress and predicts all of it - including the part already published.
+    Counting both counted that part twice; counting only the forecast threw it
+    away, and 46 of 140 CNAs then showed less for this month than was already
+    out. The main pipeline has always nowcast instead.
+    """
+
+    @staticmethod
+    def nowcast(values, now):
+        import adapters.cna_adapter as mod
+        from adapters.cna_adapter import CNAForecaster
+
+        fc = CNAForecaster.__new__(CNAForecaster)
+        real = mod.datetime
+
+        class Frozen:
+            @staticmethod
+            def now(tz=None):
+                return now
+
+        mod.datetime = Frozen
+        try:
+            return fc._nowcast(values)
+        finally:
+            mod.datetime = real
+
+    def test_the_month_in_progress_is_cut_to_its_remainder(self):
+        now = datetime(2026, 9, 18, tzinfo=timezone.utc)  # 14 of 22 business days
+        out = self.nowcast({'2026-09-01': 100, '2026-10-01': 100}, now)
+        assert out['2026-09-01'] == 36
+        assert out['2026-10-01'] == 100, 'later months are untouched'
+
+    def test_nothing_is_left_of_a_month_that_is_over(self):
+        now = datetime(2026, 9, 30, tzinfo=timezone.utc)
+        assert self.nowcast({'2026-09-01': 100}, now)['2026-09-01'] == 0
+
+    def test_a_forecast_that_does_not_reach_this_month_is_untouched(self):
+        # 22 of 140 CNAs forecast from an earlier month because their history
+        # stops early; some end before the current month entirely.
+        now = datetime(2026, 9, 18, tzinfo=timezone.utc)
+        values = {'2022-04-01': 10, '2022-05-01': 12}
+        assert self.nowcast(values, now) == values

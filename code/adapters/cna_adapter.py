@@ -21,7 +21,7 @@ from core.model_utils import create_model_safe
 from darts import TimeSeries
 from darts.models import AutoARIMA, ExponentialSmoothing, LightGBMModel, LinearRegressionModel, Prophet, XGBModel
 from darts.models.forecasting.baselines import NaiveDrift, NaiveMean, NaiveSeasonal
-from forecast_constraints import build_cumulative_band
+from forecast_constraints import build_cumulative_band, business_day_share
 from validation.rolling_origin import BacktestResult, RollingOriginBacktest, mark_naive_baselines, rank_models
 
 # What a CNA falls back to when no model beats it. NaiveDrift extrapolates the
@@ -423,6 +423,37 @@ class CNAForecaster(BaseForecaster):
             return None
         return f'peaks at {worst:,.0f} against a {RUNAWAY_LOOKBACK}-month high of {peak:,.0f} ({worst / peak:,.0f}x)'
 
+    def _nowcast(self, forecast_values: Dict[str, int]) -> Dict[str, int]:
+        """
+        Replace the in-progress month's full-month forecast with its remainder.
+
+        Training stops at the last complete month, so the forecast opens on the
+        month in progress and predicts the whole of it - including the part
+        already published. Counting both counted that part twice; counting only
+        the forecast threw away real data, and for 46 of 140 CNAs the page then
+        showed a smaller figure for this month than had already been published.
+        Linux had 1,509 September CVEs out and the page said 639.
+
+        The main pipeline has always nowcast this month rather than choosing
+        between the two: what is out stays, and the forecast contributes only
+        what is left. This does the same, scaled by business days elapsed,
+        because publication happens on working days.
+
+        Args:
+            forecast_values: ``{date_string: full-month forecast}``
+
+        Returns:
+            The same mapping with the current month cut to its remainder
+        """
+        now = datetime.now(timezone.utc)
+        current = now.strftime('%Y-%m')
+        remaining = max(0.0, 1.0 - business_day_share(now))
+
+        return {
+            date: (max(0, round(value * remaining)) if str(date)[:7] == current else value)
+            for date, value in forecast_values.items()
+        }
+
     def _spans_for(self, ts: TimeSeries) -> Tuple[Dict[str, Tuple[int, int]], Dict[str, str]]:
         """
         The spans this CNA publishes, named by horizon rather than by year.
@@ -744,19 +775,14 @@ class CNAForecaster(BaseForecaster):
         if not monthly and not annual_bands:
             return {}
 
-        forecast_months = {pd.to_datetime(d).strftime('%Y-%m') for d in forecast_result.forecast_values}
-
-        # The forecast starts at the current month and predicts the whole of it,
-        # while the history holds however much of that month has been published
-        # so far. Counting both would count the month twice, so a month the
-        # forecast covers is taken from the forecast alone.
+        # Both halves count. The month in progress is nowcast - what is published
+        # stays in the history and the forecast holds only the remainder - so
+        # adding them is exactly right, where adding a full-month forecast to a
+        # part-published month would have counted the published part twice.
         actual_by_year: Dict[int, int] = {}
         for date_str, count in historical_dict.items():
-            month = str(date_str)[:7]
-            if month in forecast_months:
-                continue
             try:
-                year = int(month[:4])
+                year = int(str(date_str)[:4])
             except ValueError:
                 continue
             actual_by_year[year] = actual_by_year.get(year, 0) + int(count)
@@ -1039,10 +1065,13 @@ class CNAForecaster(BaseForecaster):
                     else:
                         date_obj = datetime.strptime(date_str[:10], '%Y-%m-%d')
 
-                    # Sum all months in current year through last complete month
-                    if date_obj.year == current_year:
-                        if date_obj.month <= last_complete_month:
-                            actuals_base += count
+                    # Through NOW, not through the last complete month: the
+                    # forecast starts from this month's remainder, so the chart
+                    # has to start from what is already out - otherwise the line
+                    # branches below the actuals and reality overtakes it within
+                    # days of the run.
+                    if date_obj.year == current_year and date_obj.month <= now.month:
+                        actuals_base += count
                 except ValueError:
                     continue
 
@@ -1246,6 +1275,7 @@ class CNAForecaster(BaseForecaster):
                     str(date): max(0, round(float(value)))
                     for date, value in zip(attempt.forecast.time_index, attempt.forecast.values().flatten())
                 }
+                forecast_values = self._nowcast(forecast_values)
 
                 # Publishing an obviously impossible number costs more than
                 # publishing a dull one. Fall back to the baseline, which is what

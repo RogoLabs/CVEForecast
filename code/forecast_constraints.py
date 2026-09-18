@@ -28,9 +28,11 @@ makes 9/12 of the annual figure a known quantity rather than a model output.
 
 import logging
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -160,6 +162,27 @@ class ForecastConstraints:
         for message in warnings:
             self.logger.warning(f'Sanity guard: {message}')
         return warnings
+
+
+def business_day_share(now: datetime) -> float:
+    """
+    How far through the current month we are, in business days.
+
+    Business days rather than calendar days because publication happens on
+    working days: by calendar day 17 of a 30-day month we may be 75% through the
+    month's publishing capacity, not 57%.
+
+    Args:
+        now: The moment to measure from
+
+    Returns:
+        Share of the month's business days elapsed, in [0, 1]
+    """
+    start = pd.Timestamp(now).tz_localize(None).normalize().replace(day=1)
+    today = pd.Timestamp(now).tz_localize(None).normalize()
+    total = len(pd.bdate_range(start, start + pd.offsets.MonthEnd(0)))
+    elapsed = len(pd.bdate_range(start, today))
+    return min(elapsed / total, 1.0) if total else 1.0
 
 
 def build_cumulative_band(

@@ -264,13 +264,12 @@ function calculateCnaMetrics(rec) {
     const selectedModel = rec.model_selection?.selected_model;
     const modelForecasts = selectedModel ? rec.forecasts?.[selectedModel] : null;
 
-    /* The forecast begins at the month in progress and predicts the whole of
-       it, while the history holds however much of that month has been published
-       so far. Counting both counted the month twice and overstated the current
-       year by the part of it already out. A month the forecast covers is taken
-       from the forecast alone. */
-    const forecastMonths = new Set(Object.keys(modelForecasts || {}).map(m => m.slice(0, 7)));
-
+    /* Both halves count. The month in progress is nowcast upstream - what has
+       been published stays in the history and the forecast carries only the
+       remainder - so adding them is right. Adding a full-month forecast to a
+       part-published month counted the published part twice; dropping that
+       month from the history instead threw it away, and for 46 CNAs the page
+       then showed less for this month than had already been published. */
     let priorTotal = 0;
     let currentPublished = 0;
 
@@ -279,7 +278,7 @@ function calculateCnaMetrics(rec) {
         if (typeof count !== 'number') return;
         const year = Number(month.slice(0, 4));
         if (year === priorYear) priorTotal += count;
-        else if (year === currentYear && !forecastMonths.has(month.slice(0, 7))) currentPublished += count;
+        else if (year === currentYear) currentPublished += count;
       });
     }
 
