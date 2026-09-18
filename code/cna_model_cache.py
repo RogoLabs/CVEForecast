@@ -25,7 +25,8 @@ population cycles through roughly every two weeks.
 
 New CNAs, and any whose history has grown substantially since they were last
 scored, jump the queue - those are the cases where the cached choice is most
-likely to be wrong.
+likely to be wrong. So do entries that predate a change to what an entry has to
+carry, since those cannot serve the current pipeline at all.
 """
 
 import json
@@ -117,6 +118,17 @@ class ModelSelectionCache:
                 never_scored.append(cna_id)
                 continue
 
+            # An entry from before residuals were cached names a model but
+            # cannot produce a band, and nothing else here would notice: it is
+            # neither new nor grown nor aged. Left alone, every entry would sit
+            # unrefreshed until it passed refresh_days, so a release that starts
+            # caching residuals would publish no intervals at all for a month,
+            # and only then begin filling. Treat it as unscored, which it
+            # effectively is for the purpose it is now needed for.
+            if 'log_residuals' not in entry:
+                never_scored.append(cna_id)
+                continue
+
             if months - entry.get('n_months', months) >= SERIES_GROWTH_TRIGGER:
                 grown.append(cna_id)
                 continue
@@ -191,19 +203,22 @@ class ModelSelectionCache:
             'selected_at': datetime.now(timezone.utc).isoformat(),
             'all_scores': scores,
         }
-        # Absent rather than null when there are none: the publishing side treats
-        # a missing key as "this CNA has no interval", and a null would have to
-        # be special-cased into meaning the same thing.
-        if residuals:
-            # 4dp is far finer than the quantiles these feed, and keeps a file
-            # that is rewritten on every run from carrying 17 digits of noise.
-            entry['log_residuals'] = {
-                str(h): [round(float(v), 4) for v in vals] for h, vals in sorted(residuals.items()) if vals
-            }
-        if window_residuals:
-            entry['log_residuals_by_window'] = {
-                str(name): [round(float(v), 4) for v in vals] for name, vals in sorted(window_residuals.items()) if vals
-            }
+        # Always written, even when empty. Scoring that ran and found nothing is
+        # not the same as an entry from before residuals were cached: the first
+        # is settled until this CNA next comes round, the second cannot serve the
+        # pipeline at all and has to jump the queue. An absent key is what tells
+        # the two apart, so the key is there whenever the current code has run.
+        #
+        # 4dp is far finer than the quantiles these feed, and keeps a file that
+        # is rewritten on every run from carrying 17 digits of noise.
+        entry['log_residuals'] = {
+            str(h): [round(float(v), 4) for v in vals] for h, vals in sorted((residuals or {}).items()) if vals
+        }
+        entry['log_residuals_by_window'] = {
+            str(name): [round(float(v), 4) for v in vals]
+            for name, vals in sorted((window_residuals or {}).items())
+            if vals
+        }
         self.entries[cna_id] = entry
 
     def save(self) -> None:
