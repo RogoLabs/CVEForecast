@@ -390,6 +390,74 @@ class TestCumulativeBand:
         assert chart['lower'][-1]['cumulative_total'] == projection.lower_80
         assert chart['upper'][-1]['cumulative_total'] == projection.upper_80
 
+    def test_an_unmeasured_marker_falls_back_to_a_correct_accumulation(self):
+        """
+        A year measured early and unmeasured at its close must not end on a
+        stale offset. It ended on zero - a year-end band of no width, which is
+        the same disagreement with the year figure this change exists to fix.
+        """
+        from core.intervals import IntervalBands
+
+        band = IntervalBands()
+        band.factors = {1: {'80': (0.9, 1.1)}}
+        band.max_horizon = 1
+
+        timeline = [
+            {'date': '2027-01-01T00:00:00Z', 'cumulative_total': 0},
+            {'date': '2027-02-01T00:00:00Z', 'cumulative_total': 10000},
+            {'date': '2027-03-01T00:00:00Z', 'cumulative_total': 20000},
+        ]
+        steps = {
+            '2027-01': {'lower_80': 8000, 'upper_80': 13000},
+            '2027-02': {'lower_80': 8000, 'upper_80': 13000},
+        }
+        # Measured for the first marker only; the second has to accumulate both
+        # months, not just the one it saw.
+        result = self.band(timeline, steps, {'2027-01': band})
+        lower = {e['date']: e['cumulative_total'] for e in result['lower']}
+        upper = {e['date']: e['cumulative_total'] for e in result['upper']}
+
+        assert lower['2027-03-01T00:00:00Z'] == 20000 + (8000 - 10000) * 2
+        assert upper['2027-03-01T00:00:00Z'] == 20000 + (13000 - 10000) * 2
+        assert lower['2027-03-01T00:00:00Z'] < 20000 < upper['2027-03-01T00:00:00Z']
+
+    def test_the_pre_deploy_check_passes_on_what_the_adapter_builds(self):
+        """
+        The failure this change fixes only appeared when the pipeline ran, because
+        PR CI runs lint and tests and not the pipeline. So run the actual
+        pre-deploy check here, over structures built the way the adapter builds
+        them, and catch the next one before it reaches main.
+        """
+        import sys
+        from pathlib import Path as _Path
+
+        sys.path.insert(0, str(_Path(__file__).parent.parent / 'code' / 'scripts'))
+
+        from core.intervals import IntervalBands
+        from forecast_constraints import build_year_projections
+        from validate_forecast_data import check_cumulative_band
+
+        band = IntervalBands()
+        band.factors = {1: {'80': (0.88, 1.18)}}
+        band.max_horizon = 1
+
+        timeline = [{'date': '2027-01-01T00:00:00Z', 'cumulative_total': 0}]
+        timeline += [{'date': f'2027-{m:02d}-01T00:00:00Z', 'cumulative_total': (m - 1) * 1000} for m in range(2, 13)]
+        timeline.append({'date': '2027-12-31T23:59:59Z', 'cumulative_total': 12000})
+
+        measured = {f'2027-{m:02d}': band for m in range(1, 13)}
+        chart = self.band(timeline, {}, measured)
+        projections = build_year_projections({}, {'2027-06': 12000}, annual_bands={'2027': band})
+
+        data = {
+            'cumulative_band': chart,
+            'cumulative_timelines': {'Ensemble_cumulative': timeline},
+            'yearly_forecast_totals': {'2027': {'Ensemble': projections[2027].to_dict()}},
+        }
+        failures = []
+        check_cumulative_band(data, failures)
+        assert failures == [], failures
+
     def test_published_months_carry_no_model_error(self):
         """The year-to-date already out is fact; only the forecast part is banded."""
         from core.intervals import IntervalBands
