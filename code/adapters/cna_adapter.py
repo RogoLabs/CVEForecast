@@ -360,8 +360,9 @@ class CNAForecaster(BaseForecaster):
             candidates.append(FALLBACK_MODEL)
 
         # The year spans the headline needs, and the running totals the chart
-        # draws. Both are sums, so both are scored as sums.
-        windows = {**self.publication_windows(), **self.cumulative_windows()}
+        # draws. Both are sums, so both are scored as sums, and both are named by
+        # horizon because this CNA's forecast may not start where the horizon does.
+        windows, _labels = self._spans_for(ts)
 
         results = {}
         for model_name in candidates:
@@ -421,6 +422,39 @@ class CNAForecaster(BaseForecaster):
         if worst <= ceiling:
             return None
         return f'peaks at {worst:,.0f} against a {RUNAWAY_LOOKBACK}-month high of {peak:,.0f} ({worst / peak:,.0f}x)'
+
+    def _spans_for(self, ts: TimeSeries) -> Tuple[Dict[str, Tuple[int, int]], Dict[str, str]]:
+        """
+        The spans this CNA publishes, named by horizon rather than by year.
+
+        A forecast runs from the end of the series it was fitted to, so a CNA
+        that has not published for a month or two starts its forecast earlier
+        than everyone else and its calendar years sit at different horizons. 22
+        of 140 are in that position. Naming a span '2027' would therefore mean a
+        different quantity for different CNAs, and pooling them to fit a shared
+        shape would be pooling unlike things.
+
+        Named 'h5-16' instead, which is what the residual actually measures, so
+        the pool holds one quantity. Each CNA keeps its own map from the year it
+        publishes to the span that carries it.
+
+        Args:
+            ts: This CNA's history, whose end is where its forecast begins
+
+        Returns:
+            (spans, by_label) - ``{'h5-16': (5, 16)}`` and
+            ``{'2027': 'h5-16', '2027-03': 'h5-7'}``
+        """
+        start = (ts.end_time() + pd.DateOffset(months=1)).to_pydatetime().replace(tzinfo=timezone.utc)
+        named = {**self.publication_windows(start), **self.cumulative_windows(start)}
+
+        spans: Dict[str, Tuple[int, int]] = {}
+        by_label: Dict[str, str] = {}
+        for label, (first, last) in named.items():
+            key = f'h{first}-{last}'
+            spans[key] = (first, last)
+            by_label[label] = key
+        return spans, by_label
 
     def _build_interval_bands(self) -> Tuple[Dict[str, IntervalBands], Dict[str, Any]]:
         """
@@ -509,53 +543,28 @@ class CNAForecaster(BaseForecaster):
         series the months largely cancel instead. Carrying the summed assumption
         into the published figure gave the median CNA an 80% range spanning 25x.
 
-        Covers both the year totals the headline leads with and the running
-        totals the chart plots, so the cone and the headline are the same
-        measurement rather than two that have to be kept in step.
+        Covers the year totals the headline leads with and the running totals the
+        chart plots, so the cone and the headline are the same measurement rather
+        than two that have to be kept in step.
 
         Returns:
-            ``{cna_id: {span_name: bands}}``, keyed 'YYYY' for a year and
-            'YYYY-MM' for a running total. The span name occupies the horizon
-            slot in each band, so every one of them is a single horizon.
+            ``{cna_id: {'h5-16': bands}}``, keyed by horizon span. A CNA's own
+            years map onto those keys through ``_spans_for``, because a forecast
+            that starts early puts its calendar years at different horizons.
         """
-        year_spans = self.publication_windows()
-        windows = {**year_spans, **self.cumulative_windows()}
-
-        # A CNA takes part only if its cached residuals cover every span this run
-        # publishes. Partial cover is how the headline and the chart come to
-        # disagree: an entry scored before the chart's spans were measured has
-        # the year and not the running totals, so the year figure would be
-        # measured while the cone beneath it fell back to accumulating months -
-        # the disagreement that blocked three deploys, reappearing one CNA at a
-        # time as the cache turns over. Absent is the honest state, and the page
-        # already has somewhere to fall back to.
-        covering: Dict[str, Dict[str, List[float]]] = {}
-        partial = 0
+        by_span: Dict[str, Dict[str, List[float]]] = {}
         for cna_id, entry in self.selection_cache.entries.items():
             stored = entry.get('log_residuals_by_window') or {}
-            if not stored:
-                continue
-            if all(stored.get(name) for name in windows):
-                covering[cna_id] = stored
-            else:
-                partial += 1
-        if partial:
-            self.logger.info(
-                f'{partial} CNAs were scored before the current spans and have no band yet; '
-                f'they gain one when their turn to re-score comes round'
-            )
+            if stored:
+                by_span[cna_id] = stored
 
+        span_names = sorted({name for stored in by_span.values() for name in stored})
         fitted: Dict[str, Dict[str, IntervalBands]] = {}
-        for name in windows:
-            by_cna: Dict[str, Dict[int, List[float]]] = {}
-            for cna_id, stored in covering.items():
-                values = stored.get(name)
-                if values:
-                    by_cna[cna_id] = {1: list(values)}
-            if not by_cna:
+        for name in span_names:
+            contributors = {cna_id: {1: list(stored[name])} for cna_id, stored in by_span.items() if stored.get(name)}
+            if not contributors:
                 continue
-
-            shape, scales = build_shared_shape(by_cna)
+            shape, scales = build_shared_shape(contributors)
             if not shape.factors:
                 continue
             for cna_id, scale in scales.items():
@@ -563,39 +572,114 @@ class CNAForecaster(BaseForecaster):
                 if band.factors:
                     fitted.setdefault(cna_id, {})[name] = band
 
-        # A year too uncertain to state is too uncertain to draw. The guard is
-        # applied to the year, then to everything inside it: keeping the cone
-        # while dropping the headline would leave the chart asserting a range
-        # the page had just declined to make.
-        out: Dict[str, Dict[str, IntervalBands]] = {}
-        dropped: Dict[str, int] = {}
-        for cna_id, spans in fitted.items():
-            too_wide = set()
-            for year in year_spans:
-                band = spans.get(year)
-                if not band:
-                    continue
-                low, high = band.for_horizon(1)['80']
-                if high / low > MAX_INFORMATIVE_ANNUAL_RATIO:
-                    too_wide.add(year)
-                    dropped[year] = dropped.get(year, 0) + 1
-                    self.logger.debug(f'{cna_id}: {year} band spans {high / low:,.0f}x, too wide to publish')
+        if fitted:
+            self.logger.info(f'Fitted bands on {len(span_names)} published spans for {len(fitted)} CNAs')
+        return fitted
 
-            kept = {name: band for name, band in spans.items() if name[:4] not in too_wide}
-            if kept:
-                out[cna_id] = kept
+    def _bands_for_cna(
+        self, ts: TimeSeries, fitted: Dict[str, IntervalBands], forecast_values: Dict[str, Any]
+    ) -> Dict[str, IntervalBands]:
+        """
+        This CNA's spans, relabelled from horizon to what the page calls them.
 
-        for year, count in sorted(dropped.items()):
-            self.logger.info(
-                f'{year}: {count} CNAs have a band too wide to be worth publishing '
-                f'(over {MAX_INFORMATIVE_ANNUAL_RATIO:.0f}x); those pages keep the model and MASE line'
-            )
+        Args:
+            ts: The CNA's history, which fixes where its forecast begins
+            fitted: Its bands from ``_build_annual_bands``, keyed by horizon span
+            forecast_values: The published forecast, needed to turn each span's
+                factors into the width a reader actually sees
 
-        if out:
-            self.logger.info(
-                f'Built interval bands on published totals for {len(out)} CNAs over '
-                + ', '.join(f'{k}=h{v[0]}..{v[1]}' for k, v in sorted(year_spans.items()))
-            )
+        Returns:
+            ``{'2027': bands, '2027-03': bands}``. Empty unless every span this
+            CNA publishes was fitted: partial cover is how the headline and the
+            chart come to disagree, since the year would be measured while the
+            cone beneath it fell back to accumulating months. Absent is the
+            honest state and the page already has somewhere to fall back to.
+        """
+        _spans, by_label = self._spans_for(ts)
+        if not by_label or not all(key in fitted for key in by_label.values()):
+            return {}
+
+        bands = {label: fitted[key] for label, key in by_label.items()}
+
+        # A year too uncertain to state is too uncertain to draw, so where the
+        # guard drops a year's headline range the cone over it goes too. Keeping
+        # the cone would leave the chart asserting a range the page had just
+        # declined to make.
+        bands = self._widen_along_the_year(bands, forecast_values)
+
+        too_wide = set()
+        for label, band in bands.items():
+            if len(label) != 4:
+                continue
+            low, high = band.for_horizon(1)['80']
+            if high / low > MAX_INFORMATIVE_ANNUAL_RATIO:
+                too_wide.add(label)
+        return {label: band for label, band in bands.items() if label[:4] not in too_wide}
+
+    @staticmethod
+    def _widen_along_the_year(
+        bands: Dict[str, IntervalBands], forecast_values: Dict[str, Any]
+    ) -> Dict[str, IntervalBands]:
+        """
+        Stop the cone from narrowing as the year fills in.
+
+        Each running total is fitted from its own handful of residuals, so the
+        cone drawn through them wobbles: mitre's 2027 band was 713 CVEs wide in
+        April, 386 in November and 1,030 at the close. A reader cannot be told
+        that eleven months of a year are more certain than four of it.
+
+        The same argument ``build_intervals`` already makes for horizons, applied
+        across spans instead, and in the width a reader sees rather than in the
+        factors - the factors legitimately tighten as a span lengthens, because
+        that is the month-to-month error cancelling, while the absolute width has
+        to grow because there is more forecast underneath it.
+
+        Widened rather than clipped, so nothing is narrowed to fit, and the year
+        label takes the closing span's band so the headline and the cone stay the
+        same number.
+
+        Args:
+            bands: This CNA's spans, labelled 'YYYY' and 'YYYY-MM'
+            forecast_values: The published forecast
+
+        Returns:
+            The same mapping with each year's spans widened into order
+        """
+        by_month: Dict[str, float] = {}
+        for date_str, value in forecast_values.items():
+            if isinstance(value, (int, float)):
+                by_month[pd.to_datetime(date_str).strftime('%Y-%m')] = float(value)
+
+        out = dict(bands)
+        for year in sorted({label[:4] for label in bands}):
+            running = sorted(label for label in bands if len(label) == 7 and label[:4] == year)
+            if not running:
+                continue
+
+            widest = 0.0
+            total = 0.0
+            closing = None
+            for label in running:
+                total += by_month.get(label, 0.0)
+                band = out[label]
+                factors = band.for_horizon(1)
+                low, high = factors['80']
+                widest = max(widest, total * (high - low))
+
+                if total > 0 and total * (high - low) < widest:
+                    # Spread the shortfall evenly about the point estimate, which
+                    # keeps the band centred where the forecast is.
+                    grow = (widest / total - (high - low)) / 2.0
+                    widened = IntervalBands(levels=band.levels)
+                    widened.factors[1] = {lbl: (max(lo - grow, 1e-6), hi + grow) for lbl, (lo, hi) in factors.items()}
+                    widened.n_residuals = dict(band.n_residuals)
+                    widened.max_horizon = 1
+                    out[label] = widened
+                closing = label
+
+            # The year is the closing span, so they cannot drift apart.
+            if closing and year in out:
+                out[year] = out[closing]
         return out
 
     def _monthly_intervals(self, forecast_values: Dict[str, Any], bands: IntervalBands) -> Dict[str, Dict[str, float]]:

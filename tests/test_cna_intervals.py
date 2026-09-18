@@ -247,3 +247,75 @@ class TestSpanCoverage:
     def test_running_totals_exist_for_every_forecast_month(self, month):
         cumulative = cumulative_windows_for(2026, month)
         assert len(cumulative) == 25 - month
+
+
+class TestConeWidening:
+    """
+    Each running total is fitted from its own handful of residuals, so the cone
+    drawn through them wobbles. A reader cannot be told that eleven months of a
+    year are more certain than four of it.
+    """
+
+    @staticmethod
+    def band(lo, hi):
+        from core.intervals import IntervalBands
+
+        b = IntervalBands()
+        b.factors = {1: {'80': (lo, hi)}}
+        b.max_horizon = 1
+        return b
+
+    def widened(self, bands, forecasts):
+        from adapters.cna_adapter import CNAForecaster
+
+        return CNAForecaster._widen_along_the_year(bands, forecasts)
+
+    def test_the_cone_never_narrows_as_the_year_fills_in(self):
+        # A wide middle span followed by a tight one, which is what sampling
+        # noise across separately fitted spans produces.
+        bands = {
+            '2027-01': self.band(0.8, 1.2),
+            '2027-02': self.band(0.5, 1.5),
+            '2027-03': self.band(0.97, 1.03),
+            '2027': self.band(0.97, 1.03),
+        }
+        forecasts = {'2027-01-01': 100.0, '2027-02-01': 100.0, '2027-03-01': 100.0}
+        out = self.widened(bands, forecasts)
+
+        widths = []
+        total = 0
+        for month in ('2027-01', '2027-02', '2027-03'):
+            total += 100
+            lo, hi = out[month].for_horizon(1)['80']
+            widths.append(total * (hi - lo))
+        # Tolerant of float noise: the widening lands on the running maximum to
+        # within 1e-9, and the published figures are rounded to whole CVEs.
+        for earlier, later in zip(widths, widths[1:]):
+            assert later >= earlier - 1e-6, widths
+
+    def test_the_year_keeps_the_closing_span_so_the_headline_agrees(self):
+        bands = {
+            '2027-01': self.band(0.5, 1.5),
+            '2027-02': self.band(0.98, 1.02),
+            '2027': self.band(0.98, 1.02),
+        }
+        out = self.widened(bands, {'2027-01-01': 100.0, '2027-02-01': 100.0})
+        assert out['2027'].for_horizon(1)['80'] == out['2027-02'].for_horizon(1)['80']
+
+    def test_widening_only_ever_widens(self):
+        bands = {
+            '2027-01': self.band(0.9, 1.1),
+            '2027-02': self.band(0.9, 1.1),
+            '2027': self.band(0.9, 1.1),
+        }
+        forecasts = {'2027-01-01': 100.0, '2027-02-01': 100.0}
+        out = self.widened(bands, forecasts)
+        for month in ('2027-01', '2027-02'):
+            lo, hi = out[month].for_horizon(1)['80']
+            before_lo, before_hi = bands[month].for_horizon(1)['80']
+            assert lo <= before_lo and hi >= before_hi
+
+    def test_a_year_with_no_running_totals_is_left_alone(self):
+        bands = {'2027': self.band(0.9, 1.1)}
+        out = self.widened(bands, {'2027-01-01': 100.0})
+        assert out['2027'].for_horizon(1)['80'] == (0.9, 1.1)

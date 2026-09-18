@@ -126,7 +126,7 @@ class BaseForecaster(ABC):
     # Shared Methods (Implemented in Base)
     # ========================================================================
 
-    def publication_windows(self) -> Dict[str, Tuple[int, int]]:
+    def publication_windows(self, start: Optional[datetime] = None) -> Dict[str, Tuple[int, int]]:
         """
         The spans of the forecast that the site publishes as single totals.
 
@@ -141,11 +141,22 @@ class BaseForecaster(ABC):
         model errs in the same direction every month of the year, and the months
         largely cancel instead.
 
+        Args:
+            start: The month the forecast actually begins, when that is not the
+                horizon's own start. A forecast runs from the end of the series
+                it was fitted to, and a CNA that has not published for a while
+                has a series that ends early - so its months sit at different
+                horizons from everyone else's, and a span derived from the
+                global horizon would name the wrong ones.
+
         Returns:
             ``{'YYYY': (first_horizon, last_horizon)}``, 1-based and inclusive
         """
-        start, end = self.get_forecast_horizon()
+        horizon_start, end = self.get_forecast_horizon()
+        start = start or horizon_start
         total = (end.year - start.year) * 12 + (end.month - start.month) + 1
+        if total <= 0:
+            return {}
 
         windows: Dict[str, Tuple[int, int]] = {}
         first = 1
@@ -158,7 +169,7 @@ class BaseForecaster(ABC):
             first = last + 1
         return windows
 
-    def cumulative_windows(self) -> Dict[str, Tuple[int, int]]:
+    def cumulative_windows(self, start: Optional[datetime] = None) -> Dict[str, Tuple[int, int]]:
         """
         The running totals the cumulative chart draws, as spans of the forecast.
 
@@ -172,13 +183,18 @@ class BaseForecaster(ABC):
         with the year total by construction rather than by coincidence, which is
         what the two disagreeing looked like.
 
+        Args:
+            start: The month the forecast actually begins; see
+                ``publication_windows``
+
         Returns:
             ``{'YYYY-MM': (first_horizon, last_horizon)}``, 1-based and inclusive
         """
-        start, _end = self.get_forecast_horizon()
+        horizon_start, _end = self.get_forecast_horizon()
+        start = start or horizon_start
         windows: Dict[str, Tuple[int, int]] = {}
 
-        for year, (first, last) in self.publication_windows().items():
+        for year, (first, last) in self.publication_windows(start).items():
             for horizon in range(first, last + 1):
                 offset = horizon - 1
                 month = (start.month - 1 + offset) % 12 + 1
