@@ -1347,7 +1347,16 @@ class CNAForecaster(BaseForecaster):
                         'selected_at': entry.get('selected_at'),
                         'interval_coverage': interval_coverage,
                         'interval_max_horizon': bands.max_horizon,
-                        'annual_bands': (annual_bands.get(cna_id, {}) if entry.get('model') == best_model else {}),
+                        # Relabelled from horizon span to the year this CNA
+                        # publishes, widened into order, and dropped where a year
+                        # is too uncertain to state. Passing the raw spans
+                        # through leaves the headline keyed 'h1-4' and the chart
+                        # with nothing to look up.
+                        'annual_bands': (
+                            self._bands_for_cna(ts, annual_bands.get(cna_id, {}), forecast_values)
+                            if entry.get('model') == best_model
+                            else {}
+                        ),
                     },
                 )
 
