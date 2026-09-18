@@ -264,12 +264,12 @@ class TestCumulativeBand:
     """
 
     @staticmethod
-    def band(timeline, step_intervals):
+    def band(timeline, step_intervals, measured=None):
         from adapters.cve_adapter import CVEForecaster
 
-        # The method touches no instance state; call it unbound to avoid needing
-        # a configured forecaster (and a cvelistV5 checkout) for a pure-maths test.
-        return CVEForecaster._generate_cumulative_band(None, timeline, step_intervals)
+        # A pure function of its inputs, so it needs no configured forecaster
+        # (and no cvelistV5 checkout) for a pure-maths test.
+        return CVEForecaster._generate_cumulative_band(timeline, step_intervals, measured)
 
     def test_band_brackets_the_line(self):
         timeline = [
@@ -331,3 +331,79 @@ class TestCumulativeBand:
 
     def test_no_intervals_yields_no_band(self):
         assert self.band([{'date': '2026-10-01T00:00:00Z', 'cumulative_total': 1}], {}) == {}
+
+    def test_a_measured_span_is_used_in_place_of_accumulating(self):
+        """
+        Each point is a running total, so its band is measured on running totals
+        rather than added up from the months inside it. Accumulating assumes the
+        model errs the same direction every month; the months largely cancel.
+        """
+        from core.intervals import IntervalBands
+
+        def at(lo, hi):
+            b = IntervalBands()
+            b.factors = {1: {'80': (lo, hi)}}
+            b.max_horizon = 1
+            return b
+
+        timeline = [
+            {'date': '2027-01-01T00:00:00Z', 'cumulative_total': 0},
+            {'date': '2027-02-01T00:00:00Z', 'cumulative_total': 10000},
+            {'date': '2027-03-01T00:00:00Z', 'cumulative_total': 20000},
+        ]
+        measured = {'2027-01': at(0.9, 1.2), '2027-02': at(0.85, 1.3)}
+        # Bounds an accumulating band would have produced, far wider.
+        steps = {'2027-01': {'lower_80': 2000, 'upper_80': 30000}, '2027-02': {'lower_80': 2000, 'upper_80': 30000}}
+
+        result = self.band(timeline, steps, measured)
+        lower = {e['date']: e['cumulative_total'] for e in result['lower']}
+        upper = {e['date']: e['cumulative_total'] for e in result['upper']}
+
+        assert lower['2027-02-01T00:00:00Z'] == 9000
+        assert upper['2027-02-01T00:00:00Z'] == 12000
+        assert lower['2027-03-01T00:00:00Z'] == 17000
+        assert upper['2027-03-01T00:00:00Z'] == 26000
+
+    def test_the_chart_closes_where_the_year_figure_says(self):
+        """
+        The last span of a year IS that year's span, so the chart's year-end and
+        the headline are the same measurement. They disagreed once - 2027 read
+        109,546-138,059 in the headline against 97,760-215,537 on the chart -
+        and the pre-deploy check caught it.
+        """
+        from core.intervals import IntervalBands
+        from forecast_constraints import build_year_projections
+
+        band = IntervalBands()
+        band.factors = {1: {'80': (0.9, 1.15)}}
+        band.max_horizon = 1
+
+        # Markers run month by month and close on a year-end point, whose span
+        # is the whole year - the same span the year figure is measured over.
+        timeline = [{'date': '2027-01-01T00:00:00Z', 'cumulative_total': 0}]
+        timeline += [{'date': f'2027-{m:02d}-01T00:00:00Z', 'cumulative_total': (m - 1) * 1000} for m in range(2, 13)]
+        timeline.append({'date': '2027-12-31T23:59:59Z', 'cumulative_total': 20000})
+
+        chart = self.band(timeline, {}, {f'2027-{m:02d}': band for m in range(1, 13)})
+        projection = build_year_projections({}, {'2027-06': 20000}, annual_bands={'2027': band})[2027]
+
+        assert chart['lower'][-1]['cumulative_total'] == projection.lower_80
+        assert chart['upper'][-1]['cumulative_total'] == projection.upper_80
+
+    def test_published_months_carry_no_model_error(self):
+        """The year-to-date already out is fact; only the forecast part is banded."""
+        from core.intervals import IntervalBands
+
+        band = IntervalBands()
+        band.factors = {1: {'80': (0.5, 2.0)}}
+        band.max_horizon = 1
+
+        timeline = [
+            {'date': '2026-01-01T00:00:00Z', 'cumulative_total': 0},
+            {'date': '2026-09-17T12:00:00Z', 'cumulative_total': 66401},
+            {'date': '2026-10-01T00:00:00Z', 'cumulative_total': 70401},
+        ]
+        result = self.band(timeline, {}, {'2026-09': band})
+        # 66,401 is published; only the 4,000 forecast on top of it moves.
+        assert result['lower'][2]['cumulative_total'] == 66401 + 2000
+        assert result['upper'][2]['cumulative_total'] == 66401 + 8000
