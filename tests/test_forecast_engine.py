@@ -265,11 +265,12 @@ class TestCumulativeBand:
 
     @staticmethod
     def band(timeline, step_intervals, measured=None):
-        from adapters.cve_adapter import CVEForecaster
+        from forecast_constraints import build_cumulative_band
 
         # A pure function of its inputs, so it needs no configured forecaster
-        # (and no cvelistV5 checkout) for a pure-maths test.
-        return CVEForecaster._generate_cumulative_band(timeline, step_intervals, measured)
+        # (and no cvelistV5 checkout) for a pure-maths test. It lives outside the
+        # adapters because both of them draw this chart.
+        return build_cumulative_band(timeline, step_intervals, measured)
 
     def test_band_brackets_the_line(self):
         timeline = [

@@ -12,12 +12,19 @@ import numpy as np
 import pandas as pd
 import pytest
 from cna_model_cache import ModelSelectionCache
+from core.base_forecaster import BaseForecaster
 from darts import TimeSeries
 from validation.rolling_origin import RollingOriginBacktest
 
 
-class FakeHorizon:
-    """A forecaster stub with only the horizon behaviour publication_windows needs."""
+class FakeHorizon(BaseForecaster):
+    """
+    A forecaster with only the horizon behaviour the span derivation needs.
+
+    Subclassed rather than stubbed because cumulative_windows builds on
+    publication_windows, so the two have to stay in step - which is the property
+    several of these tests are about.
+    """
 
     def __init__(self, start, end):
         self._start, self._end = start, end
@@ -25,16 +32,38 @@ class FakeHorizon:
     def get_forecast_horizon(self):
         return self._start, self._end
 
+    # Unused here; declared because the base class requires them.
+    def load_data(self):
+        raise NotImplementedError
 
-def windows_for(year, month):
-    """Publication windows as they would be derived in a given month."""
-    from core.base_forecaster import BaseForecaster
+    def get_model_list(self):
+        raise NotImplementedError
 
-    stub = FakeHorizon(
+    def create_model(self, model_name, hyperparameters):
+        raise NotImplementedError
+
+    def apply_constraints(self, forecasts):
+        raise NotImplementedError
+
+    def save_results(self, forecasts):
+        raise NotImplementedError
+
+
+def _at(year, month):
+    return FakeHorizon(
         datetime(year, month, 1, tzinfo=timezone.utc),
         datetime(year + 1, 12, 31, tzinfo=timezone.utc),
     )
-    return BaseForecaster.publication_windows(stub)
+
+
+def windows_for(year, month):
+    """Publication windows as they would be derived in a given month."""
+    return _at(year, month).publication_windows()
+
+
+def cumulative_windows_for(year, month):
+    """Cumulative spans as they would be derived in a given month."""
+    return _at(year, month).cumulative_windows()
 
 
 class TestPublicationWindows:
@@ -187,3 +216,152 @@ class TestCachedResiduals:
         entry = ModelSelectionCache(path=str(path)).get('a')
         assert entry['model'] == 'Prophet'
         assert entry.get('log_residuals') is None
+
+
+class TestSpanCoverage:
+    """
+    A CNA is banded only where its cached residuals cover every span the run
+    publishes. Partial cover is how the headline and the chart come to disagree.
+    """
+
+    def test_windows_cover_both_the_year_and_every_running_total(self):
+        year_spans = windows_for(2026, 9)
+        cumulative = cumulative_windows_for(2026, 9)
+
+        # Every running total starts where its year starts, so a year's last
+        # running total IS that year's span - the chart closes on the same
+        # measurement the headline is made of, rather than one kept in step.
+        for year, span in year_spans.items():
+            closing = [k for k, v in cumulative.items() if k.startswith(year) and v == span]
+            assert closing, f'{year} has no running total covering its whole span'
+
+    def test_a_running_total_never_reaches_past_its_own_year(self):
+        cumulative = cumulative_windows_for(2026, 9)
+        year_spans = windows_for(2026, 9)
+        for name, (first, last) in cumulative.items():
+            year = name[:4]
+            assert (first, last) >= (year_spans[year][0], first)
+            assert last <= year_spans[year][1]
+
+    @pytest.mark.parametrize('month', range(1, 13))
+    def test_running_totals_exist_for_every_forecast_month(self, month):
+        cumulative = cumulative_windows_for(2026, month)
+        assert len(cumulative) == 25 - month
+
+
+class TestConeWidening:
+    """
+    Each running total is fitted from its own handful of residuals, so the cone
+    drawn through them wobbles. A reader cannot be told that eleven months of a
+    year are more certain than four of it.
+    """
+
+    @staticmethod
+    def band(lo, hi):
+        from core.intervals import IntervalBands
+
+        b = IntervalBands()
+        b.factors = {1: {'80': (lo, hi)}}
+        b.max_horizon = 1
+        return b
+
+    def widened(self, bands, forecasts):
+        from adapters.cna_adapter import CNAForecaster
+
+        return CNAForecaster._widen_along_the_year(bands, forecasts)
+
+    def test_the_cone_never_narrows_as_the_year_fills_in(self):
+        # A wide middle span followed by a tight one, which is what sampling
+        # noise across separately fitted spans produces.
+        bands = {
+            '2027-01': self.band(0.8, 1.2),
+            '2027-02': self.band(0.5, 1.5),
+            '2027-03': self.band(0.97, 1.03),
+            '2027': self.band(0.97, 1.03),
+        }
+        forecasts = {'2027-01-01': 100.0, '2027-02-01': 100.0, '2027-03-01': 100.0}
+        out = self.widened(bands, forecasts)
+
+        widths = []
+        total = 0
+        for month in ('2027-01', '2027-02', '2027-03'):
+            total += 100
+            lo, hi = out[month].for_horizon(1)['80']
+            widths.append(total * (hi - lo))
+        # Tolerant of float noise: the widening lands on the running maximum to
+        # within 1e-9, and the published figures are rounded to whole CVEs.
+        for earlier, later in zip(widths, widths[1:]):
+            assert later >= earlier - 1e-6, widths
+
+    def test_the_year_keeps_the_closing_span_so_the_headline_agrees(self):
+        bands = {
+            '2027-01': self.band(0.5, 1.5),
+            '2027-02': self.band(0.98, 1.02),
+            '2027': self.band(0.98, 1.02),
+        }
+        out = self.widened(bands, {'2027-01-01': 100.0, '2027-02-01': 100.0})
+        assert out['2027'].for_horizon(1)['80'] == out['2027-02'].for_horizon(1)['80']
+
+    def test_widening_only_ever_widens(self):
+        bands = {
+            '2027-01': self.band(0.9, 1.1),
+            '2027-02': self.band(0.9, 1.1),
+            '2027': self.band(0.9, 1.1),
+        }
+        forecasts = {'2027-01-01': 100.0, '2027-02-01': 100.0}
+        out = self.widened(bands, forecasts)
+        for month in ('2027-01', '2027-02'):
+            lo, hi = out[month].for_horizon(1)['80']
+            before_lo, before_hi = bands[month].for_horizon(1)['80']
+            assert lo <= before_lo and hi >= before_hi
+
+    def test_a_year_with_no_running_totals_is_left_alone(self):
+        bands = {'2027': self.band(0.9, 1.1)}
+        out = self.widened(bands, {'2027-01-01': 100.0})
+        assert out['2027'].for_horizon(1)['80'] == (0.9, 1.1)
+
+
+class TestNowcast:
+    """
+    Training stops at the last complete month, so the forecast opens on the month
+    in progress and predicts all of it - including the part already published.
+    Counting both counted that part twice; counting only the forecast threw it
+    away, and 46 of 140 CNAs then showed less for this month than was already
+    out. The main pipeline has always nowcast instead.
+    """
+
+    @staticmethod
+    def nowcast(values, now):
+        import adapters.cna_adapter as mod
+        from adapters.cna_adapter import CNAForecaster
+
+        fc = CNAForecaster.__new__(CNAForecaster)
+        real = mod.datetime
+
+        class Frozen:
+            @staticmethod
+            def now(tz=None):
+                return now
+
+        mod.datetime = Frozen
+        try:
+            return fc._nowcast(values)
+        finally:
+            mod.datetime = real
+
+    def test_the_month_in_progress_is_cut_to_its_remainder(self):
+        now = datetime(2026, 9, 18, tzinfo=timezone.utc)  # 14 of 22 business days
+        out = self.nowcast({'2026-09-01': 100, '2026-10-01': 100}, now)
+        assert out['2026-09-01'] == 36
+        assert out['2026-10-01'] == 100, 'later months are untouched'
+
+    def test_nothing_is_left_of_a_month_that_is_over(self):
+        now = datetime(2026, 9, 30, tzinfo=timezone.utc)
+        assert self.nowcast({'2026-09-01': 100}, now)['2026-09-01'] == 0
+
+    def test_a_forecast_that_does_not_reach_this_month_is_untouched(self):
+        # 22 of 140 CNAs forecast from an earlier month because their history
+        # stops early; some end before the current month entirely.
+        now = datetime(2026, 9, 18, tzinfo=timezone.utc)
+        values = {'2022-04-01': 10, '2022-05-01': 12}
+        assert self.nowcast(values, now) == values

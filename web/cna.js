@@ -78,6 +78,11 @@ function applyYearLabels() {
 // Formatting
 const numberFmt = new Intl.NumberFormat();
 
+/* Read a theme token at draw time rather than caching it, so a chart rebuilt
+   after a theme switch picks up the new value - the defect v0.13 fixed for the
+   other charts. */
+const cssToken = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
 /* app.js has its own copy; this page does not load app.js. Model names come from
    our own pipeline, but they reach the DOM through innerHTML here, so they go
    through this on the way rather than relying on that staying true. */
@@ -259,13 +264,12 @@ function calculateCnaMetrics(rec) {
     const selectedModel = rec.model_selection?.selected_model;
     const modelForecasts = selectedModel ? rec.forecasts?.[selectedModel] : null;
 
-    /* The forecast begins at the month in progress and predicts the whole of
-       it, while the history holds however much of that month has been published
-       so far. Counting both counted the month twice and overstated the current
-       year by the part of it already out. A month the forecast covers is taken
-       from the forecast alone. */
-    const forecastMonths = new Set(Object.keys(modelForecasts || {}).map(m => m.slice(0, 7)));
-
+    /* Both halves count. The month in progress is nowcast upstream - what has
+       been published stays in the history and the forecast carries only the
+       remainder - so adding them is right. Adding a full-month forecast to a
+       part-published month counted the published part twice; dropping that
+       month from the history instead threw it away, and for 46 CNAs the page
+       then showed less for this month than had already been published. */
     let priorTotal = 0;
     let currentPublished = 0;
 
@@ -274,7 +278,7 @@ function calculateCnaMetrics(rec) {
         if (typeof count !== 'number') return;
         const year = Number(month.slice(0, 4));
         if (year === priorYear) priorTotal += count;
-        else if (year === currentYear && !forecastMonths.has(month.slice(0, 7))) currentPublished += count;
+        else if (year === currentYear) currentPublished += count;
       });
     }
 
@@ -719,7 +723,38 @@ function buildCumulativeDatasets(rec, year) {
       }
     });
   }
-  
+
+  /* The shaded cone, where this CNA has one. Same construction as the overview
+     chart: edges drawn rather than a faint wash, because the interval is the
+     claim the headline makes and it should read as a shape.
+
+     It is drawn from bands measured on running totals, not accumulated from the
+     monthly ones - the months largely cancel, so accumulating them here would
+     draw a cone several times too wide and contradict the figure above it. The
+     last span of a year is that year's span, so the cone closes exactly where
+     the headline says. */
+  const band = rec?.cumulative_band;
+  if (band?.lower?.length && band?.upper?.length) {
+    const inYear = pts => pts
+      .filter(p => Number(p.date.slice(0, 4)) === year)
+      .filter(p => !lastActualMonthDateStr || p.date >= lastActualMonthDateStr)
+      .map(p => ({ x: new Date(p.date), y: p.cumulative_total }));
+
+    const lower = inYear(band.lower);
+    const upper = inYear(band.upper);
+    if (lower.length > 1 && upper.length > 1) {
+      datasets.push({
+        label: '80% range', data: upper, borderWidth: 1, pointRadius: 0,
+        borderColor: cssToken('--band-edge'), backgroundColor: cssToken('--band'),
+        fill: '+1', tension: 0.1, order: 10, $band: true,
+      });
+      datasets.push({
+        label: '_lower', data: lower, borderWidth: 1, pointRadius: 0,
+        borderColor: cssToken('--band-edge'), fill: false, tension: 0.1, order: 10, $band: true,
+      });
+    }
+  }
+
   return datasets;
 }
 
@@ -895,12 +930,16 @@ function renderChart(rec) {
         position: 'top',
         labels: {
           usePointStyle: true,
-          padding: 20
+          padding: 20,
+          /* The band is two datasets filled against each other; only the upper
+             one is named, and neither belongs in the legend as a line. */
+          filter: item => !item.text.startsWith('_')
         }
       },
       tooltip: {
         mode: 'nearest',
         intersect: false,
+        filter: item => !item.dataset.$band,
         callbacks: {
           title: function(context) {
             if (context && context.length > 0) {
