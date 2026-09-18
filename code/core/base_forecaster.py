@@ -158,6 +158,33 @@ class BaseForecaster(ABC):
             first = last + 1
         return windows
 
+    def cumulative_windows(self) -> Dict[str, Tuple[int, int]]:
+        """
+        The running totals the cumulative chart draws, as spans of the forecast.
+
+        The chart resets at each January, so the point it plots for a month is
+        the total for that year so far - itself a sum, and so a quantity whose
+        error has to be measured on sums rather than accumulated from the months
+        inside it.
+
+        Each span starts where its year's span starts, so the last span of a
+        year is that year's span exactly. The chart's year-end therefore agrees
+        with the year total by construction rather than by coincidence, which is
+        what the two disagreeing looked like.
+
+        Returns:
+            ``{'YYYY-MM': (first_horizon, last_horizon)}``, 1-based and inclusive
+        """
+        start, _end = self.get_forecast_horizon()
+        windows: Dict[str, Tuple[int, int]] = {}
+
+        for year, (first, last) in self.publication_windows().items():
+            for horizon in range(first, last + 1):
+                offset = horizon - 1
+                month = (start.month - 1 + offset) % 12 + 1
+                windows[f'{year}-{month:02d}'] = (first, horizon)
+        return windows
+
     def train_model(
         self,
         model_name: str,
