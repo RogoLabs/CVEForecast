@@ -139,13 +139,30 @@ class TestCachedResiduals:
         assert entry['log_residuals'] == {'1': [0.1, -0.2], '2': [0.3]}
         assert entry['log_residuals_by_window'] == {'2027': [0.05, -0.04]}
 
-    def test_a_selection_without_residuals_carries_no_keys(self, tmp_path):
-        # Absent rather than null: the publishing side reads a missing key as
-        # "no band", and a null would have to be special-cased into meaning it.
+    def test_scoring_that_found_nothing_still_records_that_it_ran(self, tmp_path):
+        """
+        Empty, not absent. An entry that predates residual caching jumps the
+        refresh queue; one whose backtest simply produced nothing must not, or
+        it would be re-scored every run and starve the rest of the cap. An
+        absent key is what tells the two apart.
+        """
         cache = ModelSelectionCache(path=str(tmp_path / 'sel.json'))
         cache.put('a', 'Prophet', 1.2, 60, {})
-        assert 'log_residuals' not in cache.get('a')
-        assert 'log_residuals_by_window' not in cache.get('a')
+        assert cache.get('a')['log_residuals'] == {}
+        assert cache.get('a')['log_residuals_by_window'] == {}
+        assert cache.plan_refresh({'a': 60}) == []
+
+    def test_an_entry_from_before_residuals_were_cached_jumps_the_queue(self, tmp_path):
+        """
+        Otherwise the whole population sits unrefreshed until it ages past
+        refresh_days: not new, not grown, not old. A release that starts caching
+        residuals would publish no intervals at all for a month, then begin
+        filling - six weeks before the feature is visible anywhere.
+        """
+        cache = ModelSelectionCache(path=str(tmp_path / 'sel.json'))
+        cache.put('legacy', 'Prophet', 1.2, 60, {})
+        del cache.entries['legacy']['log_residuals']
+        assert cache.plan_refresh({'legacy': 60}) == ['legacy']
 
     def test_entries_written_before_residuals_existed_still_load(self, tmp_path):
         import json
