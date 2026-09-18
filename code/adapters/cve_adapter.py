@@ -591,6 +591,19 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
             band = measured.get(previous['date'][:7])
             factors = band.for_horizon(1).get('80') if band else None
 
+            # The accumulator is kept up to date whether or not it is used, so
+            # that a marker with no measured span falls back to a correct
+            # accumulation rather than to however much had been accrued the last
+            # time this branch was taken. A year measured up to November and
+            # unmeasured at its close would otherwise have ended on an offset of
+            # zero - a year-end band of no width at all, disagreeing with the
+            # year figure, which is the failure this whole change exists to fix.
+            step = entry['cumulative_total'] - previous['cumulative_total']
+            step_band = step_intervals.get(previous['date'][:7])
+            if step_band and step > 0:
+                lower_offset += step_band['lower_80'] - step
+                upper_offset += step_band['upper_80'] - step
+
             if factors:
                 if forecast_base is None:
                     forecast_base = previous['cumulative_total']
@@ -600,12 +613,6 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
                 low = forecast_base + forecast_so_far * factors[0]
                 high = forecast_base + forecast_so_far * factors[1]
             else:
-                # No measured span for this marker - accumulate, as before.
-                step = entry['cumulative_total'] - previous['cumulative_total']
-                step_band = step_intervals.get(previous['date'][:7])
-                if step_band and step > 0:
-                    lower_offset += step_band['lower_80'] - step
-                    upper_offset += step_band['upper_80'] - step
                 low = entry['cumulative_total'] + lower_offset
                 high = entry['cumulative_total'] + upper_offset
 
