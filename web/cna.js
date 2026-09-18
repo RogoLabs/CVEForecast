@@ -78,6 +78,32 @@ function applyYearLabels() {
 // Formatting
 const numberFmt = new Intl.NumberFormat();
 
+/* app.js has its own copy; this page does not load app.js. Model names come from
+   our own pipeline, but they reach the DOM through innerHTML here, so they go
+   through this on the way rather than relying on that staying true. */
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/* The overview page rounds modelled figures to the nearest thousand, because
+   every number on it is in the tens of thousands. CNA totals span four orders of
+   magnitude - a median of 87 CVEs a year, a handful above 10,000 - so a fixed
+   unit would round most of them to zero. This keeps the same idea, that a
+   modelled figure should not claim more precision than the model has, and scales
+   the unit to the number: two significant figures, near enough. */
+function approxCna(value) {
+  const v = Math.round(Number(value) || 0);
+  if (v < 100) return numberFmt.format(v);
+  const unit = Math.pow(10, Math.floor(Math.log10(v)) - 1);
+  return numberFmt.format(Math.round(v / unit) * unit);
+}
+
+/** The published 80% range for a year, when this CNA has one. */
+function annualBand(rec, year) {
+  const band = rec?.intervals?.annual?.[String(year)];
+  if (!band || band.lower_80 == null || band.upper_80 == null) return null;
+  if (!(band.upper_80 > band.lower_80)) return null;
+  return band;
+}
+
 // =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================
@@ -230,6 +256,16 @@ function calculateCnaMetrics(rec) {
     // over. YEARS is computed once in deriveYears().
     const { priorYear, currentYear, nextYear } = YEARS;
 
+    const selectedModel = rec.model_selection?.selected_model;
+    const modelForecasts = selectedModel ? rec.forecasts?.[selectedModel] : null;
+
+    /* The forecast begins at the month in progress and predicts the whole of
+       it, while the history holds however much of that month has been published
+       so far. Counting both counted the month twice and overstated the current
+       year by the part of it already out. A month the forecast covers is taken
+       from the forecast alone. */
+    const forecastMonths = new Set(Object.keys(modelForecasts || {}).map(m => m.slice(0, 7)));
+
     let priorTotal = 0;
     let currentPublished = 0;
 
@@ -238,7 +274,7 @@ function calculateCnaMetrics(rec) {
         if (typeof count !== 'number') return;
         const year = Number(month.slice(0, 4));
         if (year === priorYear) priorTotal += count;
-        else if (year === currentYear) currentPublished += count;
+        else if (year === currentYear && !forecastMonths.has(month.slice(0, 7))) currentPublished += count;
       });
     }
 
@@ -247,8 +283,6 @@ function calculateCnaMetrics(rec) {
     // only the next year is forecast end to end.
     let currentRemainder = 0;
     let nextForecast = 0;
-    const selectedModel = rec.model_selection?.selected_model;
-    const modelForecasts = selectedModel ? rec.forecasts?.[selectedModel] : null;
 
     if (modelForecasts) {
       Object.entries(modelForecasts).forEach(([month, value]) => {
@@ -276,7 +310,10 @@ function calculateCnaMetrics(rec) {
       model: rec.model_selection?.selected_model || 'N/A',
       mase: rec.model_selection?.validation_mase ?? null,
       isFallback: rec.model_selection?.is_fallback === true,
-      awaitingScoring: rec.model_selection?.awaiting_scoring === true
+      awaitingScoring: rec.model_selection?.awaiting_scoring === true,
+      // The next-year column is the one the band matters most for: it is
+      // entirely forecast, up to sixteen months out.
+      nextBand: annualBand(rec, YEARS.nextYear)
     };
 
     return result;
@@ -362,7 +399,9 @@ function renderTable() {
         <td class="strong">${row.name || 'Unknown CNA'}</td>
         <td class="num">${numberFmt.format(row.priorTotal)}</td>
         <td class="num">${numberFmt.format(row.forecastedCurrent)}</td>
-        <td class="num">${numberFmt.format(row.forecastedNext)}</td>
+        <td class="num">${row.nextBand
+          ? `${approxCna(row.nextBand.lower_80)}<span class="to">\u2013</span>${approxCna(row.nextBand.upper_80)}`
+          : numberFmt.format(row.forecastedNext)}</td>
         <td class="num">${growthSymbol}${row.growthRate.toFixed(1)}%</td>
         <td>
           <span class="pill ${row.isFallback ? 'pill--neutral' : 'pill--info'}"
@@ -956,50 +995,85 @@ function updateSummary(rec) {
   const displayName = getCnaDisplayName(rec.id, rec.name);
   const metrics = calculateCnaMetrics(rec);
 
-  const setText = (id, value) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
-  };
   const setHTML = (id, value) => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = value;
   };
 
-  setText('cnaEyebrow', `${displayName} \u00b7 projected ${currentYear}`);
-  setText('summaryCurrentYear', numberFmt.format(metrics.forecastedCurrent));
+  /* The hero follows the year toggle. It used to stay on the current year
+     while the chart moved, which left next year - the column with the most
+     forecast in it and the least reason to trust a point estimate - with no way
+     to see its range at all. */
+  const showingNext = currentYear === YEARS.nextYear;
+  const total = showingNext ? metrics.forecastedNext : metrics.forecastedCurrent;
+  const band = annualBand(rec, currentYear);
 
-  /* The comparison against last year, in the same form the overview page
-     uses: a multiple carries further than a percentage. A CNA can start from
-     nothing, though, where a multiple is undefined and the count is the only
-     honest thing to show. */
-  const prior = metrics.priorTotal;
+  /* What the year is compared against. For the current year that is last year's
+     settled count; for next year it is this year's projection, which has not
+     finished and must not be described as published. */
+  const prior = showingNext ? metrics.forecastedCurrent : metrics.priorTotal;
+  const priorSettled = !showingNext;
+
+  setHTML('cnaEyebrow', `${esc(displayName)} \u00b7 projected ${currentYear}`);
+  setHTML('summaryCurrentYear', band
+    ? `${approxCna(band.lower_80)}<span class="to">\u2013</span>${approxCna(band.upper_80)}`
+    : approxCna(total));
+
   const compare = document.getElementById('summaryGrowthRate');
   if (compare) {
     if (prior > 0) {
-      const multiple = metrics.forecastedCurrent / prior;
-      compare.innerHTML = `<b>${multiple.toFixed(1)}\u00d7</b> the ${numberFmt.format(prior)} published in ${currentYear - 1}`;
+      /* Quoted as a range too when the headline is one: a single growth
+         multiple against a range forecast puts the false precision straight
+         back. */
+      const low = (band ? band.lower_80 : total) / prior;
+      const high = (band ? band.upper_80 : total) / prior;
+      const priorLabel = priorSettled
+        ? `the ${numberFmt.format(prior)} published in ${currentYear - 1}`
+        : `the ${approxCna(prior)} projected for ${currentYear - 1}`;
+      compare.innerHTML = band
+        ? `<b>${low.toFixed(1)}\u00d7</b> to <b>${high.toFixed(1)}\u00d7</b> ${priorLabel}`
+        : `<b>${low.toFixed(1)}\u00d7</b> ${priorLabel}`;
     } else {
-      compare.innerHTML = `No CVEs published in ${currentYear - 1}`;
+      compare.innerHTML = `No CVEs ${priorSettled ? 'published' : 'projected'} in ${currentYear - 1}`;
     }
   }
 
-  /* Model choice is cached and refreshed periodically, so say when it was made
-     rather than implying it was decided on today's data. The MASE sits here
-     because it is the only uncertainty signal this page has — the CNA pipeline
-     produces a point forecast per organisation, not an interval. */
+  /* What the headline figure is stays on the line under it; how the model
+     behind it was picked belongs with the other provenance, in the meta row. */
   const selection = cnaData?.[metrics.id]?.model_selection;
-  const chosen = selection?.selected_at;
-  const when = chosen ? ` \u00b7 chosen ${new Date(chosen).toLocaleDateString('en-US', { dateStyle: 'medium' })}` : '';
-  const mase = typeof metrics.mase === 'number' ? ` \u00b7 MASE ${metrics.mase.toFixed(2)}` : '';
-  const fallback = selection?.is_fallback ? ' \u00b7 naive baseline, nothing beat it' : '';
-  setText('summaryModelInfo', `${metrics.model || 'Unknown'}${mase}${when}${fallback}`);
+  setHTML('summaryModelInfo', band
+    ? `80% prediction interval \u00b7 central estimate <b>${approxCna(total)}</b>`
+    : 'Central estimate');
 
-  const parts = [
-    `<b>${numberFmt.format(metrics.currentPublished)}</b> published`,
-    `<b>${numberFmt.format(metrics.currentRemainder)}</b> forecast`,
-  ];
-  if (prior > 0) parts.push(`Prior year <b>${numberFmt.format(prior)}</b>`);
-  parts.push(`Growth <b>${metrics.growthRate > 0 ? '+' : ''}${metrics.growthRate.toFixed(1)}%</b>`);
+  const parts = [];
+  if (showingNext) {
+    parts.push(`<b>${approxCna(total)}</b> forecast (12 mo)`);
+  } else {
+    parts.push(`<b>${numberFmt.format(metrics.currentPublished)}</b> published`);
+    parts.push(`<b>${numberFmt.format(metrics.currentRemainder)}</b> forecast`);
+  }
+  if (prior > 0) {
+    parts.push(`${priorSettled ? 'Prior year' : `${currentYear - 1} projected`} <b>${
+      priorSettled ? numberFmt.format(prior) : approxCna(prior)}</b>`);
+  }
+
+  /* Growth as a single percentage says what the compare line above already
+     says as a range, and says it with a precision the range exists to deny.
+     It stays only where there is no range to contradict. */
+  if (!band && !showingNext) {
+    parts.push(`Growth <b>${metrics.growthRate > 0 ? '+' : ''}${metrics.growthRate.toFixed(1)}%</b>`);
+  }
+
+  /* Model choice is cached and refreshed periodically, so say when it was made
+     rather than implying it was decided on today's data. */
+  const mase = typeof metrics.mase === 'number' ? ` \u00b7 MASE ${metrics.mase.toFixed(2)}` : '';
+  parts.push(`<b>${esc(metrics.model || 'Unknown')}</b>${mase}`);
+
+  const chosen = selection?.selected_at;
+  if (chosen) parts.push(`Chosen ${new Date(chosen).toLocaleDateString('en-US', { dateStyle: 'medium' })}`);
+  if (selection?.runaway_guarded) parts.push('Naive baseline \u2014 the chosen model ran away');
+  else if (selection?.is_fallback) parts.push('Naive baseline \u2014 nothing beat it');
+
   setHTML('cnaMeta', parts.map(p => `<span>${p}</span>`).join(''));
 
   document.title = `${displayName} - CNA Forecasts - CVEForecast`;
@@ -1013,6 +1087,9 @@ function setYear(year) {
   currentYear = year;
   updateYearToggleUI();
   if (currentCnaData) {
+    // The summary reads currentYear, so it has to be redrawn with the chart or
+    // the page shows one year's headline above another year's chart.
+    updateSummary(currentCnaData);
     renderChart(currentCnaData);
   }
 }

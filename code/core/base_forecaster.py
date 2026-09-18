@@ -126,6 +126,38 @@ class BaseForecaster(ABC):
     # Shared Methods (Implemented in Base)
     # ========================================================================
 
+    def publication_windows(self) -> Dict[str, Tuple[int, int]]:
+        """
+        The spans of the forecast that the site publishes as single totals.
+
+        The forecast runs from the current month to the end of next year, so its
+        length moves between 13 and 24 months over the course of a year and the
+        year boundary inside it moves with it. These are derived from the current
+        horizon rather than fixed, and named by calendar year, so a band measured
+        under one name is never applied to a different span.
+
+        A year total needs its own measurement because the error on a sum is not
+        the sum of the errors on its parts: adding up monthly bounds assumes the
+        model errs in the same direction every month of the year, and the months
+        largely cancel instead.
+
+        Returns:
+            ``{'YYYY': (first_horizon, last_horizon)}``, 1-based and inclusive
+        """
+        start, end = self.get_forecast_horizon()
+        total = (end.year - start.year) * 12 + (end.month - start.month) + 1
+
+        windows: Dict[str, Tuple[int, int]] = {}
+        first = 1
+        for year in range(start.year, end.year + 1):
+            first_month = start.month if year == start.year else 1
+            last_month = end.month if year == end.year else 12
+            last = min(first + (last_month - first_month), total)
+            if last >= first:
+                windows[str(year)] = (first, last)
+            first = last + 1
+        return windows
+
     def train_model(
         self,
         model_name: str,

@@ -2,10 +2,16 @@
 Cached per-CNA model selection.
 
 Choosing a model for each CNA by rolling-origin backtest is the right way to do
-it, and far too slow to do daily: roughly 140 CNAs x 6 models x 8 origins is
-about 6,700 model fits, which measured at over an hour. The previous
-single-holdout approach was fast because it was cheap in the wrong way - one
-6-month split, scored on 6 points, picking winners that were mostly noise.
+it, and far too slow to do daily: 140 CNAs x 6 models x 24 origins is about
+20,000 model fits, measured at 2h17m. The previous single-holdout approach was
+fast because it was cheap in the wrong way - one 6-month split, scored on 6
+points, picking winners that were mostly noise.
+
+v0.14 made it 2.7x slower again, taking the backtest from six months to sixteen
+so it covers what the site actually publishes, and from eight origins to
+twenty-four so the long horizons have residuals to fit a band from. That is
+11.7 minutes a run against 4.3, which the cap below is what makes affordable:
+the cost of a run is set by the refresh cap, not by the population.
 
 The resolution is that model *choice* does not need to be daily. A CNA's series
 gains one observation a month; the model that suited it yesterday almost
@@ -136,7 +142,16 @@ class ModelSelectionCache:
         )
         return selected
 
-    def put(self, cna_id: str, model: str, mase: Optional[float], n_months: int, scores: Dict[str, Any]) -> None:
+    def put(
+        self,
+        cna_id: str,
+        model: str,
+        mase: Optional[float],
+        n_months: int,
+        scores: Dict[str, Any],
+        residuals: Optional[Dict[int, List[float]]] = None,
+        window_residuals: Optional[Dict[str, List[float]]] = None,
+    ) -> None:
         """
         Record a fresh selection.
 
@@ -146,21 +161,62 @@ class ModelSelectionCache:
             mase: Its backtest MASE
             n_months: Length of history it was scored on
             scores: All candidate scores, for transparency on the site
+            residuals: ``{horizon: [log(actual / forecast), ...]}`` from the same
+                backtest that chose the model - the raw material for this CNA's
+                prediction interval.
+
+                Cached for the same reason the model choice is. Scoring runs for
+                at most a dozen CNAs per run, so residuals computed and dropped
+                would leave the other ~128 with no band, and which CNAs had one
+                would rotate daily. Stored raw rather than as a finished band
+                because the band's shape is estimated across the whole
+                population, so a CNA's own residuals are only half of what
+                building it needs.
+            window_residuals: ``{'YYYY': [log(actual total / forecast total)]}``
+                for the year totals the site publishes. A separate measurement
+                rather than something derivable from the monthly ones: summing
+                monthly bounds would assume the model errs in the same direction
+                all year, and the months largely cancel instead.
+
+                Keyed by calendar year, and the span each year covers shifts as
+                the forecast window rolls forward, so an entry more than a month
+                old describes a slightly different span than today's. Over the
+                30-day refresh cycle that is at most one month of drift on a
+                twelve-month total.
         """
-        self.entries[cna_id] = {
+        entry = {
             'model': model,
             'mase': mase,
             'n_months': n_months,
             'selected_at': datetime.now(timezone.utc).isoformat(),
             'all_scores': scores,
         }
+        # Absent rather than null when there are none: the publishing side treats
+        # a missing key as "this CNA has no interval", and a null would have to
+        # be special-cased into meaning the same thing.
+        if residuals:
+            # 4dp is far finer than the quantiles these feed, and keeps a file
+            # that is rewritten on every run from carrying 17 digits of noise.
+            entry['log_residuals'] = {
+                str(h): [round(float(v), 4) for v in vals] for h, vals in sorted(residuals.items()) if vals
+            }
+        if window_residuals:
+            entry['log_residuals_by_window'] = {
+                str(name): [round(float(v), 4) for v in vals] for name, vals in sorted(window_residuals.items()) if vals
+            }
+        self.entries[cna_id] = entry
 
     def save(self) -> None:
         """Write the cache to disk, tolerating an unwritable path."""
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
             payload = {
-                'version': '1.0',
+                # 1.1 adds the per-CNA backtest residuals that build the
+                # prediction intervals. Entries written by 1.0 simply have no
+                # 'log_residuals' key, which already reads as "no band yet" -
+                # they gain one when their turn to re-score comes round, so no
+                # migration is needed.
+                'version': '1.1',
                 'updated_at': datetime.now(timezone.utc).isoformat(),
                 'refresh_days': self.refresh_days,
                 'selections': self.entries,

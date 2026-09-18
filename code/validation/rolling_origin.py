@@ -31,7 +31,7 @@ than under-forecasting, which biases selection low on a growing series.
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 from darts import TimeSeries
@@ -55,6 +55,9 @@ class BacktestResult:
     bias_pct: Optional[float] = None
     mase_by_horizon: Dict[int, float] = field(default_factory=dict)
     log_residuals_by_horizon: Dict[int, List[float]] = field(default_factory=dict)
+    # Error on a SUM over several months, which is a different quantity from the
+    # errors on its parts - see RollingOriginBacktest.evaluate.
+    log_residuals_by_window: Dict[str, List[float]] = field(default_factory=dict)
     errors: List[str] = field(default_factory=list)
     # Set by mark_naive_baseline() once every model in the run has been scored.
     beats_naive: Optional[bool] = None
@@ -157,6 +160,7 @@ class RollingOriginBacktest:
         series: TimeSeries,
         forecast_fn: Callable[[TimeSeries, int], Optional[TimeSeries]],
         model_name: str,
+        windows: Optional[Dict[str, Tuple[int, int]]] = None,
     ) -> BacktestResult:
         """
         Score one model across every origin.
@@ -167,6 +171,20 @@ class RollingOriginBacktest:
                 Production passes ``ForecastEngine.forecast`` so the backtest
                 exercises the same transforms that ship.
             model_name: Label for reporting
+            windows: ``{name: (first_horizon, last_horizon)}``, inclusive and
+                1-based, to score as sums as well as month by month.
+
+                The error on an annual total is not the sum of the errors on its
+                months. Summing monthly bounds assumes the model is wrong in the
+                same direction every month of the year; month-to-month noise
+                mostly cancels instead. Measured on the CNA series, monthly
+                residual spread is 3.4x the spread of the same model's error on a
+                16-month sum - against 4.0x for months that cancel completely and
+                1.0x for months that do not cancel at all. Carrying that
+                assumption into the published range made the median CNA's 80%
+                interval span 25x when the measured figure is nearer 2x.
+
+                So a total that the site publishes is scored as a total here.
 
         Returns:
             BacktestResult; check ``is_valid`` before using the metrics
@@ -221,6 +239,19 @@ class RollingOriginBacktest:
                 result.log_residuals_by_horizon.setdefault(int(i) + 1, []).append(
                     float(np.log(actual[i] / predicted[i]))
                 )
+
+            for name, (first, last) in (windows or {}).items():
+                # Only score a window this origin can see all of. A part-observed
+                # window looks like a large under-forecast and would widen the
+                # band for a reason that has nothing to do with accuracy.
+                if last > len(actual):
+                    continue
+                actual_sum = float(np.sum(actual[first - 1 : last]))
+                predicted_sum = float(np.sum(predicted[first - 1 : last]))
+                if actual_sum > 0 and predicted_sum > 0:
+                    result.log_residuals_by_window.setdefault(name, []).append(
+                        float(np.log(actual_sum / predicted_sum))
+                    )
 
         result.n_origins = len(fold_mase)
         if not fold_mase:
