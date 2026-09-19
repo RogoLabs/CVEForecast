@@ -290,6 +290,13 @@ def check_cna_intervals(data: Dict[str, Any], failures: List[str]) -> None:
                         )
 
         for year, band in (intervals.get('annual') or {}).items():
+            # Spans are named by horizon internally ('h5-16') and relabelled to
+            # the year each CNA publishes on the way out. An internal name
+            # reaching the file means the relabelling was skipped, which also
+            # leaves the chart with nothing to look up and the two disagreeing.
+            if not (len(year) == 4 and year.isdigit()):
+                _fail(f'{name}: annual interval keyed {year!r}, which is not a year', failures)
+                continue
             if band['lower_80'] > band['upper_80']:
                 _fail(f'{name} {year}: annual interval bounds inverted', failures)
             # Both halves count: the month in progress is nowcast, so what is
