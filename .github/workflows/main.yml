@@ -124,8 +124,22 @@ jobs:
               exit 0
             fi
 
-            echo "Push rejected (attempt ${attempt}/${max_attempts}); resetting and retrying"
-            git fetch origin "${GITHUB_REF_NAME}"
+            echo "Push failed (attempt ${attempt}/${max_attempts}); resetting and retrying"
+
+            # Guarded because the step runs under `set -e`: a push can fail for
+            # reasons that also break the fetch, and an unguarded fetch then
+            # aborts the whole step rather than reaching attempt 2. On
+            # 2026-09-19 DNS went down mid-push, `git fetch` died with "Could
+            # not resolve host", and a loop advertising three attempts delivered
+            # one - a retryable blip turned into a failed run and a day of stale
+            # data.
+            if ! git fetch origin "${GITHUB_REF_NAME}"; then
+              echo "Could not reach the remote; waiting before the next attempt"
+              sleep $((attempt * 15))
+              attempt=$((attempt + 1))
+              continue
+            fi
+
             git reset --hard "origin/${GITHUB_REF_NAME}"
             git add web/data.json web/cna_data.json web/forecast_history.json web/pipeline_results.json web/model_info.json web/validation.json web/data_vintages.json web/cna_model_selection.json code/cna_count_cache.json
             git commit -m "Update CVE forecast data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')" || {
