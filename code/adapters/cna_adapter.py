@@ -54,6 +54,23 @@ RUNAWAY_LOOKBACK = 24
 # far side is not a statement about the CNA.
 MAX_INFORMATIVE_ANNUAL_RATIO = 20.0
 
+# How far a cached span may sit from the one a run needs before its band is
+# dropped rather than reused, counted in months of start drift plus months of
+# length difference.
+#
+# Spans move every month: the rest of 2026 is h1-4 in September, h1-3 in October,
+# h1-2 in November. A band measured in September is therefore keyed for a span
+# that does not exist a month later, and requiring an exact match emptied every
+# band on the first of each month and left it empty for the twelve runs it takes
+# to re-score the population.
+#
+# Reusing a near neighbour instead costs a little accuracy in a known direction:
+# a four-month band carried onto a three-month remainder is about sqrt(4/3), some
+# 15%, too wide, because a shorter total has less month-to-month error to cancel.
+# Too wide is the safe direction, and selection refreshes every 30 days, so drift
+# is normally one month and two is the most a catch-up should produce.
+MAX_SPAN_DRIFT = 2
+
 
 class CNAForecaster(BaseForecaster):
     """
@@ -607,6 +624,39 @@ class CNAForecaster(BaseForecaster):
             self.logger.info(f'Fitted bands on {len(span_names)} published spans for {len(fitted)} CNAs')
         return fitted
 
+    @staticmethod
+    def _nearest_span(needed: Tuple[int, int], fitted: Dict[str, IntervalBands]) -> Optional[IntervalBands]:
+        """
+        The closest span this CNA has a band for, when the exact one is missing.
+
+        Distance is months of start drift plus months of length difference,
+        which are the two ways a cached span differs from a current one: the
+        calendar moving the forecast's first month forward, and a shrinking year
+        leaving fewer months in it.
+
+        Args:
+            needed: ``(first_horizon, last_horizon)`` the run wants
+            fitted: This CNA's bands, keyed 'h<first>-<last>'
+
+        Returns:
+            The nearest band within ``MAX_SPAN_DRIFT``, or None
+        """
+        first, last = needed
+        best: Optional[Tuple[int, str]] = None
+
+        for name in fitted:
+            try:
+                start, end = (int(part) for part in name[1:].split('-'))
+            except ValueError:
+                continue  # not a horizon span; a year label from an older cache
+            drift = abs(start - first) + abs((end - start) - (last - first))
+            if drift > MAX_SPAN_DRIFT:
+                continue
+            if best is None or drift < best[0]:
+                best = (drift, name)
+
+        return fitted[best[1]] if best else None
+
     def _bands_for_cna(
         self, ts: TimeSeries, fitted: Dict[str, IntervalBands], forecast_values: Dict[str, Any]
     ) -> Dict[str, IntervalBands]:
@@ -619,18 +669,30 @@ class CNAForecaster(BaseForecaster):
             forecast_values: The published forecast, needed to turn each span's
                 factors into the width a reader actually sees
 
+        A span measured a month or two ago is reused where the exact one is
+        missing, because the spans move with the calendar and an exact match
+        would leave every page bandless on the first of each month. See
+        ``MAX_SPAN_DRIFT``.
+
         Returns:
             ``{'2027': bands, '2027-03': bands}``. Empty unless every span this
-            CNA publishes was fitted: partial cover is how the headline and the
+            CNA publishes was matched: partial cover is how the headline and the
             chart come to disagree, since the year would be measured while the
             cone beneath it fell back to accumulating months. Absent is the
             honest state and the page already has somewhere to fall back to.
         """
-        _spans, by_label = self._spans_for(ts)
-        if not by_label or not all(key in fitted for key in by_label.values()):
+        spans, by_label = self._spans_for(ts)
+        if not by_label:
             return {}
 
-        bands = {label: fitted[key] for label, key in by_label.items()}
+        matched: Dict[str, IntervalBands] = {}
+        for label, key in by_label.items():
+            band = fitted.get(key) or self._nearest_span(spans[key], fitted)
+            if band is None:
+                return {}
+            matched[label] = band
+
+        bands = matched
 
         # A year too uncertain to state is too uncertain to draw, so where the
         # guard drops a year's headline range the cone over it goes too. Keeping

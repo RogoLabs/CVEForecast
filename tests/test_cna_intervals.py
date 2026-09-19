@@ -365,3 +365,62 @@ class TestNowcast:
         now = datetime(2026, 9, 18, tzinfo=timezone.utc)
         values = {'2022-04-01': 10, '2022-05-01': 12}
         assert self.nowcast(values, now) == values
+
+
+class TestSpanDrift:
+    """
+    Spans move with the calendar: the rest of 2026 is h1-4 in September, h1-3 in
+    October. A band measured in September is keyed for a span that does not exist
+    a month later, so requiring an exact match emptied every page on the first of
+    each month and kept it empty for the twelve runs it takes to re-score the
+    population.
+    """
+
+    @staticmethod
+    def band(width=0.2):
+        from core.intervals import IntervalBands
+
+        b = IntervalBands()
+        b.factors = {1: {'80': (1 - width, 1 + width)}}
+        b.max_horizon = 1
+        return b
+
+    def nearest(self, needed, fitted):
+        from adapters.cna_adapter import CNAForecaster
+
+        return CNAForecaster._nearest_span(needed, fitted)
+
+    def test_last_months_span_is_reused_for_this_months(self):
+        # September measured h1-4; October wants h1-3.
+        september = {'h1-4': self.band()}
+        assert self.nearest((1, 3), september) is september['h1-4']
+
+    def test_next_years_span_is_reused_when_the_whole_window_shifts(self):
+        # h5-16 measured in September; October wants h4-15 - same length, moved.
+        september = {'h5-16': self.band()}
+        assert self.nearest((4, 15), september) is september['h5-16']
+
+    def test_the_closest_span_wins(self):
+        near, far = self.band(0.1), self.band(0.9)
+        fitted = {'h1-3': near, 'h1-1': far}
+        assert self.nearest((1, 4), fitted) is near
+
+    def test_an_exact_match_is_preferred_over_a_neighbour(self):
+        exact, neighbour = self.band(0.1), self.band(0.9)
+        fitted = {'h1-4': exact, 'h1-3': neighbour}
+        assert self.nearest((1, 4), fitted) is exact
+
+    def test_a_span_too_far_away_is_not_reused(self):
+        from adapters.cna_adapter import MAX_SPAN_DRIFT
+
+        # Beyond the tolerance the band describes a materially different
+        # quantity, and absent beats wrong.
+        stale = {f'h1-{1 + MAX_SPAN_DRIFT + 3}': self.band()}
+        assert self.nearest((1, 1), stale) is None
+
+    def test_a_year_label_from_an_older_cache_is_not_mistaken_for_a_span(self):
+        # Entries written before spans were named by horizon carry '2026'.
+        assert self.nearest((1, 4), {'2026': self.band()}) is None
+
+    def test_nothing_fitted_means_nothing_reused(self):
+        assert self.nearest((1, 4), {}) is None
