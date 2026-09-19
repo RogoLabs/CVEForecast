@@ -424,3 +424,81 @@ class TestSpanDrift:
 
     def test_nothing_fitted_means_nothing_reused(self):
         assert self.nearest((1, 4), {}) is None
+
+
+class TestForecastLength:
+    """
+    A forecast runs on from the last month it was fitted to, so counting a fixed
+    number of months from the horizon's start lands short for any CNA that has
+    been quiet. 19 of 140 were missing between one and nine months of next year.
+    """
+
+    @staticmethod
+    def months_to(end, series_ends):
+        first = series_ends + pd.DateOffset(months=1)
+        return (end.year - first.year) * 12 + (end.month - first.month) + 1
+
+    def test_a_current_series_gets_the_whole_horizon(self):
+        # History through August, forecasting to the end of next year.
+        end = datetime(2027, 12, 31, tzinfo=timezone.utc)
+        assert self.months_to(end, pd.Timestamp('2026-08-01')) == 16
+
+    def test_a_series_that_stops_early_still_reaches_the_end(self):
+        end = datetime(2027, 12, 31, tzinfo=timezone.utc)
+        # Liferay's history stops in November 2025; it was publishing three
+        # months of 2027 where a full year implies about four times that.
+        assert self.months_to(end, pd.Timestamp('2025-11-01')) == 25
+        # facebook, two months quiet, was missing December.
+        assert self.months_to(end, pd.Timestamp('2026-07-01')) == 17
+
+    @pytest.mark.parametrize('ends', ['2025-11-01', '2026-03-01', '2026-07-01', '2026-08-01'])
+    def test_every_forecast_ends_in_the_same_december(self, ends):
+        end = datetime(2027, 12, 31, tzinfo=timezone.utc)
+        n = self.months_to(end, pd.Timestamp(ends))
+        last = pd.Timestamp(ends) + pd.DateOffset(months=n)
+        assert (last.year, last.month) == (2027, 12)
+
+
+class TestDormancy:
+    """
+    A CNA with nothing published for a year has no recent level to extrapolate
+    from. Forecasting it produces a flat line that reads as a prediction and is
+    really an extrapolation from a series that stopped years ago.
+    """
+
+    @staticmethod
+    def idle(published_through, series_ends, now):
+        """A series publishing up to one month and silent to another."""
+        from adapters.cna_adapter import CNAForecaster
+
+        idx = pd.date_range(start='2020-01-01', end=series_ends, freq='MS')
+        values = [1.0 if d <= pd.Timestamp(published_through) else 0.0 for d in idx]
+        ts = TimeSeries.from_dataframe(pd.DataFrame({'v': values}, index=idx), freq='MS')
+        return CNAForecaster._months_idle(CNAForecaster.__new__(CNAForecaster), ts, now)
+
+    def test_a_silent_series_is_measured_from_its_last_publication(self):
+        now = datetime(2026, 9, 19, tzinfo=timezone.utc)
+        # pivotal's shape: published through March 2022, silent since.
+        assert self.idle('2022-03-01', '2026-08-01', now) == 54
+
+    def test_a_recently_active_series_is_not_idle(self):
+        now = datetime(2026, 9, 19, tzinfo=timezone.utc)
+        assert self.idle('2026-08-01', '2026-08-01', now) == 1
+
+    def test_the_threshold_separates_the_dormant_from_the_merely_quiet(self):
+        from adapters.cna_adapter import DORMANT_AFTER_MONTHS
+
+        now = datetime(2026, 9, 19, tzinfo=timezone.utc)
+        # Liferay is the quietest active CNA - ten months idle, and it must
+        # survive, because it published 92 CVEs inside the last year.
+        assert self.idle('2025-11-01', '2026-08-01', now) == 10
+        assert self.idle('2025-11-01', '2026-08-01', now) < DORMANT_AFTER_MONTHS
+        # Splunk is the least dormant of the dormant, at twenty months.
+        assert self.idle('2025-01-01', '2026-08-01', now) == 20
+        assert self.idle('2025-01-01', '2026-08-01', now) >= DORMANT_AFTER_MONTHS
+
+    def test_a_series_that_never_published_is_dormant(self):
+        from adapters.cna_adapter import DORMANT_AFTER_MONTHS
+
+        now = datetime(2026, 9, 19, tzinfo=timezone.utc)
+        assert self.idle('2019-01-01', '2026-08-01', now) >= DORMANT_AFTER_MONTHS
