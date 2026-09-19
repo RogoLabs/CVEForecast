@@ -42,17 +42,33 @@ RUNAWAY_CEILING = 8.0
 # every CNA eligible to be forecast has at least this much.
 RUNAWAY_LOOKBACK = 24
 
-# An annual 80% interval wider than this is not published. A range of "300 to
-# 150,000 CVEs next year" is technically calibrated and tells a reader nothing,
-# and the page has somewhere honest to fall back to - the model and its MASE,
-# which is what it showed before intervals existed.
+# An annual 80% interval wider than this is not published: past here the band is
+# a measurement artefact rather than a wide measurement. A CNA's annual width
+# comes from the handful of origins far enough from the end to have seen a whole
+# year, so one pathological origin moves it a long way - a model compounding a
+# trend in log space can forecast 10^13 times the actual.
 #
-# It is also the backstop against a measurement artefact. A CNA's width comes
-# from the handful of origins far enough from the end to have seen a whole year,
-# so one pathological origin moves it a long way: a model compounding a trend in
-# log space can forecast 10^13 times the actual, and the band that comes out the
-# far side is not a statement about the CNA.
-MAX_INFORMATIVE_ANNUAL_RATIO = 20.0
+# Set where the data separates rather than by taste. Sorted, every fitted band
+# runs 11.3x, 20.1x, 23.2x, 66.4x, then 179,429x, 15,436,783x, 23,208,181x.
+# Nothing real spans twenty-three million fold, and the gap either side of 100x
+# is a factor of 2,700 - so a cut there divides wide-but-measured from broken,
+# where the 20x this started at divided nothing in particular and dropped three
+# bands that were merely wide.
+#
+# For scale, the widest band currently published is apache's 2027 at 11.2x
+# (1,291 to 14,502) against a median of 1.69x, so this is a backstop rather than
+# something shaping what a reader usually sees.
+MAX_INFORMATIVE_ANNUAL_RATIO = 100.0
+
+# A CNA with nothing published in this long is not forecast. Its series has no
+# recent level to extrapolate from, and running a model over the gap produces a
+# flat line that looks like a prediction and is really a four-year-old
+# extrapolation: pivotal last published in March 2022, Mend in October 2022.
+#
+# Twelve months separates the three dormant CNAs from every active one cleanly -
+# the next quietest, Liferay, is ten months idle but published 92 CVEs inside the
+# last year.
+DORMANT_AFTER_MONTHS = 12
 
 # How far a cached span may sit from the one a run needs before its band is
 # dropped rather than reused, counted in months of start drift plus months of
@@ -439,6 +455,26 @@ class CNAForecaster(BaseForecaster):
         if worst <= ceiling:
             return None
         return f'peaks at {worst:,.0f} against a {RUNAWAY_LOOKBACK}-month high of {peak:,.0f} ({worst / peak:,.0f}x)'
+
+    def _months_idle(self, ts: TimeSeries, now: datetime) -> int:
+        """
+        Months since this CNA last published anything.
+
+        Args:
+            ts: The CNA's history, complete months only
+            now: The moment to measure back from
+
+        Returns:
+            Months since the last month with a publication, or a large number
+            when the series is empty
+        """
+        values = ts.values().flatten()
+        published = [i for i, v in enumerate(values) if v > 0]
+        if not published:
+            return 10**6
+
+        last = ts.time_index[published[-1]]
+        return (now.year - last.year) * 12 + (now.month - last.month)
 
     def _nowcast(self, forecast_values: Dict[str, int]) -> Dict[str, int]:
         """
@@ -1185,6 +1221,10 @@ class CNAForecaster(BaseForecaster):
                     'selected_at': forecast_result.metadata.get('selected_at'),
                     'all_model_scores': forecast_result.metadata.get('all_scores', {}),
                     'awaiting_scoring': forecast_result.metadata.get('awaiting_scoring', False),
+                    # Published rather than forecast: the page shows the history
+                    # and says when this CNA went quiet.
+                    'dormant': forecast_result.metadata.get('dormant', False),
+                    'last_published': forecast_result.metadata.get('last_published'),
                     # The chosen model produced a forecast its own history could
                     # not support and was replaced. The page says so rather than
                     # naming the baseline as though it had been selected on merit.
@@ -1314,8 +1354,36 @@ class CNAForecaster(BaseForecaster):
         results['cnas_with_intervals'] = len(interval_bands)
         results['interval_coverage'] = interval_coverage
 
+        now = datetime.now(timezone.utc)
+
         for cna_id, ts in eligible.items():
             cna_info = self.cna_data[cna_id]
+
+            # A CNA that has published nothing for a year has no recent level to
+            # extrapolate from. Forecasting it anyway produces a flat line that
+            # reads as a prediction and is really an extrapolation from a series
+            # that stopped years ago. Its history still publishes - it was a CNA,
+            # and dropping it silently loses that - but with no forecast and a
+            # note saying when it went quiet.
+            idle = self._months_idle(ts, now)
+            if idle >= DORMANT_AFTER_MONTHS:
+                last = ts.time_index[[i for i, v in enumerate(ts.values().flatten()) if v > 0][-1]]
+                self.logger.info(
+                    f'{cna_info["name"]}: nothing published since {last:%Y-%m} ({idle} months); not forecast'
+                )
+                cna_forecasts[cna_id] = ForecastResult(
+                    forecast_values={},
+                    model_name=FALLBACK_MODEL,
+                    metrics={'validation_mase': None},
+                    metadata={
+                        'all_scores': {},
+                        'is_fallback': False,
+                        'dormant': True,
+                        'last_published': f'{last:%Y-%m}',
+                        'months_idle': idle,
+                    },
+                )
+                continue
 
             if cna_id in to_refresh:
                 cached_now = self.selection_cache.get(cna_id) or {}
@@ -1337,9 +1405,18 @@ class CNAForecaster(BaseForecaster):
                     all_scores = cached.get('all_scores', {})
                     self.logger.debug(f'{cna_info["name"]} → {best_model} (cached)')
 
-            # Get forecast horizon
-            start_date, end_date = self.get_forecast_horizon()
-            forecast_months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month) + 1
+            # How many months to forecast, counted from where THIS CNA's series
+            # ends rather than from the horizon's own start. A forecast runs on
+            # from the last month it was fitted to, so a fixed count lands short
+            # for any CNA that has been quiet: 19 of 140 were missing between one
+            # and nine months of next year, and Liferay published a 2027 total of
+            # 17 covering three months where a full year implies about 68.
+            _start, end_date = self.get_forecast_horizon()
+            first = ts.end_time() + pd.DateOffset(months=1)
+            forecast_months = (end_date.year - first.year) * 12 + (end_date.month - first.month) + 1
+            if forecast_months < 1:
+                self.logger.debug(f'{cna_id}: series already runs past the horizon; nothing to forecast')
+                continue
 
             # Forecast through the shared engine, which handles the incomplete
             # current month, log space and damping consistently with the CVE side.

@@ -408,6 +408,10 @@ th.num, td.num { text-align: right; }
    it is punctuation, not a value - and the cell must not wrap mid-range,
    which would read as two separate numbers stacked. */
 td.num .to { color: var(--text-subtle); margin: 0 .1em; }
+
+/* A cell saying why there is no number. Quieter than a number, because it is
+   the absence of one. */
+td .muted { color: var(--text-subtle); font-variant-numeric: normal; }
 td.num { white-space: nowrap; }
 th.center, td.center { text-align: center; }
 td.strong { color: var(--text); font-weight: 550; }
