@@ -314,6 +314,8 @@ function calculateCnaMetrics(rec) {
       model: rec.model_selection?.selected_model || 'N/A',
       mase: rec.model_selection?.validation_mase ?? null,
       isFallback: rec.model_selection?.is_fallback === true,
+      dormant: rec.model_selection?.dormant === true,
+      lastPublished: rec.model_selection?.last_published || null,
       awaitingScoring: rec.model_selection?.awaiting_scoring === true,
       // The next-year column is the one the band matters most for: it is
       // entirely forecast, up to sixteen months out.
@@ -403,9 +405,11 @@ function renderTable() {
         <td class="strong">${row.name || 'Unknown CNA'}</td>
         <td class="num">${numberFmt.format(row.priorTotal)}</td>
         <td class="num">${numberFmt.format(row.forecastedCurrent)}</td>
-        <td class="num">${row.nextBand
-          ? `${approxCna(row.nextBand.lower_80)}<span class="to">\u2013</span>${approxCna(row.nextBand.upper_80)}`
-          : numberFmt.format(row.forecastedNext)}</td>
+        <td class="num">${row.dormant
+          ? '<span class="muted">not forecast</span>'
+          : row.nextBand
+            ? `${approxCna(row.nextBand.lower_80)}<span class="to">\u2013</span>${approxCna(row.nextBand.upper_80)}`
+            : numberFmt.format(row.forecastedNext)}</td>
         <td class="num">${growthSymbol}${row.growthRate.toFixed(1)}%</td>
         <td>
           <span class="pill ${row.isFallback ? 'pill--neutral' : 'pill--info'}"
@@ -1052,6 +1056,28 @@ function updateSummary(rec) {
      finished and must not be described as published. */
   const prior = showingNext ? metrics.forecastedCurrent : metrics.priorTotal;
   const priorSettled = !showingNext;
+
+  /* A CNA that has published nothing for a year is not forecast at all: there
+     is no recent level to extrapolate from, and a flat line would read as a
+     prediction. Show what it did publish and say when it stopped. */
+  if (metrics.dormant) {
+    const when = metrics.lastPublished
+      ? new Date(`${metrics.lastPublished}-01T00:00:00Z`)
+          .toLocaleDateString('en-US', { year: 'numeric', month: 'long', timeZone: 'UTC' })
+      : null;
+    setHTML('cnaEyebrow', `${esc(displayName)} \u00b7 no recent activity`);
+    setHTML('summaryCurrentYear', numberFmt.format(metrics.priorTotal + metrics.currentPublished));
+    setHTML('summaryGrowthRate', when
+      ? `Nothing published since <b>${esc(when)}</b>`
+      : 'Nothing published recently');
+    setHTML('summaryModelInfo', 'Published to date \u00b7 not forecast');
+    setHTML('cnaMeta', [
+      `<b>${numberFmt.format(metrics.currentPublished)}</b> published in ${currentYear}`,
+      `Prior year <b>${numberFmt.format(metrics.priorTotal)}</b>`,
+    ].map(x => `<span>${x}</span>`).join(''));
+    document.title = `${displayName} - CNA Forecasts - CVEForecast`;
+    return;
+  }
 
   setHTML('cnaEyebrow', `${esc(displayName)} \u00b7 projected ${currentYear}`);
   setHTML('summaryCurrentYear', band
