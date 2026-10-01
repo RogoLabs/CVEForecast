@@ -43,17 +43,23 @@
         "daily_seasonality": false,
         "seasonality_mode": "additive",
         "growth": "linear",
-        "changepoint_prior_scale": 0.05,
-        "seasonality_prior_scale": 0.1,
+        "changepoint_prior_scale": 0.1,
+        "seasonality_prior_scale": 1.0,
         "n_changepoints": 25,
         "mcmc_samples": 0,
-        "interval_width": 0.8
+        "interval_width": 0.95
       },
       "tuning_results": {
-        "training_time": 0.05185675621032715,
-        "tuned_at": "2025-08-01T04:10:53.306335",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 8.72840235953653,
+        "mape": 1366.2790732934536,
+        "mae": 4399.646992042693,
+        "n_origins": null,
+        "training_time": 1.2001972198486328,
+        "trial_number": 3,
+        "tuned_at": "2026-10-01T09:26:32.787117",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "ExponentialSmoothing": {
@@ -87,13 +93,13 @@
       "enabled": true,
       "hyperparameters": {
         "lags": 24,
-        "n_estimators": 200,
-        "max_depth": 4,
-        "learning_rate": 0.01,
-        "subsample": 0.8,
+        "n_estimators": 500,
+        "max_depth": 6,
+        "learning_rate": 0.05,
+        "subsample": 0.9,
         "colsample_bytree": 0.9,
         "reg_alpha": 0.1,
-        "reg_lambda": 0,
+        "reg_lambda": 0.1,
         "random_state": 42,
         "n_jobs": -1,
         "tree_method": "hist",
@@ -101,25 +107,31 @@
         "eval_metric": "mae"
       },
       "tuning_results": {
-        "training_time": 0.07805824279785156,
-        "tuned_at": "2025-07-30T04:03:58.670124",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 9.891184613821304,
+        "mape": 1286.9351959025107,
+        "mae": 4967.401021550127,
+        "n_origins": null,
+        "training_time": 2.415374994277954,
+        "trial_number": 3,
+        "tuned_at": "2026-10-01T09:26:32.787132",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "LightGBM": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 36,
-        "n_estimators": 500,
-        "max_depth": 4,
+        "lags": 48,
+        "n_estimators": 200,
+        "max_depth": 6,
         "num_leaves": 50,
         "min_child_samples": 10,
-        "learning_rate": 0.2,
-        "subsample": 1.0,
-        "colsample_bytree": 1.0,
+        "learning_rate": 0.1,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
         "reg_alpha": 0.1,
-        "reg_lambda": 0,
+        "reg_lambda": 0.1,
         "min_split_gain": 0.1,
         "random_state": 42,
         "force_row_wise": true,
@@ -133,30 +145,42 @@
         "feature_pre_filter": false
       },
       "tuning_results": {
-        "training_time": 0.04757380485534668,
-        "tuned_at": "2025-07-31T04:03:21.183789",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 9.945484795246724,
+        "mape": 1096.9410535673844,
+        "mae": 4976.978226571276,
+        "n_origins": null,
+        "training_time": 0.7138981819152832,
+        "trial_number": 61,
+        "tuned_at": "2026-10-01T09:26:32.787142",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "CatBoost": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 48,
-        "iterations": 100,
-        "depth": 10,
+        "lags": 36,
+        "iterations": 200,
+        "depth": 8,
         "learning_rate": 0.1,
-        "l2_leaf_reg": 10,
+        "l2_leaf_reg": 3,
         "subsample": 0.8,
         "random_state": 42,
         "verbose": false,
-        "border_count": 64
+        "border_count": 128
       },
       "tuning_results": {
-        "training_time": 1.0175838470458984,
-        "tuned_at": "2025-08-31T03:35:04.268222",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 9.287946400909185,
+        "mape": 1324.9991963815291,
+        "mae": 4656.791271772525,
+        "n_origins": null,
+        "training_time": 7.870919942855835,
+        "trial_number": 22,
+        "tuned_at": "2026-10-01T09:26:32.787137",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "TCN": {
@@ -171,8 +195,8 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "kernel_size": 5,
-        "num_filters": 16,
+        "kernel_size": 3,
+        "num_filters": 32,
         "dropout": 0.1,
         "weight_norm": true,
         "optimizer_kwargs": {
@@ -182,10 +206,16 @@
         "dilation_base": 2
       },
       "tuning_results": {
-        "training_time": 0.9281713962554932,
-        "tuned_at": "2025-07-30T04:03:58.670102",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 8.650315748318151,
+        "mape": 1721.7355237925174,
+        "mae": 4360.913039512067,
+        "n_origins": null,
+        "training_time": 14.385018348693848,
+        "trial_number": 5,
+        "tuned_at": "2026-10-01T09:26:32.787148",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "NBEATS": {
@@ -252,11 +282,11 @@
           "accelerator": "cpu",
           "enable_progress_bar": false
         },
-        "num_encoder_layers": 1,
+        "num_encoder_layers": 2,
         "num_decoder_layers": 1,
         "decoder_output_dim": 8,
         "hidden_size": 64,
-        "temporal_width_past": 8,
+        "temporal_width_past": 4,
         "temporal_width_future": 4,
         "dropout": 0.1,
         "optimizer_kwargs": {
@@ -266,16 +296,22 @@
         "temporal_decoder_hidden": 32
       },
       "tuning_results": {
-        "training_time": 0.6650915145874023,
-        "tuned_at": "2025-09-28T02:42:18.486063",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 8.121629569378413,
+        "mape": 1375.520700690388,
+        "mae": 4085.0658274993893,
+        "n_origins": null,
+        "training_time": 8.583159446716309,
+        "trial_number": 17,
+        "tuned_at": "2026-10-01T09:26:32.787153",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "DLinear": {
       "enabled": false,
       "hyperparameters": {
-        "input_chunk_length": 24,
+        "input_chunk_length": 12,
         "output_chunk_length": 1,
         "n_epochs": 50,
         "batch_size": 32,
@@ -293,16 +329,22 @@
         "model_name": "dlinear_forecaster"
       },
       "tuning_results": {
-        "training_time": 0.42996740341186523,
-        "tuned_at": "2025-08-01T04:10:53.306312",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 7.975595683520105,
+        "mape": 1673.8446217933429,
+        "mae": 4039.535176895277,
+        "n_origins": null,
+        "training_time": 5.402029991149902,
+        "trial_number": 3,
+        "tuned_at": "2026-10-01T09:26:32.787127",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "RandomForest": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 24,
+        "lags": 36,
         "n_estimators": 300,
         "max_depth": null,
         "min_samples_split": 5,
@@ -313,31 +355,43 @@
         "max_features": "sqrt"
       },
       "tuning_results": {
-        "training_time": 1.008251667022705,
-        "tuned_at": "2026-01-01T03:52:06.219120",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 9.501924669379546,
+        "mape": 1301.577474151871,
+        "mae": 4770.240892476186,
+        "n_origins": null,
+        "training_time": 12.249450922012329,
+        "trial_number": 8,
+        "tuned_at": "2026-10-01T09:26:32.787122",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "LinearRegression": {
       "enabled": true,
       "hyperparameters": {
-        "lags": 24,
+        "lags": 30,
         "lags_past_covariates": null,
-        "output_chunk_length": 3,
+        "output_chunk_length": 1,
         "fit_intercept": true,
         "multi_models": true,
-        "n_jobs": 1,
-        "output_chunk_shift": 1,
-        "positive": true,
+        "n_jobs": -1,
+        "output_chunk_shift": 0,
+        "positive": false,
         "likelihood": null,
         "quantiles": null
       },
       "tuning_results": {
-        "training_time": 0.004676103591918945,
-        "tuned_at": "2025-09-27T02:40:51.158896",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 8.96399676977933,
+        "mape": 1696.6779518328444,
+        "mae": 4551.023264062259,
+        "n_origins": null,
+        "training_time": 0.49745798110961914,
+        "trial_number": 3,
+        "tuned_at": "2026-10-01T09:26:32.787101",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "AutoARIMA": {
@@ -349,15 +403,21 @@
         "max_q": 3,
         "seasonal": true,
         "stepwise": true,
-        "random_state": null,
+        "random_state": 42,
         "quantiles": null,
         "season_length": 12
       },
       "tuning_results": {
-        "training_time": 8.96207332611084,
-        "tuned_at": "2025-09-23T02:41:08.890837",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 8.884307009565823,
+        "mape": 1597.969760990487,
+        "mae": 4486.1205025234385,
+        "n_origins": null,
+        "training_time": 69.83758687973022,
+        "trial_number": 1,
+        "tuned_at": "2026-10-01T09:26:32.787077",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "AutoETS": {
@@ -372,26 +432,38 @@
       "enabled": true,
       "hyperparameters": {
         "season_mode": "ADDITIVE",
-        "theta": 0.5
+        "theta": 3
       },
       "tuning_results": {
-        "training_time": 0.0040378570556640625,
-        "tuned_at": "2025-09-25T02:40:36.468398",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 9.077491352717397,
+        "mape": 1516.0010632889155,
+        "mae": 4577.288708986113,
+        "n_origins": null,
+        "training_time": 0.7301864624023438,
+        "trial_number": 3,
+        "tuned_at": "2026-10-01T09:26:32.787107",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "FourTheta": {
       "enabled": true,
       "hyperparameters": {
         "season_mode": "ADDITIVE",
-        "theta": 0.5
+        "theta": 3
       },
       "tuning_results": {
-        "training_time": 0.003965139389038086,
-        "tuned_at": "2025-09-25T02:40:36.468419",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 9.12701642365274,
+        "mape": 1480.4409174564469,
+        "mae": 4600.283384365506,
+        "n_origins": null,
+        "training_time": 0.7335116863250732,
+        "trial_number": 3,
+        "tuned_at": "2026-10-01T09:26:32.787112",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "KalmanFilter": {
@@ -409,17 +481,23 @@
     "Croston": {
       "enabled": true,
       "hyperparameters": {
-        "alpha_d": null,
-        "alpha_p": 0.3,
+        "alpha_d": 0.1,
+        "alpha_p": 0.1,
         "quantiles": null,
         "random_state": 42,
-        "version": "classic"
+        "version": "optimized"
       },
       "tuning_results": {
-        "training_time": 0.0015134811401367188,
-        "tuned_at": "2025-09-23T02:41:08.890852",
-        "tuning_method": "comprehensive_hyperparameter_tuning",
-        "note": "Metrics dropped in v0.12: tuned against a 1-2 point validation split. Re-tune on rolling origins."
+        "mase": 9.340293279962806,
+        "mape": 1356.8504318385117,
+        "mae": 4688.96433448694,
+        "n_origins": null,
+        "training_time": 0.5788295269012451,
+        "trial_number": 1,
+        "tuned_at": "2026-10-01T09:26:32.787094",
+        "tuning_method": "rolling_origin_mase",
+        "previous_mase": null,
+        "improvement": null
       }
     },
     "AutoCES": {
@@ -456,22 +534,26 @@
     }
   },
   "comprehensive_tuning": {
-    "last_tuned_at": "2025-07-31T04:03:21.183828",
-    "best_model": "LightGBM",
+    "last_tuned_at": "2026-10-01T09:26:32.787201",
+    "best_model": "DLinear",
+    "best_mase": 7.975595683520105,
     "models_tuned": [
-      "KalmanFilter",
       "AutoARIMA",
-      "DLinear",
+      "Croston",
+      "LinearRegression",
       "Theta",
       "FourTheta",
-      "ExponentialSmoothing",
       "Prophet",
-      "TiDE",
-      "LinearRegression",
+      "RandomForest",
+      "DLinear",
+      "XGBoost",
+      "CatBoost",
       "LightGBM",
-      "CatBoost"
+      "TCN",
+      "TiDE"
     ],
-    "note": "Superseded by rolling-origin CV; re-run the tuner against MASE before trusting these."
+    "previous_best_mase": null,
+    "tuning_method": "rolling_origin_mase"
   },
   "forecast_constraints": {
     "max_annual_growth": 4.0,
