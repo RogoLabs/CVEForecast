@@ -7,6 +7,17 @@ Extracted from cve_adapter.py and cna_adapter.py to eliminate duplication.
 import logging
 from typing import Any, Dict, Optional
 
+# statsmodels-style spellings of an ETS component, mapped to the value of the
+# matching darts enum member (ModelMode / SeasonalityMode share these values).
+_ETS_MODES = {
+    'add': 'additive',
+    'additive': 'additive',
+    'mul': 'multiplicative',
+    'mult': 'multiplicative',
+    'multiplicative': 'multiplicative',
+    'none': None,
+}
+
 
 def fix_hyperparameters(model_name: str, hyperparameters: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -16,7 +27,8 @@ def fix_hyperparameters(model_name: str, hyperparameters: Dict[str, Any]) -> Dic
 
     Handles:
     - ExponentialSmoothing: damped_trend -> damping_trend conversion,
-      removal of unsupported initialization_method and missing params
+      removal of unsupported initialization_method and missing params,
+      trend/seasonal strings ('add', 'mul') -> ModelMode/SeasonalityMode enums
     - Theta/FourTheta: season_mode string -> SeasonalityMode enum
     - LinearRegression: clamp output_chunk_shift to 0 if > 0
 
@@ -62,6 +74,22 @@ def fix_hyperparameters(model_name: str, hyperparameters: Dict[str, Any]) -> Dic
         # fine and then raises at fit time, so create_model_safe's construction
         # fallback never fires - it has to be stripped here.
         params.pop('use_boxcox', None)
+
+        # Darts takes trend and seasonal as enums and calls ``.value`` on them
+        # in fit(), so a config string such as cna_config.json's 'add' builds a
+        # model and then fails at fit time with "'str' object has no attribute
+        # 'value'". Like use_boxcox above, construction succeeds, so the
+        # fallback in create_model_safe never fires: every CNA backtest and
+        # forecast for this model failed and it was silently left out of CNA
+        # model selection.
+        # Unrecognised strings are left alone so they still fail loudly rather
+        # than quietly turning into darts' additive default.
+        from darts.utils.utils import ModelMode, SeasonalityMode
+
+        for key, enum in (('trend', ModelMode), ('seasonal', SeasonalityMode)):
+            value = params.get(key)
+            if isinstance(value, str) and value.lower() in _ETS_MODES:
+                params[key] = enum(_ETS_MODES[value.lower()])
 
     if model_name in ['Theta', 'FourTheta']:
         # Fix season_mode: must be SeasonalityMode enum, not string
