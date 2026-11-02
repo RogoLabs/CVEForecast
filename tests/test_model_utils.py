@@ -42,7 +42,43 @@ class TestFixHyperparameters:
         )
         assert 'initialization_method' not in result
         assert 'missing' not in result
-        assert result['trend'] == 'add'
+
+    def test_exponential_smoothing_mode_strings_become_enums(self):
+        """
+        Darts calls ``.value`` on trend and seasonal in fit(). cna_config.json
+        sets both to 'add', and passing the string through made every CNA
+        ExponentialSmoothing fit fail with "'str' object has no attribute 'value'".
+        """
+        from darts.utils.utils import ModelMode, SeasonalityMode
+
+        result = fix_hyperparameters('ExponentialSmoothing', {'trend': 'add', 'seasonal': 'mul'})
+        assert result['trend'] is ModelMode.ADDITIVE
+        assert result['seasonal'] is SeasonalityMode.MULTIPLICATIVE
+
+        result = fix_hyperparameters('ExponentialSmoothing', {'trend': 'none', 'seasonal': None})
+        assert result['trend'] is ModelMode.NONE
+        assert result['seasonal'] is None
+
+    def test_cna_exponential_smoothing_config_fits(self):
+        """The shipped CNA hyperparameters must produce a model that can fit."""
+        import json
+
+        import numpy as np
+        import pandas as pd
+        from darts import TimeSeries
+        from darts.models import ExponentialSmoothing
+
+        config = json.loads((Path(__file__).parent.parent / 'code' / 'cna_config.json').read_text())
+        hyperparameters = config['models']['ExponentialSmoothing']['hyperparameters']
+
+        months = np.arange(48)
+        series = TimeSeries.from_times_and_values(
+            pd.date_range('2022-01-31', periods=48, freq='ME'),
+            100 + months + 10 * np.sin(months * 2 * np.pi / 12),
+        )
+        model = ExponentialSmoothing(**fix_hyperparameters('ExponentialSmoothing', hyperparameters))
+        model.fit(series)
+        assert len(model.predict(3)) == 3
 
     def test_linear_regression_clamps_output_chunk_shift(self):
         result = fix_hyperparameters('LinearRegression', {'output_chunk_shift': 5})
@@ -63,6 +99,7 @@ class TestFixHyperparameters:
         fix_hyperparameters('ExponentialSmoothing', original)
         assert 'damped_trend' in original
         assert 'damping_trend' not in original
+        assert original['trend'] == 'add'
 
     def test_empty_params(self):
         result = fix_hyperparameters('ExponentialSmoothing', {})

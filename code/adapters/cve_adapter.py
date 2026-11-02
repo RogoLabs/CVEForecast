@@ -503,8 +503,17 @@ class CVEForecaster(BaseForecaster, ValidationMixin):
                     if not any(entry['date'] == month_start_date for entry in timeline):
                         timeline.append({'date': month_start_date, 'cumulative_total': int(round(year_total))})
 
-                # Now add this month's forecast to the running total
-                year_total += cve_count
+                # Add this month's forecast to the running total, rounded the
+                # same way the year figure rounds it. build_year_projections
+                # sums whole months (int(round(v)) each), and the published
+                # monthly table shows those same whole months. Summing the
+                # unrounded floats here and rounding once at the end let the
+                # chart's year-end drift from the headline by a CVE or two,
+                # and the band factor scaled that drift past the pre-deploy
+                # check's tolerance: 2027 closed at 216,622 on the chart
+                # against 216,624 in the headline on 2026-11-01, and the
+                # upper bounds read 306,473 against 306,476.
+                year_total += int(round(cve_count))
 
             # Add final Dec 31 marker for the last year in the forecast
             if sorted_dates:

@@ -459,6 +459,65 @@ class TestCumulativeBand:
         check_cumulative_band(data, failures)
         assert failures == [], failures
 
+    def test_adapter_timeline_and_year_figure_round_the_same_way(self):
+        """
+        The test above hands both paths whole numbers, so it could not see that
+        the adapter's timeline summed unrounded months and rounded once while
+        the year figure rounds each month and sums. Fractional forecasts made
+        the two drift by a CVE or two, the band factor scaled the drift past
+        the check's tolerance, and most nightly deploys from 2026-09-29 on
+        failed. Build both through the adapter's own methods with forecasts
+        whose rounding drifts.
+        """
+        import logging
+        import sys
+        from datetime import datetime, timezone
+        from pathlib import Path as _Path
+
+        sys.path.insert(0, str(_Path(__file__).parent.parent / 'code' / 'scripts'))
+
+        from adapters.cve_adapter import ENSEMBLE_KEY, CVEForecaster
+        from core.base_forecaster import ForecastResult
+        from core.intervals import IntervalBands
+        from validate_forecast_data import check_cumulative_band
+
+        band = IntervalBands()
+        band.factors = {1: {'80': (0.91, 1.41)}}
+        band.max_horizon = 1
+
+        fc = CVEForecaster.__new__(CVEForecaster)
+        fc.logger = logging.getLogger('test')
+        fc.current_datetime = datetime(2026, 11, 1, 3, 44, tzinfo=timezone.utc)
+        # Nothing of November published yet, so the nowcast keeps the full month.
+        fc.current_month_progress = lambda: ('2026-11', 0.0, 0.0)
+        fc.monthly_actuals = lambda complete_only=True: {f'2026-{m:02d}': 9000.0 for m in range(1, 11)}
+
+        months = ['2026-11', '2026-12'] + [f'2027-{m:02d}' for m in range(1, 13)]
+        # Every month rounds down by 0.4, so twelve of them drift by about five.
+        values = {f'{m}-15': 15000.4 + i for i, m in enumerate(months)}
+        forecasts = {ENSEMBLE_KEY: ForecastResult(forecast_values=values, model_name=ENSEMBLE_KEY)}
+
+        # The real annual_bands carries both span names, years and running totals.
+        fc.annual_bands = {key: band for key in ['2026', '2027'] + months}
+
+        actuals_base = 9000 * 10
+        timelines = fc._generate_cumulative_timelines(forecasts, actuals_base)
+        timeline = timelines[f'{ENSEMBLE_KEY}_cumulative']
+        chart = self.band(timeline, {}, fc.annual_bands)
+        yearly = fc._calculate_yearly_totals(forecasts, {})
+
+        closes = {e['date'][:4]: e['cumulative_total'] for e in timeline if e['date'].endswith('12-31T23:59:59Z')}
+        assert closes == {y: yearly[y][ENSEMBLE_KEY]['total'] for y in ('2026', '2027')}
+
+        data = {
+            'cumulative_band': chart,
+            'cumulative_timelines': timelines,
+            'yearly_forecast_totals': yearly,
+        }
+        failures = []
+        check_cumulative_band(data, failures)
+        assert failures == [], failures
+
     def test_published_months_carry_no_model_error(self):
         """The year-to-date already out is fact; only the forecast part is banded."""
         from core.intervals import IntervalBands
